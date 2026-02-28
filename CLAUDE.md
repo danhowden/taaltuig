@@ -9,6 +9,7 @@ This file provides guidance to Claude Code when working with this codebase.
 - **Context efficiency**: Use context-saving commands for long operations
 - **Refer to design docs**: Check `/docs/design/` before implementing features
 - **No unsolicited documentation**: Do NOT create summary docs, migration guides, or completion reports unless explicitly asked. Just do the work and report results concisely in chat.
+- **Commit and push**: After each atomic piece of work, commit using [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`) and push to the remote.
 
 ## Deployment Rules
 
