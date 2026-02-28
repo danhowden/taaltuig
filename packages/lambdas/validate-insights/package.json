@@ -1,0 +1,26 @@
+{
+  "name": "@taaltuig/lambda-validate-insights",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "pnpm lint && pnpm test:coverage",
+    "build": "node ../shared-esbuild.config.cjs",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run --config=../vitest.config.ts",
+    "test:watch": "vitest --config=../vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
+  },
+  "dependencies": {
+    "@taaltuig/dynamodb-client": "workspace:*",
+    "@taaltuig/lambda-utils": "workspace:*",
+    "@aws-sdk/client-bedrock-runtime": "^3.500.0",
+    "@aws-sdk/client-cloudwatch": "^3.500.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.1.9"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@taaltuig/lambda-utils",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts",
+    "prebuild": "pnpm lint && pnpm test:coverage"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.14.0",
+    "eslint": "^9.9.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.5"
+  }
+}

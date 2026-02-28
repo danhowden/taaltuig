@@ -1,0 +1,45 @@
+/* Example: Dutch-themed colors for Taaltuig */
+
+@layer base {
+  :root {
+    /* Backgrounds */
+    --background: 0 0% 100%;              /* White background */
+    --foreground: 222 47% 11%;            /* Dark blue text */
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    /* Primary - Dutch Orange */
+    --primary: 24 100% 50%;               /* Dutch orange #FF8C00 */
+    --primary-foreground: 0 0% 100%;      /* White text on orange */
+
+    /* Secondary - Dutch Blue */
+    --secondary: 214 100% 50%;            /* Dutch blue #0066FF */
+    --secondary-foreground: 0 0% 100%;    /* White text on blue */
+
+    /* Muted */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent - Light Orange */
+    --accent: 24 100% 95%;
+    --accent-foreground: 24 100% 30%;
+
+    /* Destructive (errors) */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 24 100% 50%;                  /* Orange focus ring */
+
+    --radius: 0.5rem;
+  }
+
+  /* Dark mode would go here */
+  .dark {
+    /* ... */
+  }
+}

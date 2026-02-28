@@ -1,0 +1,19 @@
+{
+  "name": "@taaltuig/lambda-get-metrics",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "pnpm lint",
+    "build": "node ../shared-esbuild.config.cjs",
+    "lint": "eslint . && secretlint \"**/*\""
+  },
+  "dependencies": {
+    "@taaltuig/lambda-utils": "workspace:*",
+    "@aws-sdk/client-cloudwatch": "^3.500.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145"
+  }
+}

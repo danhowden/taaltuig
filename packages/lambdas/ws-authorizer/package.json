@@ -1,0 +1,18 @@
+{
+  "name": "@taaltuig/lambda-ws-authorizer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm lint && pnpm test:coverage",
+    "build": "node ../shared-esbuild.config.cjs",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
+  },
+  "dependencies": {
+    "@taaltuig/lambda-utils": "workspace:*",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0"
+  }
+}

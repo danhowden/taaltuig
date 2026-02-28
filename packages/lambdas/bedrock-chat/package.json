@@ -1,0 +1,22 @@
+{
+  "name": "@taaltuig/lambda-bedrock-chat",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm lint && pnpm test:coverage",
+    "build": "node ../shared-esbuild.config.cjs",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run --config=../vitest.config.ts",
+    "test:watch": "vitest --config=../vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
+  },
+  "dependencies": {
+    "@taaltuig/lambda-utils": "workspace:*",
+    "@aws-sdk/client-bedrock-runtime": "^3.500.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.1.9"
+  }
+}

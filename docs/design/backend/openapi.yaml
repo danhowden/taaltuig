@@ -1,0 +1,1061 @@
+openapi: 3.0.0
+info:
+  title: Taaltuig API
+  version: 1.0.0
+  description: |
+    AI-powered Dutch language learning platform with spaced repetition (SRS).
+
+    **Authentication**: All endpoints require Google OAuth2 JWT token in Authorization header.
+
+    **Base URL**: https://{api-id}.execute-api.{region}.amazonaws.com
+  contact:
+    name: Taaltuig
+
+servers:
+  - url: https://{api-id}.execute-api.{region}.amazonaws.com
+    description: Production API
+    variables:
+      api-id:
+        default: your-api-id
+      region:
+        default: eu-central-1
+
+security:
+  - GoogleJWT: []
+
+tags:
+  - name: Auth
+    description: Authentication and user management
+  - name: Reviews
+    description: Spaced repetition review operations
+  - name: Settings
+    description: User SRS configuration
+  - name: Cards
+    description: Flashcard CRUD operations
+  - name: Categories
+    description: Card organization
+  - name: Import
+    description: Anki deck import
+  - name: AI
+    description: AI model experimentation
+  - name: Insights
+    description: AI-generated vocabulary insights
+  - name: Metrics
+    description: Usage and validation metrics
+  - name: Debug
+    description: Development and testing utilities
+
+paths:
+  /api/auth/me:
+    get:
+      summary: Get current user profile
+      description: Returns authenticated user profile. Auto-creates user on first access.
+      tags: [Auth]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/reviews/queue:
+    get:
+      summary: Get daily review queue
+      description: Returns cards due for review today plus new cards up to daily limit
+      tags: [Reviews]
+      responses:
+        '200':
+          description: Review queue with statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queue:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueueItem'
+                  stats:
+                    type: object
+                    properties:
+                      due_count:
+                        type: integer
+                        description: Number of due cards (LEARNING, REVIEW, RELEARNING)
+                      new_count:
+                        type: integer
+                        description: Number of NEW cards in queue
+                      new_remaining_today:
+                        type: integer
+                        description: Remaining new cards available today
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/reviews/submit:
+    post:
+      summary: Submit review grade
+      description: |
+        Submit grade for a reviewed card. Updates scheduling state using SM-2 algorithm.
+
+        **Grades:**
+        - 0 (Again): Complete failure, restart learning
+        - 2 (Hard): Passed with difficulty, reduce ease
+        - 3 (Good): Passed normally
+        - 4 (Easy): Passed easily, graduate or boost interval
+      tags: [Reviews]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [review_item_id, grade, duration_ms]
+              properties:
+                review_item_id:
+                  type: string
+                  format: uuid
+                  description: ID of the review item being graded
+                grade:
+                  type: integer
+                  enum: [0, 2, 3, 4]
+                  description: User's grade (0=Again, 2=Hard, 3=Good, 4=Easy)
+                duration_ms:
+                  type: integer
+                  minimum: 0
+                  description: Time spent reviewing in milliseconds
+      responses:
+        '200':
+          description: Review submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  next_review:
+                    type: string
+                    format: date-time
+                    description: Next scheduled review time
+                  interval_days:
+                    type: number
+                    description: Interval in days until next review
+                  state:
+                    type: string
+                    enum: [NEW, LEARNING, REVIEW, RELEARNING]
+                    description: New state after review
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/settings:
+    get:
+      summary: Get user SRS settings
+      description: Returns user's SRS configuration (daily limits, learning steps, etc.)
+      tags: [Settings]
+      responses:
+        '200':
+          description: User settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '#/components/schemas/UserSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      summary: Update user SRS settings
+      description: Update user's SRS configuration. Supports partial updates.
+      tags: [Settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettings'
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '#/components/schemas/UserSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/cards:
+    get:
+      summary: List all cards
+      description: Returns all flashcards for the authenticated user
+      tags: [Cards]
+      responses:
+        '200':
+          description: List of cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create new card
+      description: |
+        Create a new flashcard. Automatically creates two ReviewItems (forward and reverse).
+
+        **Bidirectional learning**: One card creates two independent review schedules:
+        - Forward: Dutch → English
+        - Reverse: English → Dutch
+      tags: [Cards]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [front, back]
+              properties:
+                front:
+                  type: string
+                  description: Dutch phrase
+                  example: de kat
+                back:
+                  type: string
+                  description: English translation
+                  example: the cat
+                explanation:
+                  type: string
+                  description: Optional explanation or notes
+                  example: de = common gender article
+                category:
+                  type: string
+                  description: Category for organization
+                  example: Animals
+      responses:
+        '201':
+          description: Card created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card:
+                    $ref: '#/components/schemas/Card'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/cards/{card_id}:
+    put:
+      summary: Update card
+      description: Update an existing card's content. Syncs changes to associated ReviewItems.
+      tags: [Cards]
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Card ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                front:
+                  type: string
+                back:
+                  type: string
+                explanation:
+                  type: string
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Card updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card:
+                    $ref: '#/components/schemas/Card'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete card
+      description: Delete a card and its associated ReviewItems
+      tags: [Cards]
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Card ID
+      responses:
+        '200':
+          description: Card deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/categories/rename:
+    put:
+      summary: Rename category
+      description: Rename a category across all cards and review items
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [old_name, new_name]
+              properties:
+                old_name:
+                  type: string
+                  description: Current category name
+                new_name:
+                  type: string
+                  description: New category name
+      responses:
+        '200':
+          description: Category renamed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated_count:
+                    type: integer
+                    description: Number of cards updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/import/upload-url:
+    post:
+      summary: Get presigned S3 upload URL
+      description: Generates a presigned URL for uploading Anki deck (.apkg) to S3
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename]
+              properties:
+                filename:
+                  type: string
+                  description: Filename for the Anki deck
+                  example: my-deck.apkg
+      responses:
+        '200':
+          description: Presigned URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url:
+                    type: string
+                    format: uri
+                    description: Presigned S3 URL (valid for 5 minutes)
+                  s3_key:
+                    type: string
+                    description: S3 object key for import request
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/import/anki:
+    post:
+      summary: Import Anki deck
+      description: |
+        Triggers Anki deck import from S3. Sends real-time progress via WebSocket.
+
+        **Flow**:
+        1. Upload .apkg to S3 using presigned URL from /api/import/upload-url
+        2. Connect to WebSocket API
+        3. Call this endpoint with connection_id and s3_key
+        4. Receive progress updates via WebSocket
+
+        **Progress events**:
+        - `{ step: 'parsing', progress: 25 }`
+        - `{ step: 'importing', progress: 50, imported: 100, total: 200 }`
+        - `{ step: 'complete', progress: 100 }`
+      tags: [Import]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [s3_key, connection_id]
+              properties:
+                s3_key:
+                  type: string
+                  description: S3 object key from upload-url response
+                connection_id:
+                  type: string
+                  description: WebSocket connection ID for progress updates
+      responses:
+        '200':
+          description: Import started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported:
+                    type: integer
+                    description: Number of cards imported
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/bedrock/chat:
+    post:
+      summary: Test Bedrock AI models
+      description: |
+        Experimental endpoint for testing Claude and Nova models via AWS Bedrock.
+        Used in AI Lab for prompt experimentation.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages, model]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    required: [role, content]
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: string
+                  description: Conversation messages
+                model:
+                  type: string
+                  enum: [claude-sonnet, claude-haiku, nova-lite, nova-micro]
+                  description: Model to use for generation
+                system:
+                  type: string
+                  description: Optional system prompt
+                max_tokens:
+                  type: integer
+                  minimum: 1
+                  maximum: 4096
+                  default: 1024
+                  description: Maximum tokens to generate
+      responses:
+        '200':
+          description: AI response generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: Generated text response
+                  usage:
+                    type: object
+                    properties:
+                      input_tokens:
+                        type: integer
+                      output_tokens:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/insights/generate:
+    post:
+      summary: Generate AI insights for cards
+      description: |
+        Generate vocabulary insights using Claude Sonnet 4.5.
+        Insights include compound breakdowns, verb forms, etymology, pronunciation tips, etc.
+      tags: [Insights]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card_ids]
+              properties:
+                card_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  maxItems: 20
+                  description: Card IDs to generate insights for (max 20)
+      responses:
+        '200':
+          description: Insights generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        card_id:
+                          type: string
+                        insights_count:
+                          type: integer
+                  failed:
+                    type: array
+                    items:
+                      type: string
+                    description: Card IDs that failed to process
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/insights/validate:
+    post:
+      summary: Validate pending insights with AI
+      description: |
+        Validate pending insights using Claude Haiku 3.5.
+        Approved insights are kept, rejected insights are deleted.
+      tags: [Insights]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card_ids]
+              properties:
+                card_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  maxItems: 20
+                  description: Card IDs with pending insights to validate
+      responses:
+        '200':
+          description: Insights validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  validated:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        card_id:
+                          type: string
+                        approved:
+                          type: integer
+                        deleted:
+                          type: integer
+                  failed:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/insights/queue:
+    get:
+      summary: Get cards with insights for review
+      description: Returns cards with pending or AI-approved insights for human review
+      tags: [Insights]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, ai_approved, all]
+          description: Filter by insight status
+      responses:
+        '200':
+          description: Queue of cards with insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/insights/{card_id}/review:
+    put:
+      summary: Human review of a card insight
+      description: Approve, reject, or edit a specific insight on a card
+      tags: [Insights]
+      parameters:
+        - name: card_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [insight_index, action]
+              properties:
+                insight_index:
+                  type: integer
+                  minimum: 0
+                  description: Index of the insight to review
+                action:
+                  type: string
+                  enum: [approve, reject, edit]
+                content:
+                  type: string
+                  description: New content (required for edit action)
+      responses:
+        '200':
+          description: Insight reviewed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card:
+                    $ref: '#/components/schemas/Card'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/metrics/insights:
+    get:
+      summary: Get insights validation metrics
+      description: Returns CloudWatch metrics for insights generation and validation
+      tags: [Metrics]
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week]
+            default: day
+          description: Time period for metrics
+      responses:
+        '200':
+          description: Metrics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    enum: [hour, day, week]
+                  datapoints:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        approved:
+                          type: number
+                        rejected:
+                          type: number
+                        cardsProcessed:
+                          type: number
+                  totals:
+                    type: object
+                    properties:
+                      approved:
+                        type: number
+                      rejected:
+                        type: number
+                      cardsProcessed:
+                        type: number
+                      approvalRate:
+                        type: number
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/debug/reset-daily-reviews:
+    post:
+      summary: Reset daily review history
+      description: Clears review history for testing (allows re-reviewing NEW cards)
+      tags: [Debug]
+      responses:
+        '200':
+          description: History reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/debug/clear-insights:
+    post:
+      summary: Clear all AI insights
+      description: Removes all AI-generated insights from cards and review items
+      tags: [Debug]
+      responses:
+        '200':
+          description: Insights cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  cleared_cards:
+                    type: integer
+                  cleared_review_items:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    GoogleJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Google OAuth2 JWT token. Obtain from Google Sign-In.
+
+        **Issuer**: https://accounts.google.com
+        **Audience**: Your Google Client ID
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Internal user ID
+        google_sub:
+          type: string
+          description: Google's unique user identifier
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        picture_url:
+          type: string
+          format: uri
+          description: Google profile picture URL
+        created_at:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+
+    UserSettings:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        new_cards_per_day:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 20
+          description: Maximum new cards to introduce per day
+        max_reviews_per_day:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Maximum reviews per day (null = unlimited)
+        learning_steps:
+          type: array
+          items:
+            type: number
+          default: [1, 10]
+          description: Learning step intervals in minutes
+        relearning_steps:
+          type: array
+          items:
+            type: number
+          default: [10]
+          description: Relearning step intervals in minutes
+        graduating_interval:
+          type: number
+          default: 1
+          description: Interval in days when graduating from learning
+        easy_interval:
+          type: number
+          default: 4
+          description: Interval in days for "easy" button on new cards
+        starting_ease:
+          type: number
+          minimum: 1.3
+          default: 2.5
+          description: Initial ease factor for new cards
+        easy_bonus:
+          type: number
+          default: 1.3
+          description: Multiplier for "easy" button
+        interval_modifier:
+          type: number
+          default: 1.0
+          description: Global interval modifier
+        disabled_categories:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Categories excluded from review sessions
+        proficiency_level:
+          type: string
+          enum: [beginner, intermediate, advanced]
+          default: beginner
+          description: User's Dutch proficiency level (affects AI explanations)
+        updated_at:
+          type: string
+          format: date-time
+
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Alias for card_id (for convenience)
+        card_id:
+          type: string
+          format: uuid
+          description: Card UUID
+        user_id:
+          type: string
+          format: uuid
+        front:
+          type: string
+          description: Dutch phrase
+          example: de kat
+        back:
+          type: string
+          description: English translation
+          example: the cat
+        explanation:
+          type: string
+          description: Optional notes or grammar explanation
+          example: de = common gender article
+        category:
+          type: string
+          description: User-defined category
+          example: Animals
+        source:
+          type: string
+          enum: [manual, anki]
+          description: How the card was created
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardInsight'
+          description: AI-generated vocabulary insights
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    QueueItem:
+      type: object
+      description: |
+        Review item with embedded card data.
+        Card fields (front, back, explanation, category) are denormalized into the review item
+        to avoid extra Card fetch during review sessions.
+      properties:
+        review_item_id:
+          type: string
+          format: uuid
+        card_id:
+          type: string
+          format: uuid
+        direction:
+          type: string
+          enum: [forward, reverse]
+          description: |
+            - forward: Dutch (front) → English (back)
+            - reverse: English (back) → Dutch (front)
+        state:
+          type: string
+          enum: [NEW, LEARNING, REVIEW, RELEARNING]
+        interval:
+          type: number
+          description: Current interval in days
+        ease_factor:
+          type: number
+          description: Current ease factor
+        repetitions:
+          type: integer
+          description: Consecutive successful reviews
+        step_index:
+          type: integer
+          description: Current position in learning/relearning steps
+        due_date:
+          type: string
+          format: date-time
+        last_reviewed:
+          type: string
+          format: date-time
+          nullable: true
+        # Embedded card data
+        front:
+          type: string
+          description: Dutch phrase (from card)
+        back:
+          type: string
+          description: English translation (from card)
+        explanation:
+          type: string
+          description: Notes (from card)
+        category:
+          type: string
+          description: Category (from card)
+
+    CardInsight:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [compound, verb_forms, root, pronunciation, confusable, example, plural, separable_verb]
+          description: Type of insight
+        content:
+          type: string
+          description: Insight content (max 60 chars)
+        status:
+          type: string
+          enum: [pending, approved]
+          description: Review status
+        reviewed_by:
+          type: string
+          enum: [ai, human]
+          description: Who approved the insight
+        generated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code for programmatic handling
+        details:
+          type: object
+          description: Additional error context
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Invalid request
+            code: VALIDATION_ERROR
+            details:
+              field: grade
+              message: Must be 0, 2, 3, or 4
+
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized
+            code: INVALID_TOKEN
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Card not found
+            code: NOT_FOUND

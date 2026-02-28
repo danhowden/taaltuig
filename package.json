@@ -1,0 +1,35 @@
+{
+  "name": "taaltuig",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm -r --filter '@taaltuig/lambda-*' lint",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r --filter '@taaltuig/lambda-*' test:coverage",
+    "dev": "pnpm --filter frontend dev",
+    "deploy": "set -a && source .env && set +a && pnpm --filter infrastructure run deploy",
+    "synth": "set -a && source .env && set +a && pnpm --filter infrastructure run synth"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.0",
+    "@vitest/coverage-v8": "2.1.9",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.9.0",
+    "globals": "^15.9.0",
+    "secretlint": "^11.3.1",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.2.0",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.1.0"
+}

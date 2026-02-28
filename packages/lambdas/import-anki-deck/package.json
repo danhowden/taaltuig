@@ -1,0 +1,21 @@
+{
+  "name": "@taaltuig/lambda-import-anki-deck",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "pnpm lint && pnpm test:coverage",
+    "build": "node ../shared-esbuild.config.cjs && cp ../../../node_modules/.pnpm/sql.js@1.13.0/node_modules/sql.js/dist/sql-wasm.wasm dist/",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.0.0",
+    "@taaltuig/dynamodb-client": "workspace:*",
+    "@taaltuig/lambda-utils": "workspace:*",
+    "anki-reader": "^0.3.0",
+    "jszip": "^3.10.1"
+  }
+}
