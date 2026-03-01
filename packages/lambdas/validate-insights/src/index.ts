@@ -82,8 +82,9 @@ const SYSTEM_PROMPT = `You are validating AI-generated Dutch vocabulary insights
 ## Validation Criteria by Type
 
 **compound:**
-- APPROVE if: both parts are real Dutch words AND breakdown genuinely aids memory
-- REJECT if: breakdown is obvious, forced etymology, or parts aren't meaningful alone
+- REJECT by default — only approve truly surprising breakdowns
+- REJECT if: either part is a cognate (sounds like English), the English translation already implies the breakdown (e.g., "ziekenhuis" → hospital is obviously "sick house"), it's a simple prefix/suffix pattern (on-/be-/ver-/-heid/-lijk), or the parts are basic words the learner already knows
+- APPROVE only if: both parts are non-obvious to English speakers AND the breakdown creates a genuine "aha" moment that aids memory
 
 **verb_forms:**
 - APPROVE if: forms are correct AND verb is truly irregular (not just spelling change)
@@ -94,8 +95,9 @@ const SYSTEM_PROMPT = `You are validating AI-generated Dutch vocabulary insights
 - REJECT if: speculation, vague "related to" claims, or doesn't help memory
 
 **pronunciation:**
-- APPROVE if: targets genuinely difficult sounds (ui/oe/g/ij/eu/sch) AND description helps
-- REJECT if: standard sounds, obvious pronunciation, or unhelpful description
+- REJECT by default — only approve for truly alien sounds
+- REJECT if: the sound is oe, ij, or sch (common enough that learners pick them up quickly), the word is short/simple, the pronunciation is guessable from spelling, or the description is vague
+- APPROVE only if: the sound is genuinely alien to English speakers (ui, eu, harsh g) AND the description is concrete and actionable
 
 **confusable:**
 - APPROVE if: words genuinely look/sound similar AND learners actually confuse them

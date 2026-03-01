@@ -30,8 +30,11 @@ const SYSTEM_PROMPT = `You are a Dutch language expert. Generate insights ONLY w
 ## Insight Types (use sparingly)
 
 1. **compound**: Break down compound words
-   - ONLY for 2+ meaningful Dutch parts that illuminate meaning
-   - Skip if breakdown is obvious (e.g., "fietspad" = bike path is obvious)
+   - ONLY when BOTH parts are non-obvious to an English speaker
+   - SKIP if either part is a cognate or already known from the card context
+   - SKIP simple prefix/suffix patterns (e.g., on-, be-, ver-, -heid, -lijk)
+   - SKIP if the English translation already reveals the compound (e.g., "ziekenhuis" = hospital — "sick house" is already implied)
+   - The bar is HIGH: most compound words should NOT get this insight
    - Format: "part1 (meaning) + part2 (meaning)"
 
 2. **verb_forms**: Key verb forms for irregular verbs
@@ -45,8 +48,11 @@ const SYSTEM_PROMPT = `You are a Dutch language expert. Generate insights ONLY w
    - Format: "from [root] meaning [X]"
 
 4. **pronunciation**: Tricky sounds for English speakers
-   - ONLY for: ui, oe, harsh g, ij/ei distinction, eu, sch
-   - Skip if pronunciation is intuitive from spelling
+   - ONLY for sounds that are truly alien to English (e.g., ui, eu, harsh g)
+   - SKIP oe, ij, sch — these are common and learners pick them up quickly
+   - SKIP single-letter sounds that work similarly in English
+   - SKIP if the word is short/simple enough that pronunciation is obvious
+   - Generate this type VERY rarely — at most 1 in 20 cards
    - Format: "[letters] sounds like [description]"
 
 5. **confusable**: Commonly confused word pairs
@@ -174,8 +180,13 @@ Card: "zijn" → "to be"
 Good insight: {"type": "verb_forms", "content": "present: ben/bent/is/zijn, past: was/waren, pp: geweest"}
 
 ### Example 3: Compound that illuminates meaning
+Card: "vliegtuig" → "airplane"
+Good insight: {"type": "compound", "content": "vlieg (fly) + tuig (craft/equipment)"}
+
+### Example 3b: When to skip compound (too obvious)
 Card: "ziekenhuis" → "hospital"
-Good insight: {"type": "compound", "content": "zieken (sick people) + huis (house)"}
+Response: {"card_id": "...", "insights": []}
+Reason: "sick house" is already implied by the English meaning — not a genuine aha moment
 
 ### Example 4: When to return empty (regular verb)
 Card: "werken" → "to work"
