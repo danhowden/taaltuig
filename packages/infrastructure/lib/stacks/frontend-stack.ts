@@ -52,7 +52,7 @@ export class FrontendStack extends cdk.Stack {
         responseHeadersPolicyName: 'TaaltuigSecurityHeaders',
         securityHeadersBehavior: {
           contentSecurityPolicy: {
-            contentSecurityPolicy: `default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' ${props.apiUrl} wss://*.execute-api.eu-central-1.amazonaws.com https://accounts.google.com; frame-src https://accounts.google.com;`,
+            contentSecurityPolicy: `default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ${props.apiUrl} wss://*.execute-api.eu-central-1.amazonaws.com https://accounts.google.com; frame-src https://accounts.google.com;`,
             override: true,
           },
           strictTransportSecurity: {
