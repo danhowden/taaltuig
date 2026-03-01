@@ -8,6 +8,9 @@ dist/
 *.js.map
 !vite.config.ts
 !eslint.config.js
+!packages/frontend/src/vite-env.d.ts
+!packages/frontend/src/lib/gradient.js
+!packages/frontend/src/lib/gradient.d.ts
 
 # CDK
 cdk.out/
