@@ -74,8 +74,8 @@ async function emitMetrics(
   }
 }
 
-// Use Haiku 3.5 for validation (cross-region inference profile) - fast and cost-effective
-const VALIDATOR_MODEL = 'eu.anthropic.claude-3-5-haiku-20241022-v1:0'
+// Use Haiku 4.5 for validation (cross-region inference profile) - fast and cost-effective
+const VALIDATOR_MODEL = 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
 
 const SYSTEM_PROMPT = `You are validating AI-generated Dutch vocabulary insights. Be strict - reject anything that doesn't provide clear learning value.
 
