@@ -100,7 +100,7 @@ const SYSTEM_PROMPT = `You are validating AI-generated Dutch vocabulary insights
 - APPROVE only if: the sound is genuinely alien to English speakers (ui, eu, harsh g) AND the description is concrete and actionable
 
 **confusable:**
-- APPROVE if: words genuinely look/sound similar AND learners actually confuse them
+- APPROVE if: words genuinely look/sound similar AND learners actually confuse them. Dutch homonyms (same spelling, different meaning) are excellent confusables — e.g. "bank" (couch vs financial bank)
 - REJECT if: tenuous connection or unlikely confusion
 
 **example:**
