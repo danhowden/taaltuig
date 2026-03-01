@@ -37,10 +37,10 @@ jobs:
 
       - name: Write frontend .env
         run: |
-          cat > packages/frontend/.env << 'EOF'
-          VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
-          VITE_WS_API_URL=${{ vars.VITE_WS_API_URL }}
-          VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          cat > packages/frontend/.env << EOF
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          VITE_WS_API_URL=${{ secrets.VITE_WS_API_URL }}
+          VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_USE_MOCKS=false
           EOF
 
@@ -54,7 +54,7 @@ jobs:
       - name: CDK deploy
         run: pnpm --filter infrastructure deploy
         env:
-          CDK_DEFAULT_ACCOUNT: ${{ vars.CDK_DEFAULT_ACCOUNT }}
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
           CDK_DEFAULT_REGION: eu-central-1
-          GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
-          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+          GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          FRONTEND_DOMAIN: ${{ secrets.FRONTEND_DOMAIN }}
