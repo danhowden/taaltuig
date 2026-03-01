@@ -11,10 +11,11 @@ This file provides guidance to Claude Code when working with this codebase.
 - **No unsolicited documentation**: Do NOT create summary docs, migration guides, or completion reports unless explicitly asked. Just do the work and report results concisely in chat.
 - **Commit and push**: After each atomic piece of work, commit using [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`) and push to the remote.
 
-## Deployment Rules
+## Deployment
 
-- **Frontend**: Do NOT deploy automatically. The user runs it locally with `pnpm --filter frontend dev`. Just build to verify changes compile.
-- **Backend (Lambdas)**: After making Lambda changes, ASK "Want me to deploy the backend?" before running the deploy command. Never auto-deploy.
+Pushing to `main` triggers automatic deployment via GitHub Actions (`.github/workflows/deploy.yml`). The workflow builds all packages, then deploys via CDK using OIDC authentication. There is no need to deploy manually — just commit, push, and it deploys.
+
+- **Frontend dev server**: `pnpm --filter frontend dev` (for local development only)
 - **API Changes**: When adding/modifying endpoints, update `/docs/design/backend/openapi.yaml` to keep it in sync.
 
 ## Project Overview
