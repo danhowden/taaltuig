@@ -324,6 +324,84 @@ describe('validate-insights Lambda', () => {
     expect(body.validated[0].approved).toBe(1)
   })
 
+  it('should normalize flat validation response format', async () => {
+    const cards = [
+      {
+        card_id: 'c-1',
+        front: 'aardappel',
+        back: 'potato',
+        insights: [
+          { type: 'compound', content: 'aard + appel', status: 'pending' },
+          { type: 'root', content: 'etymology', status: 'pending' },
+        ],
+      },
+    ]
+
+    mockGetCardsByIds.mockResolvedValue(cards)
+
+    // Model returns flat format: [{card_id, index, approved, reason}, ...]
+    const flatResponse = [
+      { card_id: 'c-1', index: 0, approved: true },
+      { card_id: 'c-1', index: 1, approved: false, reason: 'Speculative' },
+    ]
+    const responseWithoutBracket = JSON.stringify(flatResponse).slice(1)
+
+    mockBedrockSend.mockResolvedValue({
+      body: new TextEncoder().encode(
+        JSON.stringify({
+          content: [{ type: 'text', text: responseWithoutBracket }],
+        })
+      ),
+    })
+
+    mockBulkUpdateInsightsStatus.mockResolvedValue({})
+    mockDeleteInsight.mockResolvedValue({})
+
+    const event = createEvent({ card_ids: ['c-1'] })
+    const result = await handler(event)
+
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.validated).toHaveLength(1)
+    expect(body.validated[0].approved).toBe(1)
+    expect(body.validated[0].deleted).toBe(1)
+  })
+
+  it('should skip validation entries with missing insights array', async () => {
+    const cards = [
+      {
+        card_id: 'c-1',
+        front: 'test',
+        back: 'test',
+        insights: [{ type: 'root', content: 'test', status: 'pending' }],
+      },
+    ]
+
+    mockGetCardsByIds.mockResolvedValue(cards)
+
+    // Model returns entry without insights array
+    const malformedResponse = [
+      { card_id: 'c-1', approved: true },
+    ]
+    const responseWithoutBracket = JSON.stringify(malformedResponse).slice(1)
+
+    mockBedrockSend.mockResolvedValue({
+      body: new TextEncoder().encode(
+        JSON.stringify({
+          content: [{ type: 'text', text: responseWithoutBracket }],
+        })
+      ),
+    })
+
+    const event = createEvent({ card_ids: ['c-1'] })
+    const result = await handler(event)
+
+    // Should succeed but with empty results since the malformed entry was filtered
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.validated).toHaveLength(0)
+  })
+
   it('should return 500 on invalid JSON response from model', async () => {
     const cards = [
       {

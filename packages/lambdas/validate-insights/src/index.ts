@@ -116,7 +116,10 @@ const SYSTEM_PROMPT = `You are validating AI-generated Dutch vocabulary insights
 - REJECT if: verb isn't actually separable, or separation pattern is obvious
 
 ## Output Format
-Return ONLY valid JSON array, no markdown, no explanation. Start directly with [`
+Return ONLY valid JSON array, no markdown, no explanation. Start directly with [
+
+Example:
+[{"card_id":"abc123","insights":[{"index":0,"approved":true},{"index":1,"approved":false,"reason":"Too obvious for English speakers"}]}]`
 
 interface ValidateInsightsRequest {
   card_ids: string[]
@@ -258,7 +261,53 @@ export async function handler(
       if (jsonText.startsWith('[```')) {
         jsonText = jsonText.replace(/^\[```json?\n?/, '[').replace(/\n?```$/, '')
       }
-      validationResults = JSON.parse(jsonText)
+      const parsed = JSON.parse(jsonText) as unknown[]
+
+      // Normalize response: model may return flat array of {card_id, index, approved, reason}
+      // instead of nested {card_id, insights: [{index, approved, reason}]}
+      if (
+        parsed.length > 0 &&
+        !Array.isArray(
+          (parsed[0] as Record<string, unknown>).insights
+        ) &&
+        'index' in (parsed[0] as Record<string, unknown>)
+      ) {
+        console.log('Normalizing flat validation response to nested format')
+        const grouped = new Map<
+          string,
+          Array<{ index: number; approved: boolean; reason?: string }>
+        >()
+        for (const item of parsed) {
+          const flat = item as {
+            card_id: string
+            index: number
+            approved: boolean
+            reason?: string
+          }
+          if (!grouped.has(flat.card_id)) {
+            grouped.set(flat.card_id, [])
+          }
+          grouped.get(flat.card_id)!.push({
+            index: flat.index,
+            approved: flat.approved,
+            reason: flat.reason,
+          })
+        }
+        validationResults = Array.from(grouped.entries()).map(
+          ([card_id, insights]) => ({ card_id, insights })
+        )
+      } else {
+        validationResults = parsed as ValidationResult[]
+      }
+
+      // Guard against entries with missing/invalid insights arrays
+      validationResults = validationResults.filter((v) => {
+        if (!v.card_id || !Array.isArray(v.insights)) {
+          console.warn('Skipping invalid validation entry:', JSON.stringify(v))
+          return false
+        }
+        return true
+      })
     } catch {
       console.error('Failed to parse model response:', textContent.text)
       return serverErrorResponse(
