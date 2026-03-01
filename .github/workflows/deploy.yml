@@ -43,6 +43,7 @@ jobs:
           VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_USE_MOCKS=false
           EOF
+          sed -i 's/^ *//' packages/frontend/.env
 
       - run: pnpm build
 
