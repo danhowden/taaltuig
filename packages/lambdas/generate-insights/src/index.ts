@@ -76,12 +76,14 @@ const SYSTEM_PROMPT = `You are a Dutch language expert. Generate insights ONLY w
    - Format: "[prefix] + [stem]: [example showing separation]"
 
 ## Rules
-- Generate 0-3 insights per card (empty array is fine and expected)
+- Generate 0-3 NEW insights per card (empty array is fine and expected)
 - Fewer is better - only add insights that genuinely help
 - Only add insight if it genuinely helps memorization
 - Never generate just to have something
 - Skip obvious cognates entirely
 - Be concise (max 60 chars)
+- If a card has existing_insights, DO NOT regenerate the same type+content — generate complementary insights of different types instead
+- Aim for variety: a card benefits from multiple insight types (e.g. compound + confusable, not two compounds)
 
 ## Output
 JSON array only, no markdown. Start directly with [`
@@ -94,6 +96,7 @@ interface CardInput {
   card_id: string
   front: string
   back: string
+  existing_insights?: Array<{ type: string; content: string }>
 }
 
 interface GeneratedCardInsights {
@@ -146,12 +149,18 @@ export async function handler(
 
     const proficiencyLevel = settings?.proficiency_level ?? DEFAULT_SETTINGS.proficiency_level
 
-    // Build input for the model
-    const cardInputs: CardInput[] = cards.map((c) => ({
-      card_id: c.card_id,
-      front: c.front,
-      back: c.back,
-    }))
+    // Build input for the model, including existing insights so it avoids duplicates
+    const cardInputs: CardInput[] = cards.map((c) => {
+      const existing = (c.insights || [])
+        .filter((i) => i.status === 'approved' || i.status === 'pending')
+        .map((i) => ({ type: i.type, content: i.content }))
+      return {
+        card_id: c.card_id,
+        front: c.front,
+        back: c.back,
+        ...(existing.length > 0 ? { existing_insights: existing } : {}),
+      }
+    })
 
     // Log input cards being processed
     console.log('=== GENERATE INSIGHTS: Processing cards ===')
@@ -265,18 +274,34 @@ ${JSON.stringify(cardInputs, null, 2)}`
 
     for (const generated of generatedInsights) {
       try {
+        if (!Array.isArray(generated.insights) || generated.insights.length === 0) {
+          results.push({ card_id: generated.card_id, insights_count: 0 })
+          continue
+        }
+
         // Convert to CardInsight format with pending status
-        const insights: CardInsight[] = generated.insights.map((i) => ({
+        const newInsights: CardInsight[] = generated.insights.map((i) => ({
           type: i.type as CardInsight['type'],
           content: i.content,
           status: 'pending' as const,
           generated_at: now,
         }))
 
-        await dbClient.updateCardInsights(userId, generated.card_id, insights)
+        // Merge with existing insights: keep existing, append new (dedup by type+content)
+        const card = cards.find((c) => c.card_id === generated.card_id)
+        const existingInsights = card?.insights || []
+        const existingKeys = new Set(
+          existingInsights.map((i) => `${i.type}:${i.content}`)
+        )
+        const dedupedNew = newInsights.filter(
+          (i) => !existingKeys.has(`${i.type}:${i.content}`)
+        )
+
+        const mergedInsights = [...existingInsights, ...dedupedNew]
+        await dbClient.updateCardInsights(userId, generated.card_id, mergedInsights)
         results.push({
           card_id: generated.card_id,
-          insights_count: insights.length,
+          insights_count: dedupedNew.length,
         })
       } catch (err) {
         console.error(`Failed to update card ${generated.card_id}:`, err)
