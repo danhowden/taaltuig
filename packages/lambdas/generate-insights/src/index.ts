@@ -76,14 +76,13 @@ const SYSTEM_PROMPT = `You are a Dutch language expert. Generate insights ONLY w
    - Format: "[prefix] + [stem]: [example showing separation]"
 
 ## Rules
-- Generate 0-3 NEW insights per card (empty array is fine and expected)
-- Fewer is better - only add insights that genuinely help
-- Only add insight if it genuinely helps memorization
-- Never generate just to have something
-- Skip obvious cognates entirely
+- Generate 0-3 NEW insights per card (empty array is fine for obvious cognates)
+- Most non-trivial words benefit from 2-3 complementary insight types — aim for variety
+- Each insight must genuinely help memorization — no filler
+- Skip obvious cognates entirely (0 insights)
 - Be concise (max 60 chars)
 - If a card has existing_insights, DO NOT regenerate the same type+content — generate complementary insights of different types instead
-- Aim for variety: a card benefits from multiple insight types (e.g. compound + confusable, not two compounds)
+- Mix insight types for richer learning (e.g. compound + confusable, verb_forms + example, root + pronunciation)
 
 ## Output
 JSON array only, no markdown. Start directly with [`
@@ -180,36 +179,49 @@ Proficiency level: ${proficiencyLevel}
 
 ## Few-shot Examples
 
-### Example 1: Separable verb with useful insight
+### Example 1: Separable verb — multiple insights
 Card: "opbellen" → "to call (phone)"
-Good insight: {"type": "separable_verb", "content": "op + bellen: Ik bel je op (I'll call you)"}
+Response: {"card_id": "...", "insights": [
+  {"type": "separable_verb", "content": "op + bellen: Ik bel je op (I'll call you)"},
+  {"type": "confusable", "content": "vs bellen (to ring/doorbell)"}
+]}
 
-### Example 2: Truly irregular verb
+### Example 2: Truly irregular verb — multiple insights
 Card: "zijn" → "to be"
-Good insight: {"type": "verb_forms", "content": "present: ben/bent/is/zijn, past: was/waren, pp: geweest"}
+Response: {"card_id": "...", "insights": [
+  {"type": "verb_forms", "content": "present: ben/bent/is/zijn, past: was/waren, pp: geweest"},
+  {"type": "example", "content": "Ik ben het ermee eens — I agree with it"}
+]}
 
-### Example 3: Compound that illuminates meaning
+### Example 3: Compound with rich learning value — 3 insights
 Card: "vliegtuig" → "airplane"
-Good insight: {"type": "compound", "content": "vlieg (fly) + tuig (craft/equipment)"}
+Response: {"card_id": "...", "insights": [
+  {"type": "compound", "content": "vlieg (fly) + tuig (craft/equipment)"},
+  {"type": "confusable", "content": "vs vliegveld (airport/airfield)"},
+  {"type": "plural", "content": "plural: vliegtuigen"}
+]}
 
-### Example 3b: When to skip compound (too obvious)
+### Example 4: When to skip compound (too obvious)
 Card: "ziekenhuis" → "hospital"
 Response: {"card_id": "...", "insights": []}
 Reason: "sick house" is already implied by the English meaning — not a genuine aha moment
 
-### Example 4: When to return empty (regular verb)
+### Example 5: When to return empty (regular verb)
 Card: "werken" → "to work"
 Response: {"card_id": "...", "insights": []}
 Reason: werken follows regular patterns (werkte, gewerkt) - no insight needed
 
-### Example 5: When to return empty (obvious cognate)
+### Example 6: When to return empty (obvious cognate)
 Card: "telefoon" → "telephone"
 Response: {"card_id": "...", "insights": []}
 Reason: obvious cognate, no insight needed
 
-### Example 6: Irregular plural
+### Example 7: Irregular plural — multiple insights
 Card: "kind" → "child"
-Good insight: {"type": "plural", "content": "plural: kinderen (not *kinden)"}
+Response: {"card_id": "...", "insights": [
+  {"type": "plural", "content": "plural: kinderen (not *kinden)"},
+  {"type": "confusable", "content": "vs kindje (little child, diminutive)"}
+]}
 
 ## Cards to process:
 ${JSON.stringify(cardInputs, null, 2)}`
