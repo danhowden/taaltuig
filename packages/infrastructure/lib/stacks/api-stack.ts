@@ -307,39 +307,6 @@ export class ApiStack extends cdk.Stack {
     )
 
     // ============================================================================
-    // BEDROCK / AI EXPERIMENTATION
-    // ============================================================================
-
-    const bedrockChatLambda = new lambda.Function(
-      this,
-      'BedrockChatFunction',
-      {
-        ...lambdaDefaults,
-        functionName: 'taaltuig-bedrock-chat',
-        description: 'Experimental endpoint for testing AWS Bedrock models',
-        code: lambda.Code.fromAsset(
-          path.join(__dirname, '../../../lambdas/bedrock-chat/dist')
-        ),
-        timeout: cdk.Duration.seconds(30), // Longer timeout for AI calls
-        memorySize: 256, // More memory for AI processing
-      }
-    )
-
-    // Grant Bedrock permissions (restricted to Claude and Nova models)
-    bedrockChatLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['bedrock:InvokeModel'],
-        resources: [
-          'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
-          'arn:aws:bedrock:*::foundation-model/amazon.nova-*',
-          // Cross-region inference profiles
-          `arn:aws:bedrock:*:${this.account}:inference-profile/*`,
-        ],
-      })
-    )
-
-    // ============================================================================
     // AI INSIGHTS LAMBDAS
     // ============================================================================
 
@@ -716,17 +683,6 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'DeleteCardIntegration',
         deleteCardLambda
-      ),
-      authorizer: jwtAuthorizer,
-    })
-
-    // Bedrock AI experimentation route
-    httpApi.addRoutes({
-      path: '/api/bedrock/chat',
-      methods: [apigatewayv2.HttpMethod.POST],
-      integration: new integrations.HttpLambdaIntegration(
-        'BedrockChatIntegration',
-        bedrockChatLambda
       ),
       authorizer: jwtAuthorizer,
     })

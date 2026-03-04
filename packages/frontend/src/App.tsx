@@ -11,7 +11,6 @@ import { ReviewSession } from '@/pages/ReviewSession'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { CardsPage } from '@/pages/CardsPage'
 import { DebugPage } from '@/pages/DebugPage'
-import { AiLabPage } from '@/pages/AiLabPage'
 import { InsightsReviewPage } from '@/pages/InsightsReviewPage'
 import { Toaster } from '@/components/ui/toaster'
 import { AppLayout } from '@/components/AppLayout'
@@ -70,14 +69,6 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <DebugPage />
-                      </ErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path="/ai-lab"
-                    element={
-                      <ErrorBoundary>
-                        <AiLabPage />
                       </ErrorBoundary>
                     }
                   />
