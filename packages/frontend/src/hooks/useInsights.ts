@@ -48,7 +48,7 @@ export function useValidateInsights() {
 
   return useApiMutation<ValidateInsightsResponse, ValidateInsightsRequest>({
     mutationFn: async (data) => apiClient.validateInsights(token!, data),
-    invalidateQueries: ['cards', 'insights-queue'],
+    invalidateQueries: ['insights-queue'],
   })
 }
 
@@ -65,6 +65,6 @@ export function useReviewInsight() {
   return useApiMutation<ReviewInsightResponse, ReviewInsightParams>({
     mutationFn: async ({ cardId, ...data }) =>
       apiClient.reviewInsight(token!, cardId, data),
-    invalidateQueries: ['cards', 'insights-queue', 'review-queue'],
+    invalidateQueries: ['insights-queue'],
   })
 }

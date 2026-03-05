@@ -53,36 +53,44 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30_000)
 
-    if (!response.ok) {
-      // Try to parse error response body
-      let errorBody: ApiError | null = null
-      try {
-        errorBody = await response.json()
-      } catch {
-        // Ignore JSON parse errors
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: options.signal ?? controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      })
+
+      if (!response.ok) {
+        // Try to parse error response body
+        let errorBody: ApiError | null = null
+        try {
+          errorBody = await response.json()
+        } catch {
+          // Ignore JSON parse errors
+        }
+
+        const error: ApiError = errorBody || {
+          error: `API request failed: ${response.statusText}`,
+          code: `HTTP_${response.status}`,
+        }
+        throw error
       }
 
-      const error: ApiError = errorBody || {
-        error: `API request failed: ${response.statusText}`,
-        code: `HTTP_${response.status}`,
+      // Handle 204 No Content (e.g., DELETE operations)
+      if (response.status === 204) {
+        return {} as T
       }
-      throw error
-    }
 
-    // Handle 204 No Content (e.g., DELETE operations)
-    if (response.status === 204) {
-      return {} as T
+      return response.json()
+    } finally {
+      clearTimeout(timeoutId)
     }
-
-    return response.json()
   }
 
   // ============================================================================

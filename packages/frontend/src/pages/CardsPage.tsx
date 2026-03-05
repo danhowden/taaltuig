@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { useApiQuery } from '@/hooks/useApiQuery'
 import { useApiMutation } from '@/hooks/useApiMutation'
+import { useSettings } from '@/hooks/useSettings'
 import {
   useCreateCard,
   useUpdateCard,
@@ -124,11 +124,7 @@ export function CardsPage() {
   )
 
   // Fetch settings for active categories
-  const { data: settings } = useApiQuery<UserSettings>({
-    queryKey: ['settings'],
-    queryFn: async () => apiClient.getSettings(token!),
-    enabled: !!token,
-  })
+  const { data: settings } = useSettings()
 
   // Local state for disabled categories (synced with settings)
   const [disabledCategories, setDisabledCategories] = useState<string[] | null>(

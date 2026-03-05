@@ -13,7 +13,6 @@ export function useReviewQueue() {
       return apiClient.getReviewQueue(token)
     },
     enabled: !!token,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 30_000,
   })
 }

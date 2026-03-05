@@ -21,13 +21,13 @@ export function useApiQuery<TData = unknown, TError = Error>(
 
   // Track loading state globally
   useEffect(() => {
-    if (query.isFetching) {
+    if (query.isLoading) {
       startLoading()
       return () => {
         stopLoading()
       }
     }
-  }, [query.isFetching, startLoading, stopLoading])
+  }, [query.isLoading, startLoading, stopLoading])
 
   return query
 }

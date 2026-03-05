@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '@/lib/api'
 import type { User } from '@/types'
@@ -61,11 +61,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loadUser()
   }, [token])
 
-  // Background auth refresh - check token validity every 5 minutes
+  // Background auth refresh - check when user returns to the tab
+  const lastAuthCheckRef = useRef<number>(Date.now())
+
   useEffect(() => {
     if (!token) return
 
-    const checkAuth = async () => {
+    const MIN_CHECK_INTERVAL = 5 * 60 * 1000 // 5 minutes
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return
+
+      const elapsed = Date.now() - lastAuthCheckRef.current
+      if (elapsed < MIN_CHECK_INTERVAL) return
+
+      lastAuthCheckRef.current = Date.now()
+
       try {
         const data = await apiClient.getCurrentUser(token)
         setUser(data.user)
@@ -75,10 +86,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    // Check every 5 minutes
-    const interval = setInterval(checkAuth, 5 * 60 * 1000)
-
-    return () => clearInterval(interval)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [token, logout])
 
   const login = async (newToken: string) => {
