@@ -18,7 +18,7 @@ function MobileMenuButton() {
         variant="ghost"
         size="icon"
         onClick={toggleSidebar}
-        className="h-12 w-12 bg-white/70 backdrop-blur-sm border border-white/40 rounded-full shadow-lg"
+        className="h-12 w-12 rounded-full border border-white/40 bg-white/30 backdrop-blur-md hover:bg-white/50 text-black/60 hover:text-black/80 shadow-none"
         aria-label="Open menu"
       >
         <Menu className="h-6 w-6" />
@@ -47,12 +47,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div
             className="relative h-[calc(100vh-24px)] md:h-[calc(100vh-60px)] rounded-2xl md:rounded-3xl overflow-hidden flex items-center justify-center"
             style={{
-              background: 'rgba(255, 255, 255, 0.4)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 100%)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.65)',
               boxShadow:
-                '0 8px 32px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08)',
+                '0 8px 32px rgb(var(--primary) / 0.12), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0 10px rgba(255, 255, 255, 0.35)',
             }}
           >
             <GlobalLoadingIndicator />
@@ -75,11 +75,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   const glassStyles = isMobile
     ? undefined
     : {
-        background: 'rgba(255, 255, 255, 0.4)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 100%)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.5)',
-        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(255, 255, 255, 0.65)',
+        boxShadow: '0 8px 32px rgb(var(--primary) / 0.12), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0 10px rgba(255, 255, 255, 0.35)',
       }
 
   return (
@@ -95,15 +95,15 @@ export function AppLayout({ children }: AppLayoutProps) {
           <SidebarProvider>
             <AppSidebar />
             <SidebarInset className="bg-transparent">
-              <div className="relative flex flex-col h-full overflow-hidden md:bg-white/20">
+              <div className="relative flex flex-col h-full overflow-hidden">
                 <MobileMenuButton />
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto flex flex-col">
                   <motion.div
                     key={location.pathname}
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="min-h-full"
+                    className="flex-1"
                   >
                     {children}
                   </motion.div>

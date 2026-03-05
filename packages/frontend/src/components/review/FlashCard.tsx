@@ -68,10 +68,8 @@ export function FlashCard({
   }, [autoRead, showAnswer, dutchText, item.direction])
 
   const glassStyles = {
-    background: 'rgba(255, 255, 255, 0.65)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    boxShadow: '0 8px 32px rgba(118, 2, 215, 0.2), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.4)',
+    background: 'rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 8px 32px rgb(var(--primary) / 0.15), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.4)',
   }
 
   return (
@@ -86,7 +84,7 @@ export function FlashCard({
         >
           {/* Front face */}
           <Card
-            className={`w-full border border-white/40 rounded-[2rem] [backface-visibility:hidden] ${!showAnswer ? 'shimmer-border motion-reduce:shimmer-border-static' : ''}`}
+            className="w-full border border-white/40 rounded-[2rem] [backface-visibility:hidden]"
             style={glassStyles}
           >
             <CardContent className="relative flex min-h-[250px] md:min-h-[300px] items-center justify-center p-6 md:p-12">
@@ -101,7 +99,7 @@ export function FlashCard({
                         e.stopPropagation()
                         speakDutch()
                       }}
-                      className="h-10 w-10"
+                      className="h-10 w-10 rounded-full bg-white/30 hover:bg-white/50 text-black/60 hover:text-black/80 shadow-none"
                       title="Speak Dutch"
                     >
                       <Volume2 className="h-5 w-5" />
@@ -123,7 +121,7 @@ export function FlashCard({
             <CardContent className="relative flex min-h-[250px] md:min-h-[300px] items-center justify-center p-6 md:p-12">
               <div className="w-full text-center">
                 <div className="flex items-center justify-center gap-2 md:gap-3 mb-4">
-                  <p className="text-xl md:text-3xl font-extrabold tracking-tight text-muted-foreground">
+                  <p className="text-xl md:text-3xl font-extrabold tracking-tight text-black/40">
                     {frontText}
                   </p>
                   {item.direction === 'forward' && (
@@ -131,14 +129,14 @@ export function FlashCard({
                       variant="ghost"
                       size="icon"
                       onClick={speakDutch}
-                      className="h-8 w-8 md:h-9 md:w-9"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-white/30 hover:bg-white/50 text-black/60 hover:text-black/80 shadow-none"
                       title="Speak Dutch"
                     >
-                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Volume2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
-                <div className="my-4 md:my-6 h-0.5 bg-gradient-to-r from-transparent via-[#7602D7] to-transparent" />
+                <div className="my-4 md:my-6 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent" />
                 <div className="flex items-center justify-center gap-2 md:gap-3 mb-2">
                   <p className="text-xl md:text-3xl font-extrabold tracking-tight">{backText}</p>
                   {item.direction === 'reverse' && (
@@ -146,7 +144,7 @@ export function FlashCard({
                       variant="ghost"
                       size="icon"
                       onClick={speakDutch}
-                      className="h-8 w-8 md:h-9 md:w-9"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-white/30 hover:bg-white/50 text-black/60 hover:text-black/80 shadow-none"
                       title="Speak Dutch"
                     >
                       <Volume2 className="h-4 w-4" />

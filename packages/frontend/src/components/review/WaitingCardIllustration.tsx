@@ -20,14 +20,14 @@ export function WaitingCardIllustration({ size = 160, className }: WaitingCardIl
           height="35"
           rx="6"
           fill="none"
-          stroke="rgb(147, 51, 234)"
+          stroke="rgb(var(--primary))"
           strokeWidth="2"
           strokeDasharray="4 3"
           opacity="0.7"
         />
 
         {/* Face on card - waiting/patient expression */}
-        <g style={{ color: 'rgb(147, 51, 234)', opacity: 0.8 }}>
+        <g style={{ color: 'rgb(var(--primary))', opacity: 0.8 }}>
           {/* Left eye - horizontal line (patient/waiting look) */}
           <line
             x1="37"

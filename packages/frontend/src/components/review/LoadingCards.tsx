@@ -23,8 +23,8 @@ export function LoadingCards({ message }: LoadingCardsProps) {
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor="rgb(168, 85, 247)" />
-            <stop offset="100%" stopColor="rgb(147, 51, 234)" />
+            <stop offset="0%" style={{ stopColor: 'rgb(var(--accent))' }} />
+            <stop offset="100%" style={{ stopColor: 'rgb(var(--chart-3))' }} />
           </linearGradient>
           <linearGradient
             id={`loadingGrad2-${uniqueId}`}
@@ -33,8 +33,8 @@ export function LoadingCards({ message }: LoadingCardsProps) {
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor="rgb(147, 51, 234)" />
-            <stop offset="100%" stopColor="rgb(126, 34, 206)" />
+            <stop offset="0%" style={{ stopColor: 'rgb(var(--chart-3))' }} />
+            <stop offset="100%" style={{ stopColor: 'rgb(var(--primary))' }} />
           </linearGradient>
           <linearGradient
             id={`loadingGrad3-${uniqueId}`}
@@ -43,11 +43,11 @@ export function LoadingCards({ message }: LoadingCardsProps) {
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor="rgb(126, 34, 206)" />
-            <stop offset="100%" stopColor="rgb(107, 33, 168)" />
+            <stop offset="0%" style={{ stopColor: 'rgb(var(--primary))' }} />
+            <stop offset="100%" style={{ stopColor: 'rgb(var(--brand-dark))' }} />
           </linearGradient>
           <filter id={`cardShadow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="rgb(139, 92, 246)" floodOpacity="0.2" />
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="rgb(var(--primary))" floodOpacity="0.2" />
             <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgb(0, 0, 0)" floodOpacity="0.08" />
           </filter>
         </defs>

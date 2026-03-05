@@ -5,7 +5,7 @@ const colors = {
   background: 'rgb(255, 240, 241)',
   foreground: 'rgb(58, 13, 18)',
   secondary: 'rgb(252, 233, 235)',
-  primary: 'rgb(255, 71, 86)',
+  primary: 'rgb(var(--primary))',
   primaryForeground: 'rgb(252, 252, 252)',
 }
 
@@ -44,7 +44,7 @@ export function TaaltuigLogo({
   variant = 'default',
 }: TaaltuigLogoProps) {
   const isWhite = variant === 'white'
-  const faceColor = isWhite ? 'rgb(126, 34, 206)' : colors.primaryForeground
+  const faceColor = isWhite ? 'rgb(var(--brand-dark))' : colors.primaryForeground
   const prefersReducedMotion = usePrefersReducedMotion()
   const shouldAnimate = animate && !prefersReducedMotion
 
@@ -82,8 +82,8 @@ export function TaaltuigLogo({
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(168, 85, 247)'} />
-            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.85)' : 'rgb(147, 51, 234)'} />
+            <stop offset="0%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(var(--accent))'} />
+            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.85)' : 'rgb(var(--chart-3))'} />
           </linearGradient>
           <linearGradient
             id={`cardGrad2-${uniqueId}`}
@@ -92,8 +92,8 @@ export function TaaltuigLogo({
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(147, 51, 234)'} />
-            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.9)' : 'rgb(126, 34, 206)'} />
+            <stop offset="0%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(var(--chart-3))'} />
+            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.9)' : 'rgb(var(--primary))'} />
           </linearGradient>
           <linearGradient
             id={`cardGrad3-${uniqueId}`}
@@ -102,8 +102,8 @@ export function TaaltuigLogo({
             x2="100%"
             y2="100%"
           >
-            <stop offset="0%" stopColor={isWhite ? 'rgb(255, 255, 255)' : 'rgb(126, 34, 206)'} />
-            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(107, 33, 168)'} />
+            <stop offset="0%" stopColor={isWhite ? 'rgb(255, 255, 255)' : 'rgb(var(--primary))'} />
+            <stop offset="100%" stopColor={isWhite ? 'rgba(255, 255, 255, 0.95)' : 'rgb(var(--brand-dark))'} />
           </linearGradient>
         </defs>
 

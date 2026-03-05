@@ -6,7 +6,7 @@ import { useReviewSession } from '@/hooks/useReviewSession'
 import { useSettings } from '@/hooks/useSettings'
 import { FlashCard } from '@/components/review/FlashCard'
 import { GradeButtons } from '@/components/review/GradeButtons'
-import { ReviewHeader } from '@/components/review/ReviewHeader'
+import { ReviewTitle, ReviewProgress } from '@/components/review/ReviewHeader'
 import { TaaltuigLogo } from '@/components/TaaltuigLogo'
 import { ReviewComplete } from '@/components/review/ReviewComplete'
 import { EmptyState } from '@/components/review/EmptyState'
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Volume2, VolumeX } from 'lucide-react'
 import type { Grade } from '@/types'
 import { IS_IOS } from '@/constants/review'
@@ -243,12 +244,7 @@ export function ReviewSession() {
         animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
         transition={{ duration: shouldReduceMotion ? 0.15 : 0.4, ease: 'easeOut' }}
       >
-        <ReviewHeader
-          totalCards={session.totalCards}
-          reviewedCount={session.reviewedCount}
-          againCount={session.againCount}
-          againReviewed={session.againReviewed}
-        />
+        <ReviewTitle />
       </motion.div>
 
       {/* Flash card - centered */}
@@ -261,7 +257,7 @@ export function ReviewSession() {
                 initial={
                   shouldReduceMotion
                     ? { opacity: 0 }
-                    : { opacity: 0, x: -120, rotateY: -35, rotateX: 5, scale: 0.85 }
+                    : { opacity: 1, x: -120, rotateY: -35, rotateX: 5, scale: 0.85 }
                 }
                 animate={
                   shouldReduceMotion
@@ -292,26 +288,35 @@ export function ReviewSession() {
         </div>
       </div>
 
-      {/* Grade buttons at bottom */}
+      {/* Grade buttons */}
       <div className="px-4 pb-4 md:pb-6">
         <GradeButtons disabled={!session.showAnswer} onGrade={handleGrade} />
+      </div>
+
+      {/* Progress pinned to bottom edge */}
+      <div className="px-6 pb-3">
+        <ReviewProgress
+          totalCards={session.totalCards}
+          reviewedCount={session.reviewedCount}
+          againCount={session.againCount}
+          againReviewed={session.againReviewed}
+        />
       </div>
 
       {/* Auto-read toggle (non-iOS only, desktop only) */}
       {!IS_IOS && (
         <div className="hidden md:block fixed bottom-8 right-8">
           <Button
-            variant={autoRead ? 'default' : 'outline'}
+            variant="ghost"
             size="icon"
             onClick={() => setAutoRead(!autoRead)}
             title={autoRead ? 'Auto-read enabled' : 'Auto-read disabled'}
-            className="h-12 w-12 rounded-full border border-white/40"
-            style={{
-              background: autoRead ? undefined : 'rgba(255, 255, 255, 0.65)',
-              backdropFilter: autoRead ? undefined : 'blur(20px)',
-              WebkitBackdropFilter: autoRead ? undefined : 'blur(20px)',
-              boxShadow: '0 8px 24px rgba(139, 92, 246, 0.2), 0 2px 8px rgba(0, 0, 0, 0.08)',
-            }}
+            className={cn(
+              'h-12 w-12 rounded-full border border-white/40 shadow-none',
+              autoRead
+                ? 'bg-primary text-white hover:bg-primary/80'
+                : 'bg-white/30 hover:bg-white/50 text-black/60 hover:text-black/80'
+            )}
           >
             {autoRead ? (
               <Volume2 className="h-5 w-5" />

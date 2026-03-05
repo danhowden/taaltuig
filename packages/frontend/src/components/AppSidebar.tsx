@@ -44,7 +44,7 @@ export function AppSidebar() {
   ]
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="!bg-white/20">
       <SidebarHeader>
         {isCollapsed ? (
           <div

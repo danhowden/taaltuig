@@ -1,5 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Gradient } from '@/lib/gradient.js'
+
+function getMeshColors(): Record<string, string> {
+  const style = getComputedStyle(document.documentElement)
+  return {
+    color1: style.getPropertyValue('--mesh-1').trim(),
+    color2: style.getPropertyValue('--mesh-2').trim(),
+    color3: style.getPropertyValue('--mesh-3').trim(),
+    color4: style.getPropertyValue('--mesh-4').trim(),
+  }
+}
 
 interface MeshGradientBackgroundProps {
   colors?: {
@@ -11,15 +21,11 @@ interface MeshGradientBackgroundProps {
 }
 
 export function MeshGradientBackground({
-  colors = {
-    color1: '#E85D68', // Soft coral red
-    color2: '#6BA3D6', // Soft sky blue
-    color3: '#FFFFFF', // White
-    color4: '#F5E6E8', // Soft blush (buffers red/blue blend)
-  },
+  colors,
 }: MeshGradientBackgroundProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const gradientRef = useRef<InstanceType<typeof Gradient> | null>(null)
+  const [resolved] = useState(() => colors ?? getMeshColors())
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -43,10 +49,10 @@ export function MeshGradientBackground({
       data-js-darken-top=""
       style={
         {
-          '--gradient-color-1': colors.color1,
-          '--gradient-color-2': colors.color2,
-          '--gradient-color-3': colors.color3,
-          '--gradient-color-4': colors.color4,
+          '--gradient-color-1': resolved.color1,
+          '--gradient-color-2': resolved.color2,
+          '--gradient-color-3': resolved.color3,
+          '--gradient-color-4': resolved.color4,
         } as React.CSSProperties
       }
     />
