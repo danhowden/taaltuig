@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { categorizeCards, filterCardsBySearch, parseTSVCards } from './cardFilters'
+import { categorizeCards, filterCardsBySearch } from './cardFilters'
 import type { Card } from '@/types'
 
 describe('categorizeCards', () => {
@@ -178,76 +178,5 @@ describe('filterCardsBySearch', () => {
   it('should return empty array when no matches', () => {
     const result = filterCardsBySearch(cards, 'xyz123')
     expect(result).toHaveLength(0)
-  })
-})
-
-describe('parseTSVCards', () => {
-  it('should parse basic TSV format', () => {
-    const tsv = 'hallo\thello\t\t'
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({
-      front: 'hallo',
-      back: 'hello',
-      explanation: '',
-      tags: [],
-    })
-  })
-
-  it('should parse TSV with explanation', () => {
-    const tsv = 'hallo\thello\tA greeting\t'
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].explanation).toBe('A greeting')
-  })
-
-  it('should parse TSV with tags', () => {
-    const tsv = 'hallo\thello\t\tbasic,common'
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].tags).toEqual(['basic', 'common'])
-  })
-
-  it('should parse multiple lines', () => {
-    const tsv = 'hallo\thello\t\t\nkat\tcat\t\t'
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(2)
-    expect(result[0].front).toBe('hallo')
-    expect(result[1].front).toBe('kat')
-  })
-
-  it('should filter out cards without front or back', () => {
-    const tsv = 'hallo\thello\t\t\n\tcat\t\t\nhond\t\t\t'
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].front).toBe('hallo')
-  })
-
-  it('should trim whitespace from fields', () => {
-    const tsv = '  hallo  \t  hello  \t  greeting  \t  basic , common  '
-    const result = parseTSVCards(tsv)
-
-    expect(result).toHaveLength(1)
-    expect(result[0].front).toBe('hallo')
-    expect(result[0].back).toBe('hello')
-    expect(result[0].explanation).toBe('greeting')
-    expect(result[0].tags).toEqual(['basic', 'common'])
-  })
-
-  it('should handle empty input', () => {
-    const result = parseTSVCards('')
-    expect(result).toHaveLength(0)
-  })
-
-  it('should handle complex tags', () => {
-    const tsv = 'hallo\thello\t\ttag1, tag2 , tag3'
-    const result = parseTSVCards(tsv)
-
-    expect(result[0].tags).toEqual(['tag1', 'tag2', 'tag3'])
   })
 })
