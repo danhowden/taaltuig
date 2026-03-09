@@ -1416,4 +1416,273 @@ describe('TaaltuigDynamoDBClient', () => {
       expect(result).toEqual([])
     })
   })
+
+  // ==========================================================================
+  // WRITING EXERCISE OPERATIONS
+  // ==========================================================================
+
+  describe('countWritingAttemptsToday', () => {
+    it('should return count of writing attempts today', async () => {
+      mockSend.mockResolvedValueOnce({ Count: 5 })
+
+      const result = await client.countWritingAttemptsToday('user-123')
+
+      expect(result).toBe(5)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          TableName: 'test-table',
+          IndexName: 'GSI2',
+          Select: 'COUNT',
+        })
+      )
+    })
+
+    it('should return 0 when no attempts found', async () => {
+      mockSend.mockResolvedValueOnce({ Count: 0 })
+
+      const result = await client.countWritingAttemptsToday('user-123')
+
+      expect(result).toBe(0)
+    })
+
+    it('should return 0 when Count is undefined', async () => {
+      mockSend.mockResolvedValueOnce({})
+
+      const result = await client.countWritingAttemptsToday('user-123')
+
+      expect(result).toBe(0)
+    })
+  })
+
+  describe('getRecentlyReviewedCardIds', () => {
+    it('should return empty array when no history', async () => {
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
+      const result = await client.getRecentlyReviewedCardIds('user-123')
+
+      expect(result).toEqual([])
+    })
+
+    it('should return cards with grades from review history', async () => {
+      // GSI2 query returns history items
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { review_item_id: 'ri-1', grade: 3, card_id: 'c-1' },
+          { review_item_id: 'ri-2', grade: 0, card_id: 'c-2' },
+        ],
+      })
+
+      // getReviewItem for ri-1
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-1', front: 'huis', back: 'house', review_item_id: 'ri-1' },
+      })
+
+      // getReviewItem for ri-2
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-2', front: 'kat', back: 'cat', review_item_id: 'ri-2' },
+      })
+
+      const result = await client.getRecentlyReviewedCardIds('user-123')
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toEqual({
+        card_id: 'c-1',
+        review_item_id: 'ri-1',
+        grade: 3,
+        front: 'huis',
+        back: 'house',
+      })
+      expect(result[1]).toEqual({
+        card_id: 'c-2',
+        review_item_id: 'ri-2',
+        grade: 0,
+        front: 'kat',
+        back: 'cat',
+      })
+    })
+
+    it('should deduplicate cards from the same review item', async () => {
+      // Same review item reviewed multiple times — take worst grade
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { review_item_id: 'ri-1', grade: 3 },
+          { review_item_id: 'ri-1', grade: 0 },
+        ],
+      })
+
+      // getReviewItem for ri-1
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-1', front: 'huis', back: 'house', review_item_id: 'ri-1' },
+      })
+
+      const result = await client.getRecentlyReviewedCardIds('user-123')
+
+      expect(result).toHaveLength(1)
+      expect(result[0].grade).toBe(0) // Worst grade kept
+    })
+
+    it('should skip review items that are not found', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [{ review_item_id: 'ri-1', grade: 3 }],
+      })
+
+      // getReviewItem returns null
+      mockSend.mockResolvedValueOnce({ Item: undefined })
+
+      const result = await client.getRecentlyReviewedCardIds('user-123')
+
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('getWritingQueue', () => {
+    it('should return empty queue when writing is disabled', async () => {
+      // getSettings
+      mockSend.mockResolvedValueOnce({
+        Item: { ...DEFAULT_SETTINGS, writing_session_enabled: false, user_id: 'user-123' },
+      })
+
+      // getRecentlyReviewedCardIds — GSI2 query
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
+      // countWritingAttemptsToday
+      mockSend.mockResolvedValueOnce({ Count: 0 })
+
+      const result = await client.getWritingQueue('user-123')
+
+      expect(result.exercises).toEqual([])
+      expect(result.stats.exercises_remaining).toBe(0)
+    })
+
+    it('should return empty queue when daily limit reached', async () => {
+      // getSettings
+      mockSend.mockResolvedValueOnce({
+        Item: { ...DEFAULT_SETTINGS, writing_exercises_per_day: 5, writing_session_enabled: true, user_id: 'user-123' },
+      })
+
+      // getRecentlyReviewedCardIds — GSI2 query
+      mockSend.mockResolvedValueOnce({
+        Items: [{ review_item_id: 'ri-1', grade: 3 }],
+      })
+
+      // countWritingAttemptsToday
+      mockSend.mockResolvedValueOnce({ Count: 5 })
+
+      // getReviewItem for ri-1 (from getRecentlyReviewedCardIds)
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-1', front: 'huis', back: 'house' },
+      })
+
+      const result = await client.getWritingQueue('user-123')
+
+      expect(result.exercises).toEqual([])
+      expect(result.stats.exercises_remaining).toBe(0)
+      expect(result.stats.exercises_today).toBe(5)
+    })
+
+    it('should generate translation exercises sorted by difficulty', async () => {
+      // getSettings
+      mockSend.mockResolvedValueOnce({
+        Item: { ...DEFAULT_SETTINGS, writing_exercises_per_day: 10, writing_session_enabled: true, user_id: 'user-123' },
+      })
+
+      // getRecentlyReviewedCardIds — GSI2 query
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { review_item_id: 'ri-1', grade: 3 },
+          { review_item_id: 'ri-2', grade: 0 },
+        ],
+      })
+
+      // countWritingAttemptsToday
+      mockSend.mockResolvedValueOnce({ Count: 2 })
+
+      // getReviewItem for ri-1
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-1', front: 'huis', back: 'house' },
+      })
+
+      // getReviewItem for ri-2
+      mockSend.mockResolvedValueOnce({
+        Item: { card_id: 'c-2', front: 'kat', back: 'cat' },
+      })
+
+      const result = await client.getWritingQueue('user-123')
+
+      expect(result.exercises).toHaveLength(2)
+      // Again (grade 0) should come first
+      expect(result.exercises[0].card_id).toBe('c-2')
+      expect(result.exercises[0].prompt).toBe('cat') // English shown
+      expect(result.exercises[0].reference_answer).toBe('kat') // Dutch expected
+      expect(result.exercises[1].card_id).toBe('c-1')
+      expect(result.stats.exercises_remaining).toBe(8)
+    })
+
+    it('should throw when settings not found', async () => {
+      // getSettings returns null
+      mockSend.mockResolvedValueOnce({ Item: undefined })
+
+      // getRecentlyReviewedCardIds
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
+      // countWritingAttemptsToday
+      mockSend.mockResolvedValueOnce({ Count: 0 })
+
+      await expect(client.getWritingQueue('user-123')).rejects.toThrow('User settings not found')
+    })
+  })
+
+  describe('createWritingAttempt', () => {
+    it('should create a writing attempt with correct assessment', async () => {
+      mockSend.mockResolvedValueOnce({}) // PutCommand
+
+      const result = await client.createWritingAttempt(
+        'user-123',
+        'ex-1',
+        'translation',
+        'huis',
+        'huis',
+        [],
+        5000,
+        'c-1'
+      )
+
+      expect(result.user_id).toBe('user-123')
+      expect(result.exercise_id).toBe('ex-1')
+      expect(result.exercise_type).toBe('translation')
+      expect(result.user_answer).toBe('huis')
+      expect(result.score).toBe(3) // Exact match = Good
+      expect(result.match_type).toBe('exact')
+      expect(result.feedback).toContain('Correct')
+      expect(result.assessment_mode_used).toBe('deterministic')
+      expect(result.card_id).toBe('c-1')
+      expect(result.PK).toBe('USER#user-123')
+      expect(result.SK).toMatch(/^ATTEMPT#/)
+      expect(result.GSI2PK).toMatch(/^USER#user-123#WRITING#/)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          TableName: 'test-table',
+          Item: expect.objectContaining({ user_id: 'user-123' }),
+        })
+      )
+    })
+
+    it('should assess wrong answers correctly', async () => {
+      mockSend.mockResolvedValueOnce({}) // PutCommand
+
+      const result = await client.createWritingAttempt(
+        'user-123',
+        'ex-1',
+        'translation',
+        'completely wrong',
+        'huis',
+        [],
+        3000
+      )
+
+      expect(result.score).toBe(0)
+      expect(result.match_type).toBe('wrong')
+      expect(result.card_id).toBeUndefined()
+    })
+  })
 })
