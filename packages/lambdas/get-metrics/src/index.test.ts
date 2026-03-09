@@ -88,20 +88,18 @@ describe('get-metrics Lambda', () => {
     expect(body.period).toBe('week')
   })
 
-  it('should merge datapoints from all three metrics', async () => {
+  it('should merge datapoints from all six metrics', async () => {
     const ts = new Date('2024-01-15T12:00:00Z')
 
-    // Each call returns data for a different metric (approved, rejected, cardsProcessed)
+    // 6 metrics: InsightsApproved, InsightsRejected, CardsProcessed,
+    //            InsightsGenerated, GenerationCardsProcessed, GenerationErrors
     mockSend
-      .mockResolvedValueOnce({
-        Datapoints: [{ Timestamp: ts, Sum: 10 }],
-      })
-      .mockResolvedValueOnce({
-        Datapoints: [{ Timestamp: ts, Sum: 3 }],
-      })
-      .mockResolvedValueOnce({
-        Datapoints: [{ Timestamp: ts, Sum: 20 }],
-      })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 10 }] })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 3 }] })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 20 }] })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 7 }] })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 15 }] })
+      .mockResolvedValueOnce({ Datapoints: [{ Timestamp: ts, Sum: 1 }] })
 
     const event = createEvent({ period: 'day' })
     const result = await handler(event)
@@ -115,6 +113,9 @@ describe('get-metrics Lambda', () => {
       approved: 10,
       rejected: 3,
       cardsProcessed: 20,
+      generated: 7,
+      generationCardsProcessed: 15,
+      generationErrors: 1,
     })
   })
 
@@ -122,6 +123,7 @@ describe('get-metrics Lambda', () => {
     const ts1 = new Date('2024-01-15T12:00:00Z')
     const ts2 = new Date('2024-01-15T13:00:00Z')
 
+    // Validation metrics
     mockSend
       .mockResolvedValueOnce({
         Datapoints: [
@@ -141,6 +143,25 @@ describe('get-metrics Lambda', () => {
           { Timestamp: ts2, Sum: 10 },
         ],
       })
+      // Generation metrics
+      .mockResolvedValueOnce({
+        Datapoints: [
+          { Timestamp: ts1, Sum: 8 },
+          { Timestamp: ts2, Sum: 4 },
+        ],
+      })
+      .mockResolvedValueOnce({
+        Datapoints: [
+          { Timestamp: ts1, Sum: 18 },
+          { Timestamp: ts2, Sum: 9 },
+        ],
+      })
+      .mockResolvedValueOnce({
+        Datapoints: [
+          { Timestamp: ts1, Sum: 1 },
+          { Timestamp: ts2, Sum: 0 },
+        ],
+      })
 
     const event = createEvent({ period: 'day' })
     const result = await handler(event)
@@ -150,6 +171,9 @@ describe('get-metrics Lambda', () => {
     expect(body.totals.rejected).toBe(5)
     expect(body.totals.cardsProcessed).toBe(30)
     expect(body.totals.approvalRate).toBe(0.75) // 15 / (15 + 5)
+    expect(body.totals.generated).toBe(12)
+    expect(body.totals.generationCardsProcessed).toBe(27)
+    expect(body.totals.generationErrors).toBe(1)
   })
 
   it('should handle approval rate when no insights exist', async () => {
@@ -166,7 +190,7 @@ describe('get-metrics Lambda', () => {
     const ts1 = new Date('2024-01-15T14:00:00Z')
     const ts2 = new Date('2024-01-15T12:00:00Z')
 
-    // Return out-of-order timestamps
+    // Return out-of-order timestamps for first metric, empty for rest
     mockSend
       .mockResolvedValueOnce({
         Datapoints: [
@@ -174,6 +198,9 @@ describe('get-metrics Lambda', () => {
           { Timestamp: ts2, Sum: 10 },
         ],
       })
+      .mockResolvedValueOnce({ Datapoints: [] })
+      .mockResolvedValueOnce({ Datapoints: [] })
+      .mockResolvedValueOnce({ Datapoints: [] })
       .mockResolvedValueOnce({ Datapoints: [] })
       .mockResolvedValueOnce({ Datapoints: [] })
 
@@ -205,18 +232,21 @@ describe('get-metrics Lambda', () => {
     expect(result.statusCode).toBe(500)
   })
 
-  it('should fetch all three metrics in parallel', async () => {
+  it('should fetch all six metrics in parallel', async () => {
     mockSend.mockResolvedValue({ Datapoints: [] })
 
     const event = createEvent({ period: 'day' })
     await handler(event)
 
-    expect(mockSend).toHaveBeenCalledTimes(3)
+    expect(mockSend).toHaveBeenCalledTimes(6)
 
-    // Verify metric names
+    // Verify metric names: 3 validation + 3 generation
     const calls = mockSend.mock.calls
     expect(calls[0][0].MetricName).toBe('InsightsApproved')
     expect(calls[1][0].MetricName).toBe('InsightsRejected')
     expect(calls[2][0].MetricName).toBe('CardsProcessed')
+    expect(calls[3][0].MetricName).toBe('InsightsGenerated')
+    expect(calls[4][0].MetricName).toBe('GenerationCardsProcessed')
+    expect(calls[5][0].MetricName).toBe('GenerationErrors')
   })
 })

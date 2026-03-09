@@ -340,19 +340,21 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
-    // Grant CloudWatch PutMetricData permission to validate-insights Lambda
-    validateInsightsLambda.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['cloudwatch:PutMetricData'],
-        resources: ['*'],
-        conditions: {
-          StringEquals: {
-            'cloudwatch:namespace': 'Taaltuig/Insights',
+    // Grant CloudWatch PutMetricData permission to generate + validate insights Lambdas
+    for (const fn of [generateInsightsLambda, validateInsightsLambda]) {
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['cloudwatch:PutMetricData'],
+          resources: ['*'],
+          conditions: {
+            StringEquals: {
+              'cloudwatch:namespace': 'Taaltuig/Insights',
+            },
           },
-        },
-      })
-    )
+        })
+      )
+    }
 
     const reviewInsightLambda = new lambda.Function(
       this,

@@ -415,29 +415,22 @@ export function CardsPage() {
     }
   }
 
-  // Generate insights for specific cards (by category)
-  const handleGenerateInsights = useCallback(async (cardIds: string[]) => {
-    if (cardIds.length === 0) return
+  // Generate + validate insights in batches with retry
+  const generateAndValidateBatch = useCallback(async (cardIds: string[]) => {
+    const batchSize = 20
+    let totalGenerated = 0
+    let failedIds: string[] = []
 
-    // Find category for this set of cards (for UI state)
-    const firstCard = cards.find((c) => c.card_id === cardIds[0])
-    const category = firstCard?.category || firstCard?.tags?.[0] || 'Uncategorized'
+    for (let i = 0; i < cardIds.length; i += batchSize) {
+      const batch = cardIds.slice(i, i + batchSize)
 
-    setGeneratingInsightsCategory(category)
-
-    try {
-      // Process in batches of 20
-      const batchSize = 20
-      let totalGenerated = 0
-
-      for (let i = 0; i < cardIds.length; i += batchSize) {
-        const batch = cardIds.slice(i, i + batchSize)
-
-        // Generate insights
+      try {
         const genResult = await generateInsights.mutateAsync({ card_ids: batch })
         totalGenerated += genResult.generated.filter((g) => g.insights_count > 0).length
 
-        // Validate the generated insights
+        // Track any cards the backend reported as failed
+        if (genResult.failed) failedIds.push(...genResult.failed)
+
         const cardsWithPending = genResult.generated
           .filter((g) => g.insights_count > 0)
           .map((g) => g.card_id)
@@ -445,12 +438,66 @@ export function CardsPage() {
         if (cardsWithPending.length > 0) {
           await validateInsights.mutateAsync({ card_ids: cardsWithPending })
         }
+      } catch {
+        // Batch failed entirely — collect for retry
+        failedIds.push(...batch)
       }
+    }
 
-      toast({
-        title: 'Insights generated',
-        description: `Generated insights for ${totalGenerated} cards. Visit the Insights page to review them.`,
-      })
+    // Retry failed cards once
+    if (failedIds.length > 0) {
+      const retryIds = [...new Set(failedIds)]
+      failedIds = []
+
+      for (let i = 0; i < retryIds.length; i += batchSize) {
+        const batch = retryIds.slice(i, i + batchSize)
+
+        try {
+          const genResult = await generateInsights.mutateAsync({ card_ids: batch })
+          totalGenerated += genResult.generated.filter((g) => g.insights_count > 0).length
+
+          if (genResult.failed) failedIds.push(...genResult.failed)
+
+          const cardsWithPending = genResult.generated
+            .filter((g) => g.insights_count > 0)
+            .map((g) => g.card_id)
+
+          if (cardsWithPending.length > 0) {
+            await validateInsights.mutateAsync({ card_ids: cardsWithPending })
+          }
+        } catch {
+          failedIds.push(...batch)
+        }
+      }
+    }
+
+    return { totalGenerated, failedCount: failedIds.length }
+  }, [generateInsights, validateInsights])
+
+  // Generate insights for specific cards (by category)
+  const handleGenerateInsights = useCallback(async (cardIds: string[]) => {
+    if (cardIds.length === 0) return
+
+    const firstCard = cards.find((c) => c.card_id === cardIds[0])
+    const category = firstCard?.category || firstCard?.tags?.[0] || 'Uncategorized'
+
+    setGeneratingInsightsCategory(category)
+
+    try {
+      const { totalGenerated, failedCount } = await generateAndValidateBatch(cardIds)
+
+      if (failedCount > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Partially generated',
+          description: `Generated insights for ${totalGenerated} cards. ${failedCount} card(s) failed after retry.`,
+        })
+      } else {
+        toast({
+          title: 'Insights generated',
+          description: `Generated insights for ${totalGenerated} cards. Visit the Insights page to review them.`,
+        })
+      }
     } catch (error) {
       console.error('Failed to generate insights:', error)
       toast({
@@ -461,7 +508,7 @@ export function CardsPage() {
     } finally {
       setGeneratingInsightsCategory(null)
     }
-  }, [cards, generateInsights, validateInsights, toast])
+  }, [cards, generateAndValidateBatch, toast])
 
   // Bulk delete selected cards
   const handleBulkDelete = async () => {
@@ -510,29 +557,20 @@ export function CardsPage() {
         return
       }
 
-      // Process in batches of 20
-      const batchSize = 20
-      let totalGenerated = 0
+      const { totalGenerated, failedCount } = await generateAndValidateBatch(cardsWithoutInsights)
 
-      for (let i = 0; i < cardsWithoutInsights.length; i += batchSize) {
-        const batch = cardsWithoutInsights.slice(i, i + batchSize)
-
-        const genResult = await generateInsights.mutateAsync({ card_ids: batch })
-        totalGenerated += genResult.generated.filter((g) => g.insights_count > 0).length
-
-        const cardsWithPending = genResult.generated
-          .filter((g) => g.insights_count > 0)
-          .map((g) => g.card_id)
-
-        if (cardsWithPending.length > 0) {
-          await validateInsights.mutateAsync({ card_ids: cardsWithPending })
-        }
+      if (failedCount > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Partially generated',
+          description: `Generated insights for ${totalGenerated} cards. ${failedCount} card(s) failed after retry.`,
+        })
+      } else {
+        toast({
+          title: 'Insights generated',
+          description: `Generated insights for ${totalGenerated} cards.`,
+        })
       }
-
-      toast({
-        title: 'Insights generated',
-        description: `Generated insights for ${totalGenerated} cards.`,
-      })
 
       clearSelection()
     } catch (error) {

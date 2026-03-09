@@ -25,6 +25,13 @@ vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
   InvokeModelCommand: vi.fn((params) => params),
 }))
 
+vi.mock('@aws-sdk/client-cloudwatch', () => ({
+  CloudWatchClient: vi.fn().mockImplementation(() => ({
+    send: vi.fn().mockResolvedValue({}),
+  })),
+  PutMetricDataCommand: vi.fn((params) => params),
+}))
+
 // Import handler AFTER mocking
 const { handler } = await import('./index')
 

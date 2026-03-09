@@ -16,13 +16,17 @@ const cloudWatchClient = new CloudWatchClient({
 })
 
 const NAMESPACE = 'Taaltuig/Insights'
-const METRICS = ['InsightsApproved', 'InsightsRejected', 'CardsProcessed']
+const VALIDATION_METRICS = ['InsightsApproved', 'InsightsRejected', 'CardsProcessed']
+const GENERATION_METRICS = ['InsightsGenerated', 'GenerationCardsProcessed', 'GenerationErrors']
 
 interface MetricDatapoint {
   timestamp: string
   approved: number
   rejected: number
   cardsProcessed: number
+  generated: number
+  generationCardsProcessed: number
+  generationErrors: number
 }
 
 interface MetricsResponse {
@@ -33,6 +37,9 @@ interface MetricsResponse {
     rejected: number
     cardsProcessed: number
     approvalRate: number
+    generated: number
+    generationCardsProcessed: number
+    generationErrors: number
   }
 }
 
@@ -86,7 +93,8 @@ export async function handler(
     }
 
     // Fetch all metrics in parallel
-    const metricPromises = METRICS.map((metricName) =>
+    const allMetrics = [...VALIDATION_METRICS, ...GENERATION_METRICS]
+    const metricPromises = allMetrics.map((metricName) =>
       cloudWatchClient.send(
         new GetMetricStatisticsCommand({
           Namespace: NAMESPACE,
@@ -99,56 +107,46 @@ export async function handler(
       )
     )
 
-    const [approvedResult, rejectedResult, cardsResult] =
-      await Promise.all(metricPromises)
+    const [
+      approvedResult, rejectedResult, cardsResult,
+      generatedResult, genCardsResult, genErrorsResult,
+    ] = await Promise.all(metricPromises)
 
     // Create a map of timestamps to datapoints
     const datapointMap = new Map<string, MetricDatapoint>()
 
-    // Process approved metrics
-    for (const dp of approvedResult.Datapoints || []) {
-      if (dp.Timestamp) {
-        const ts = dp.Timestamp.toISOString()
-        const existing = datapointMap.get(ts) || {
-          timestamp: ts,
-          approved: 0,
-          rejected: 0,
-          cardsProcessed: 0,
-        }
-        existing.approved = dp.Sum || 0
-        datapointMap.set(ts, existing)
+    function emptyDatapoint(ts: string): MetricDatapoint {
+      return {
+        timestamp: ts,
+        approved: 0,
+        rejected: 0,
+        cardsProcessed: 0,
+        generated: 0,
+        generationCardsProcessed: 0,
+        generationErrors: 0,
       }
     }
 
-    // Process rejected metrics
-    for (const dp of rejectedResult.Datapoints || []) {
-      if (dp.Timestamp) {
-        const ts = dp.Timestamp.toISOString()
-        const existing = datapointMap.get(ts) || {
-          timestamp: ts,
-          approved: 0,
-          rejected: 0,
-          cardsProcessed: 0,
+    function mergeMetric(
+      result: typeof approvedResult,
+      field: keyof MetricDatapoint,
+    ) {
+      for (const dp of result.Datapoints || []) {
+        if (dp.Timestamp) {
+          const ts = dp.Timestamp.toISOString()
+          const existing = datapointMap.get(ts) || emptyDatapoint(ts)
+          ;(existing[field] as number) = dp.Sum || 0
+          datapointMap.set(ts, existing)
         }
-        existing.rejected = dp.Sum || 0
-        datapointMap.set(ts, existing)
       }
     }
 
-    // Process cards processed metrics
-    for (const dp of cardsResult.Datapoints || []) {
-      if (dp.Timestamp) {
-        const ts = dp.Timestamp.toISOString()
-        const existing = datapointMap.get(ts) || {
-          timestamp: ts,
-          approved: 0,
-          rejected: 0,
-          cardsProcessed: 0,
-        }
-        existing.cardsProcessed = dp.Sum || 0
-        datapointMap.set(ts, existing)
-      }
-    }
+    mergeMetric(approvedResult, 'approved')
+    mergeMetric(rejectedResult, 'rejected')
+    mergeMetric(cardsResult, 'cardsProcessed')
+    mergeMetric(generatedResult, 'generated')
+    mergeMetric(genCardsResult, 'generationCardsProcessed')
+    mergeMetric(genErrorsResult, 'generationErrors')
 
     // Sort datapoints by timestamp
     const datapoints = Array.from(datapointMap.values()).sort(
@@ -162,8 +160,11 @@ export async function handler(
         rejected: acc.rejected + dp.rejected,
         cardsProcessed: acc.cardsProcessed + dp.cardsProcessed,
         approvalRate: 0,
+        generated: acc.generated + dp.generated,
+        generationCardsProcessed: acc.generationCardsProcessed + dp.generationCardsProcessed,
+        generationErrors: acc.generationErrors + dp.generationErrors,
       }),
-      { approved: 0, rejected: 0, cardsProcessed: 0, approvalRate: 0 }
+      { approved: 0, rejected: 0, cardsProcessed: 0, approvalRate: 0, generated: 0, generationCardsProcessed: 0, generationErrors: 0 }
     )
 
     // Calculate approval rate

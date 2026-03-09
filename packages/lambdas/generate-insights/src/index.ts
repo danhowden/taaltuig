@@ -3,6 +3,10 @@ import {
   BedrockRuntimeClient,
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime'
+import {
+  CloudWatchClient,
+  PutMetricDataCommand,
+} from '@aws-sdk/client-cloudwatch'
 import { TaaltuigDynamoDBClient, CardInsight, DEFAULT_SETTINGS } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
@@ -21,6 +25,53 @@ const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
 const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || 'us-east-1',
 })
+
+const cloudWatchClient = new CloudWatchClient({
+  region: process.env.AWS_REGION || 'us-east-1',
+})
+
+/**
+ * Emit CloudWatch metrics for insights generation
+ */
+async function emitMetrics(
+  cardsProcessed: number,
+  insightsGenerated: number,
+  cardsFailed: number
+): Promise<void> {
+  try {
+    const timestamp = new Date()
+    await cloudWatchClient.send(
+      new PutMetricDataCommand({
+        Namespace: 'Taaltuig/Insights',
+        MetricData: [
+          {
+            MetricName: 'GenerationCardsProcessed',
+            Value: cardsProcessed,
+            Unit: 'Count',
+            Timestamp: timestamp,
+          },
+          {
+            MetricName: 'InsightsGenerated',
+            Value: insightsGenerated,
+            Unit: 'Count',
+            Timestamp: timestamp,
+          },
+          {
+            MetricName: 'GenerationErrors',
+            Value: cardsFailed,
+            Unit: 'Count',
+            Timestamp: timestamp,
+          },
+        ],
+      })
+    )
+    console.log(
+      `Emitted generation metrics: cards=${cardsProcessed}, generated=${insightsGenerated}, errors=${cardsFailed}`
+    )
+  } catch (err) {
+    console.error('Failed to emit CloudWatch metrics:', err)
+  }
+}
 
 // Use Sonnet 4.5 for generation (cross-region inference profile)
 const GENERATOR_MODEL = 'eu.anthropic.claude-sonnet-4-5-20250929-v1:0'
@@ -320,6 +371,10 @@ ${JSON.stringify(cardInputs, null, 2)}`
         failed.push(generated.card_id)
       }
     }
+
+    // Emit CloudWatch metrics
+    const totalGenerated = results.reduce((sum, r) => sum + r.insights_count, 0)
+    await emitMetrics(cards.length, totalGenerated, failed.length)
 
     return jsonResponse({
       generated: results,

@@ -32,8 +32,9 @@ Backend and review UI are functional. Missing UX integration points.
 - [SKIP] Metrics/stats display on insights review page
 - [x] Settings UI for `proficiency_level` and `show_unreviewed_insights`
 - [SKIP] Auto-generate insights on Anki import
-- [ ] Generation metrics tracking (only validation is tracked)
-- [ ] Error recovery / retry for failed generations
+- [x] Generation metrics tracking (CloudWatch: GenerationCardsProcessed, InsightsGenerated, GenerationErrors)
+- [x] Error recovery / retry for failed generations (batch retry with backoff)
+- [x] Bulk review UX on InsightsReviewPage (checkbox reject + approve rest)
 
 ## Phase 4: Writing Exercises + AI Evaluation (Not Started)
 
