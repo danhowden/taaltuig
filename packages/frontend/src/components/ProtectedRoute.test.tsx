@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import * as AuthContext from '@/contexts/AuthContext'
 
@@ -10,14 +10,14 @@ function TestComponent() {
 
 function renderProtectedRoute() {
   return render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route path="/" element={<ProtectedRoute />}>
           <Route index element={<TestComponent />} />
         </Route>
         <Route path="/login" element={<div>Login Page</div>} />
       </Routes>
-    </BrowserRouter>,
+    </MemoryRouter>,
   )
 }
 
