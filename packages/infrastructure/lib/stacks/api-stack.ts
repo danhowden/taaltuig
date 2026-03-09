@@ -453,6 +453,36 @@ export class ApiStack extends cdk.Stack {
     )
 
     // ============================================================================
+    // WRITING EXERCISE LAMBDAS
+    // ============================================================================
+
+    const writingQueueLambda = new lambda.Function(
+      this,
+      'WritingQueueFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-writing-queue',
+        description: 'Get writing exercise queue from recently reviewed cards',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/writing-queue/dist')
+        ),
+      }
+    )
+
+    const writingSubmitLambda = new lambda.Function(
+      this,
+      'WritingSubmitFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-writing-submit',
+        description: 'Submit and assess a writing exercise answer',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/writing-submit/dist')
+        ),
+      }
+    )
+
+    // ============================================================================
     // ANKI IMPORT LAMBDAS
     // ============================================================================
 
@@ -537,6 +567,8 @@ export class ApiStack extends cdk.Stack {
       reviewInsightLambda,
       getInsightsQueueLambda,
       clearInsightsLambda,
+      writingQueueLambda,
+      writingSubmitLambda,
     ]
 
     // Import the DynamoDB table from the database stack
@@ -779,6 +811,30 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'ImportAnkiDeckIntegration',
         importAnkiDeckLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    // ============================================================================
+    // WRITING EXERCISE ROUTES
+    // ============================================================================
+
+    httpApi.addRoutes({
+      path: '/api/writing/queue',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'WritingQueueIntegration',
+        writingQueueLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/writing/submit',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'WritingSubmitIntegration',
+        writingSubmitLambda
       ),
       authorizer: jwtAuthorizer,
     })

@@ -542,6 +542,24 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@25.3.3)(@vitest/ui@2.1.9)(happy-dom@20.0.2)(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))
 
+  packages/lambdas/writing-queue:
+    dependencies:
+      '@taaltuig/dynamodb-client':
+        specifier: workspace:*
+        version: link:../dynamodb-client
+      '@taaltuig/lambda-utils':
+        specifier: workspace:*
+        version: link:../lambda-utils
+
+  packages/lambdas/writing-submit:
+    dependencies:
+      '@taaltuig/dynamodb-client':
+        specifier: workspace:*
+        version: link:../dynamodb-client
+      '@taaltuig/lambda-utils':
+        specifier: workspace:*
+        version: link:../lambda-utils
+
   packages/lambdas/ws-authorizer:
     dependencies:
       '@taaltuig/lambda-utils':
