@@ -1633,14 +1633,14 @@ export class TaaltuigDynamoDBClient {
       throw new Error('User settings not found')
     }
 
-    if (!settings.writing_session_enabled) {
+    if (settings.writing_session_enabled === false) {
       return {
         exercises: [],
         stats: { total_available: 0, exercises_today: attemptsToday, exercises_remaining: 0 },
       }
     }
 
-    const dailyLimit = settings.writing_exercises_per_day
+    const dailyLimit = settings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day
     const remaining = Math.max(0, dailyLimit - attemptsToday)
 
     if (remaining === 0 || recentCards.length === 0) {
