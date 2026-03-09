@@ -27,6 +27,7 @@ export default defineConfig({
         'src/vite-env.d.ts',
         '**/*.test.tsx',
         '**/*.test.ts',
+        'src/components/ui/**',
       ],
     },
   },

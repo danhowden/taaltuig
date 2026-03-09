@@ -5,15 +5,20 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "pnpm lint",
+    "prebuild": "pnpm lint && pnpm test:coverage",
     "build": "node ../shared-esbuild.config.cjs",
-    "lint": "eslint . && secretlint \"**/*\""
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run --config=../vitest.config.ts",
+    "test:watch": "vitest --config=../vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
   },
   "dependencies": {
     "@taaltuig/lambda-utils": "workspace:*",
     "@aws-sdk/client-cloudwatch": "^3.500.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.145"
+    "@types/aws-lambda": "^8.10.145",
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.1.9"
   }
 }
