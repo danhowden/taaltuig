@@ -49,6 +49,9 @@ export interface UserSettings {
   disabled_categories?: string[] | null // Categories disabled from review (null/undefined/empty = all enabled)
   show_unreviewed_insights: boolean // Display AI-approved insights before human review (default: true)
   proficiency_level: ProficiencyLevel // User's Dutch proficiency level for tailoring insights (default: beginner)
+  // Writing exercise settings
+  writing_exercises_per_day: number // Max writing exercises per session (default: 10)
+  writing_session_enabled: boolean // Whether writing practice appears after flashcard review (default: true)
   updated_at: string
 }
 
@@ -116,6 +119,49 @@ export interface ReviewHistory {
   reviewed_at: string
 }
 
+// Writing exercise types
+export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
+export type AssessmentMatchType = 'exact' | 'alternative' | 'fuzzy' | 'wrong'
+
+export interface WritingExercise {
+  exercise_id: string
+  type: ExerciseType
+  prompt: string // What the user sees (e.g., English sentence to translate)
+  reference_answer: string // Correct Dutch answer
+  alternatives: string[] // Other valid answers
+  card_id?: string // Source card for card-linked exercises
+  grammar_rules?: string[] // For AI grading context
+}
+
+export interface WritingAttempt {
+  PK: string // USER#<user_id>
+  SK: string // ATTEMPT#<timestamp>#<exercise_id>
+  GSI2PK: string // USER#<user_id>#WRITING#<YYYY-MM-DD>
+  GSI2SK: string // <timestamp>
+  user_id: string
+  exercise_id: string
+  exercise_type: ExerciseType
+  user_answer: string
+  score: Grade
+  feedback: string
+  match_type: AssessmentMatchType
+  confidence: number // 1.0 for deterministic
+  assessment_mode_used: 'deterministic' | 'ai_fallback' | 'ai'
+  duration_ms: number
+  flagged: boolean
+  flagged_reason?: string
+  card_id?: string
+  created_at: string
+}
+
+export interface AssessmentResult {
+  correct: boolean
+  grade: Grade
+  feedback: string
+  match_type: AssessmentMatchType
+  reference_answer: string
+}
+
 // Default settings
 export const DEFAULT_SETTINGS: Omit<UserSettings, 'PK' | 'SK' | 'user_id' | 'updated_at'> = {
   new_cards_per_day: 20,
@@ -132,4 +178,6 @@ export const DEFAULT_SETTINGS: Omit<UserSettings, 'PK' | 'SK' | 'user_id' | 'upd
   disabled_categories: null,
   show_unreviewed_insights: true, // Show AI-approved insights before human review
   proficiency_level: 'beginner', // Default proficiency level
+  writing_exercises_per_day: 10,
+  writing_session_enabled: true,
 }

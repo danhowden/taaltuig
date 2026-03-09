@@ -1,4 +1,5 @@
 export { TaaltuigDynamoDBClient } from './client'
 export { SM2Scheduler } from './scheduler'
 export type { ScheduleResult } from './scheduler'
+export { TranslationAssessor } from './assessor'
 export * from './types'
