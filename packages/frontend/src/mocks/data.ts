@@ -205,6 +205,8 @@ export const mockSettings: UserSettings = {
   lapse_new_interval: 0,
   disabled_categories: [],
   show_unreviewed_insights: true,
+  writing_exercises_per_day: 10,
+  writing_session_enabled: true,
   updated_at: '2024-01-01T00:00:00Z',
 }
 
