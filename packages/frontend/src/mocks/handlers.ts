@@ -26,6 +26,11 @@ const API_PATTERN = '*/api'
 // Simple in-memory queue state for demo purposes
 let currentQueue = [...mockQueue]
 
+/** Reset mutable handler state between tests */
+export function resetHandlerState(): void {
+  currentQueue = [...mockQueue]
+}
+
 export const handlers = [
   // GET /api/auth/me - Get current user
   http.get(`${API_PATTERN}/auth/me`, () => {

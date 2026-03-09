@@ -2,7 +2,7 @@ import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import * as matchers from '@testing-library/jest-dom/matchers'
 import { setupServer } from 'msw/node'
-import { handlers } from '@/mocks/handlers'
+import { handlers, resetHandlerState } from '@/mocks/handlers'
 
 expect.extend(matchers)
 
@@ -35,6 +35,7 @@ beforeAll(() => {
 afterEach(() => {
   cleanup()
   server.resetHandlers()
+  resetHandlerState()
   localStorage.clear()
 })
 

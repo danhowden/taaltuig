@@ -3,7 +3,9 @@ import { renderApp } from './render-app'
 
 // Mock canvas-confetti (ReviewComplete uses it)
 vi.mock('canvas-confetti', () => ({
-  default: vi.fn(),
+  default: Object.assign(vi.fn(), {
+    create: vi.fn(() => Object.assign(vi.fn(), { reset: vi.fn() })),
+  }),
 }))
 
 // Mock WebGL gradient (AppLayout uses MeshGradientBackground)
