@@ -14,12 +14,16 @@ import type {
   Card,
   ReviewItem,
   ReviewHistory,
+  WritingAttempt,
+  WritingExercise,
+  ExerciseType,
   State,
   Grade,
   CardInsight,
   InsightStatus,
 } from './types'
 import { DEFAULT_SETTINGS } from './types'
+import { TranslationAssessor } from './assessor'
 
 export class TaaltuigDynamoDBClient {
   private client: DynamoDBDocumentClient
@@ -1539,5 +1543,210 @@ export class TaaltuigDynamoDBClient {
     }
 
     return { clearedCards, clearedReviewItems }
+  }
+
+  // ============================================================================
+  // WRITING EXERCISE OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get today's review history to find cards the user has reviewed.
+   * Returns unique card IDs with their grades, prioritizing cards graded Again/Hard.
+   */
+  async getRecentlyReviewedCardIds(userId: string): Promise<
+    { card_id: string; review_item_id: string; grade: Grade; front: string; back: string }[]
+  > {
+    const today = new Date().toISOString().split('T')[0]
+
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#HISTORY#${today}`,
+        },
+      })
+    )
+
+    if (!response.Items || response.Items.length === 0) {
+      return []
+    }
+
+    const historyItems = response.Items as ReviewHistory[]
+
+    // Deduplicate by card_id — take the worst grade per card (lowest = hardest)
+    // We need to look up the card data from the review items
+    const cardGrades = new Map<string, { grade: Grade; review_item_id: string }>()
+    for (const item of historyItems) {
+      const existing = cardGrades.get(item.review_item_id)
+      if (!existing || item.grade < existing.grade) {
+        cardGrades.set(item.review_item_id, {
+          grade: item.grade,
+          review_item_id: item.review_item_id,
+        })
+      }
+    }
+
+    // Fetch review items to get card content
+    const reviewItemIds = Array.from(cardGrades.keys())
+    const results: { card_id: string; review_item_id: string; grade: Grade; front: string; back: string }[] = []
+    const seenCardIds = new Set<string>()
+
+    for (const riId of reviewItemIds) {
+      const ri = await this.getReviewItem(userId, riId)
+      if (ri && !seenCardIds.has(ri.card_id)) {
+        seenCardIds.add(ri.card_id)
+        results.push({
+          card_id: ri.card_id,
+          review_item_id: riId,
+          grade: cardGrades.get(riId)!.grade,
+          front: ri.front,
+          back: ri.back,
+        })
+      }
+    }
+
+    return results
+  }
+
+  /**
+   * Build the writing exercise queue from recently reviewed cards.
+   * Generates translation exercises (show English, type Dutch).
+   * Prioritizes cards the user found difficult (Again/Hard grades).
+   */
+  async getWritingQueue(userId: string): Promise<{
+    exercises: WritingExercise[]
+    stats: {
+      total_available: number
+      exercises_today: number
+      exercises_remaining: number
+    }
+  }> {
+    const [settings, recentCards, attemptsToday] = await Promise.all([
+      this.getSettings(userId),
+      this.getRecentlyReviewedCardIds(userId),
+      this.countWritingAttemptsToday(userId),
+    ])
+
+    if (!settings) {
+      throw new Error('User settings not found')
+    }
+
+    if (!settings.writing_session_enabled) {
+      return {
+        exercises: [],
+        stats: { total_available: 0, exercises_today: attemptsToday, exercises_remaining: 0 },
+      }
+    }
+
+    const dailyLimit = settings.writing_exercises_per_day
+    const remaining = Math.max(0, dailyLimit - attemptsToday)
+
+    if (remaining === 0 || recentCards.length === 0) {
+      return {
+        exercises: [],
+        stats: {
+          total_available: recentCards.length,
+          exercises_today: attemptsToday,
+          exercises_remaining: 0,
+        },
+      }
+    }
+
+    // Sort: Again (0) and Hard (2) first, then Good (3) and Easy (4)
+    const sorted = [...recentCards].sort((a, b) => a.grade - b.grade)
+
+    // Take up to remaining limit
+    const selected = sorted.slice(0, remaining)
+
+    // Generate translation exercises: show English (back), user types Dutch (front)
+    const exercises: WritingExercise[] = selected.map((card) => ({
+      exercise_id: `card-linked:${card.card_id}:translation`,
+      type: 'translation' as ExerciseType,
+      prompt: card.back, // English — what the user sees
+      reference_answer: card.front, // Dutch — what the user must type
+      alternatives: [], // Could be expanded later
+      card_id: card.card_id,
+    }))
+
+    return {
+      exercises,
+      stats: {
+        total_available: recentCards.length,
+        exercises_today: attemptsToday,
+        exercises_remaining: remaining,
+      },
+    }
+  }
+
+  /**
+   * Store a writing attempt and return the assessment result.
+   */
+  async createWritingAttempt(
+    userId: string,
+    exerciseId: string,
+    exerciseType: ExerciseType,
+    userAnswer: string,
+    referenceAnswer: string,
+    alternatives: string[],
+    durationMs: number,
+    cardId?: string
+  ): Promise<WritingAttempt> {
+    const assessor = new TranslationAssessor()
+    const assessment = assessor.assess(userAnswer, referenceAnswer, alternatives)
+
+    const timestamp = new Date().toISOString()
+    const date = timestamp.split('T')[0]
+
+    const attempt: WritingAttempt = {
+      PK: `USER#${userId}`,
+      SK: `ATTEMPT#${timestamp}#${exerciseId}`,
+      GSI2PK: `USER#${userId}#WRITING#${date}`,
+      GSI2SK: timestamp,
+      user_id: userId,
+      exercise_id: exerciseId,
+      exercise_type: exerciseType,
+      user_answer: userAnswer,
+      score: assessment.grade,
+      feedback: assessment.feedback,
+      match_type: assessment.match_type,
+      confidence: 1.0, // deterministic
+      assessment_mode_used: 'deterministic',
+      duration_ms: durationMs,
+      flagged: false,
+      card_id: cardId,
+      created_at: timestamp,
+    }
+
+    await this.client.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: attempt,
+      })
+    )
+
+    return attempt
+  }
+
+  /**
+   * Count writing attempts completed today for daily limit enforcement.
+   */
+  async countWritingAttemptsToday(userId: string): Promise<number> {
+    const today = new Date().toISOString().split('T')[0]
+
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING#${today}`,
+        },
+        Select: 'COUNT',
+      })
+    )
+
+    return response.Count || 0
   }
 }
