@@ -4,8 +4,21 @@ import type {
   SubmitReviewRequest,
   SubmitReviewResponse,
   UserSettings,
+  PaginatedListCardsResponse,
+  GenerateInsightsResponse,
+  ValidateInsightsResponse,
+  ReviewInsightResponse,
+  ClearInsightsResponse,
 } from '@/types'
-import { mockUser, mockQueue, mockSettings } from './data'
+import {
+  mockUser,
+  mockQueue,
+  mockSettings,
+  mockCardsWithInsights,
+  mockExtraNewCards,
+  mockInsightsQueue,
+  mockInsightsMetricsData,
+} from './data'
 
 // Use wildcard pattern to match any domain
 const API_PATTERN = '*/api'
@@ -20,22 +33,46 @@ export const handlers = [
   }),
 
   // GET /api/reviews/queue - Get review queue
-  http.get(`${API_PATTERN}/reviews/queue`, () => {
-    const learningCount = currentQueue.filter(
+  http.get(`${API_PATTERN}/reviews/queue`, ({ request }) => {
+    const url = new URL(request.url)
+    const extraNew = url.searchParams.get('extra_new')
+    const all = url.searchParams.get('all')
+
+    // Extra new cards request
+    if (extraNew) {
+      const count = parseInt(extraNew, 10)
+      const extraCards = mockExtraNewCards.slice(0, count)
+      const response: QueueResponse = {
+        queue: extraCards,
+        stats: {
+          due_count: 0,
+          new_count: extraCards.length,
+          learning_count: 0,
+          total_count: extraCards.length,
+          new_remaining_today: Math.max(0, mockExtraNewCards.length - count),
+        },
+      }
+      return HttpResponse.json(response)
+    }
+
+    // All items (debug page)
+    const queue = all === 'true' ? [...mockQueue] : currentQueue
+
+    const learningCount = queue.filter(
       (item) => item.state === 'LEARNING',
     ).length
-    const dueCount = currentQueue.filter((item) =>
+    const dueCount = queue.filter((item) =>
       ['REVIEW', 'RELEARNING'].includes(item.state),
     ).length
-    const newCount = currentQueue.filter((item) => item.state === 'NEW').length
+    const newCount = queue.filter((item) => item.state === 'NEW').length
 
     const response: QueueResponse = {
-      queue: currentQueue,
+      queue,
       stats: {
         due_count: dueCount,
         new_count: newCount,
         learning_count: learningCount,
-        total_count: currentQueue.length,
+        total_count: queue.length,
         new_remaining_today: 15, // Mock value
       },
     }
@@ -52,8 +89,18 @@ export const handlers = [
       (item) => item.id !== body.review_item_id,
     )
 
-    // Calculate mock next review date based on grade
-    const daysToAdd = body.grade === 0 ? 0.0007 : body.grade === 2 ? 1 : 7
+    // Realistic interval_days based on grade
+    // Grade 0 (Again): ~10min → triggers waiting state
+    // Grade 2 (Hard): 1 day
+    // Grade 3 (Good): 1 day
+    // Grade 4 (Easy): 4 days
+    const intervalMap: Record<number, number> = {
+      0: 0.007, // ~10 minutes
+      2: 1,
+      3: 1,
+      4: 4,
+    }
+    const daysToAdd = intervalMap[body.grade] ?? 1
     const nextReview = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000)
 
     const response: SubmitReviewResponse = {
@@ -63,7 +110,7 @@ export const handlers = [
     }
 
     // Add artificial delay to simulate network
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 50))
 
     return HttpResponse.json(response)
   }),
@@ -84,15 +131,40 @@ export const handlers = [
     return HttpResponse.json({ settings: updated })
   }),
 
-  // GET /api/cards - List cards
-  http.get(`${API_PATTERN}/cards`, () => {
-    return HttpResponse.json({ cards: [] })
+  // GET /api/cards - List cards (supports pagination via ?limit= param)
+  http.get(`${API_PATTERN}/cards`, ({ request }) => {
+    const url = new URL(request.url)
+    const limit = url.searchParams.get('limit')
+
+    if (limit) {
+      // Paginated response
+      const response: PaginatedListCardsResponse = {
+        cards: mockCardsWithInsights,
+        pagination: {
+          cursor: null,
+          hasMore: false,
+          pageSize: parseInt(limit, 10),
+        },
+      }
+      return HttpResponse.json(response)
+    }
+
+    // Legacy non-paginated response
+    return HttpResponse.json({ cards: mockCardsWithInsights })
   }),
 
   // POST /api/cards - Create card
   http.post(`${API_PATTERN}/cards`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>
-    return HttpResponse.json({ card: { id: 'new-card', ...body } })
+    return HttpResponse.json({
+      card: {
+        id: `CARD#new-card-${Date.now()}`,
+        card_id: `new-card-${Date.now()}`,
+        user_id: 'user-1',
+        created_at: new Date().toISOString(),
+        ...body,
+      },
+    })
   }),
 
   // PUT /api/cards/:id - Update card
@@ -148,5 +220,73 @@ export const handlers = [
       deleted_review_items: 20,
       deleted_history: 50,
     })
+  }),
+
+  // =========================================================================
+  // Insights endpoints
+  // =========================================================================
+
+  // POST /api/insights/generate - Generate insights for cards
+  http.post(`${API_PATTERN}/insights/generate`, async ({ request }) => {
+    const body = (await request.json()) as { card_ids: string[] }
+    const response: GenerateInsightsResponse = {
+      generated: body.card_ids.map((card_id) => ({
+        card_id,
+        insights_count: 2,
+      })),
+    }
+    return HttpResponse.json(response)
+  }),
+
+  // POST /api/insights/validate - Validate pending insights
+  http.post(`${API_PATTERN}/insights/validate`, async ({ request }) => {
+    const body = (await request.json()) as { card_ids: string[] }
+    const response: ValidateInsightsResponse = {
+      validated: body.card_ids.map((card_id) => ({
+        card_id,
+        insights: [
+          { type: 'compound' as const, content: 'Test insight', approved: true },
+        ],
+      })),
+    }
+    return HttpResponse.json(response)
+  }),
+
+  // GET /api/insights/queue - Get insights awaiting review
+  http.get(`${API_PATTERN}/insights/queue`, () => {
+    return HttpResponse.json(mockInsightsQueue)
+  }),
+
+  // PUT /api/insights/:cardId/review - Review a single insight
+  http.put(`${API_PATTERN}/insights/:cardId/review`, async ({ params }) => {
+    const { cardId } = params
+    const card = mockCardsWithInsights.find((c) => c.card_id === cardId)
+    const response: ReviewInsightResponse = {
+      card: card || mockCardsWithInsights[0],
+    }
+    return HttpResponse.json(response)
+  }),
+
+  // =========================================================================
+  // Metrics endpoints
+  // =========================================================================
+
+  // GET /api/metrics/insights - Get insights metrics
+  http.get(`${API_PATTERN}/metrics/insights`, () => {
+    return HttpResponse.json(mockInsightsMetricsData())
+  }),
+
+  // =========================================================================
+  // Debug endpoints
+  // =========================================================================
+
+  // POST /api/debug/clear-insights - Clear all insights
+  http.post(`${API_PATTERN}/debug/clear-insights`, () => {
+    const response: ClearInsightsResponse = {
+      message: 'Insights cleared',
+      cleared_cards: 5,
+      cleared_review_items: 10,
+    }
+    return HttpResponse.json(response)
   }),
 ]
