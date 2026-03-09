@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS = {
   interval_modifier: 1.0,
   maximum_interval: 36500,
   lapse_new_interval: 0,
+  writing_exercises_per_day: 10,
+  writing_session_enabled: true,
 }
 
 // Helper to parse comma-separated numbers
@@ -78,6 +80,8 @@ export function SettingsPage() {
   const [lapseNewInterval, setLapseNewInterval] = useState(DEFAULT_SETTINGS.lapse_new_interval)
   const [showUnreviewedInsights, setShowUnreviewedInsights] = useState(true)
   const [proficiencyLevel, setProficiencyLevel] = useState<ProficiencyLevel>('beginner')
+  const [writingExercisesPerDay, setWritingExercisesPerDay] = useState(DEFAULT_SETTINGS.writing_exercises_per_day)
+  const [writingSessionEnabled, setWritingSessionEnabled] = useState(DEFAULT_SETTINGS.writing_session_enabled)
 
   // Load settings on mount
   useEffect(() => {
@@ -103,6 +107,8 @@ export function SettingsPage() {
         setLapseNewInterval(userSettings.lapse_new_interval ?? DEFAULT_SETTINGS.lapse_new_interval)
         setShowUnreviewedInsights(userSettings.show_unreviewed_insights ?? true)
         setProficiencyLevel(userSettings.proficiency_level ?? 'beginner')
+        setWritingExercisesPerDay(userSettings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day)
+        setWritingSessionEnabled(userSettings.writing_session_enabled ?? DEFAULT_SETTINGS.writing_session_enabled)
       } catch (error) {
         console.error('Failed to load settings:', error)
         toast({
@@ -157,6 +163,8 @@ export function SettingsPage() {
         lapse_new_interval: lapseNewInterval,
         show_unreviewed_insights: showUnreviewedInsights,
         proficiency_level: proficiencyLevel,
+        writing_exercises_per_day: writingExercisesPerDay,
+        writing_session_enabled: writingSessionEnabled,
       })
       setSettings(updated)
       // Normalize the input fields after save
@@ -193,6 +201,8 @@ export function SettingsPage() {
     setLapseNewInterval(DEFAULT_SETTINGS.lapse_new_interval)
     setShowUnreviewedInsights(true)
     setProficiencyLevel('beginner')
+    setWritingExercisesPerDay(DEFAULT_SETTINGS.writing_exercises_per_day)
+    setWritingSessionEnabled(DEFAULT_SETTINGS.writing_session_enabled)
   }
 
   const hasUnsavedChanges = settings && (
@@ -208,7 +218,9 @@ export function SettingsPage() {
     maximumInterval !== (settings.maximum_interval ?? DEFAULT_SETTINGS.maximum_interval) ||
     lapseNewInterval !== (settings.lapse_new_interval ?? DEFAULT_SETTINGS.lapse_new_interval) ||
     showUnreviewedInsights !== (settings.show_unreviewed_insights ?? true) ||
-    proficiencyLevel !== (settings.proficiency_level ?? 'beginner')
+    proficiencyLevel !== (settings.proficiency_level ?? 'beginner') ||
+    writingExercisesPerDay !== (settings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day) ||
+    writingSessionEnabled !== (settings.writing_session_enabled ?? DEFAULT_SETTINGS.writing_session_enabled)
   )
 
   const loadDebugData = async () => {
@@ -379,6 +391,46 @@ export function SettingsPage() {
                       ? 'Limits total reviews per day (due cards may accumulate)'
                       : 'No limit on daily reviews (recommended)'}
                   </p>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <h4 className="font-medium text-sm mb-4">Writing Practice</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label htmlFor="writing-session-enabled">Enable writing exercises</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Practice writing Dutch after completing flashcard reviews
+                        </p>
+                      </div>
+                      <Switch
+                        id="writing-session-enabled"
+                        checked={writingSessionEnabled}
+                        onCheckedChange={setWritingSessionEnabled}
+                      />
+                    </div>
+
+                    {writingSessionEnabled && (
+                      <div className="space-y-2">
+                        <Label htmlFor="writing-exercises-per-day">Writing exercises per day</Label>
+                        <div className="flex items-center gap-4">
+                          <Input
+                            id="writing-exercises-per-day"
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={writingExercisesPerDay}
+                            onChange={(e) => setWritingExercisesPerDay(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">exercises</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Maximum writing exercises generated from reviewed cards (1-50)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

@@ -80,6 +80,8 @@ export interface UserSettings {
   disabled_categories?: string[] | null // Categories to exclude from review (frontend extension, not in OpenAPI spec yet)
   show_unreviewed_insights: boolean // Display AI-approved insights before human review (default: true)
   proficiency_level?: ProficiencyLevel // User's Dutch proficiency level for tailoring insights (default: beginner)
+  writing_exercises_per_day: number // Max writing exercises per day (default: 10)
+  writing_session_enabled: boolean // Whether writing practice is enabled (default: true)
   updated_at: string // ISO 8601 date-time
 }
 
