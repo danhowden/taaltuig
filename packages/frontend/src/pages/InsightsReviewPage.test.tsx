@@ -230,10 +230,8 @@ describe('InsightsReviewPage', () => {
       expect(screen.getByText('huis')).toBeInTheDocument()
     })
 
-    // Find approve buttons (green check icons)
-    const approveButtons = screen.getAllByRole('button', { name: '' }).filter(
-      (btn) => btn.classList.contains('text-green-600')
-    )
+    // Find approve buttons
+    const approveButtons = screen.getAllByLabelText('Approve insight')
     expect(approveButtons.length).toBeGreaterThan(0)
     await user.click(approveButtons[0])
 
@@ -262,9 +260,7 @@ describe('InsightsReviewPage', () => {
       expect(screen.getByText('huis')).toBeInTheDocument()
     })
 
-    const rejectButtons = screen.getAllByRole('button', { name: '' }).filter(
-      (btn) => btn.classList.contains('text-red-600')
-    )
+    const rejectButtons = screen.getAllByLabelText('Reject insight')
     expect(rejectButtons.length).toBeGreaterThan(0)
     await user.click(rejectButtons[0])
 
@@ -293,13 +289,8 @@ describe('InsightsReviewPage', () => {
       expect(screen.getByText('huis')).toBeInTheDocument()
     })
 
-    // Click edit button (pencil icon) - it's a button without specific text
-    const editButtons = screen.getAllByRole('button', { name: '' }).filter(
-      (btn) =>
-        !btn.classList.contains('text-green-600') &&
-        !btn.classList.contains('text-red-600')
-    )
-    // First non-colored icon button should be edit
+    // Click edit button
+    const editButtons = screen.getAllByLabelText('Edit insight')
     await user.click(editButtons[0])
 
     // Should show input with current content
@@ -331,11 +322,7 @@ describe('InsightsReviewPage', () => {
       expect(screen.getByText('huis')).toBeInTheDocument()
     })
 
-    const editButtons = screen.getAllByRole('button', { name: '' }).filter(
-      (btn) =>
-        !btn.classList.contains('text-green-600') &&
-        !btn.classList.contains('text-red-600')
-    )
+    const editButtons = screen.getAllByLabelText('Edit insight')
     await user.click(editButtons[0])
 
     expect(

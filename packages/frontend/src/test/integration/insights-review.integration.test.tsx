@@ -73,11 +73,8 @@ describe('Insights Review Page', () => {
       expect(screen.getByText('0 of 3 insights reviewed')).toBeInTheDocument()
     })
 
-    // Find approve buttons (green icon buttons with Check icon — no aria-label)
-    const allButtons = screen.getAllByRole('button')
-    const approveButtons = allButtons.filter(
-      (btn) => btn.classList.contains('text-green-600'),
-    )
+    // Find approve buttons by aria-label
+    const approveButtons = screen.getAllByLabelText('Approve insight')
     expect(approveButtons.length).toBeGreaterThanOrEqual(1)
 
     await user.click(approveButtons[0])

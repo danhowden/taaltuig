@@ -157,7 +157,7 @@ export function VirtualizedCardsTable({
                   {card.source || 'manual'}
                 </div>
                 <div className="w-[60px] flex-shrink-0 px-2 flex gap-0.5">
-                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                  <Button size="icon" variant="ghost" className="h-6 w-6" aria-label="Edit card">
                     <Pencil className="h-3 w-3" />
                   </Button>
                   <Button
@@ -165,6 +165,7 @@ export function VirtualizedCardsTable({
                     variant="ghost"
                     className="h-6 w-6 text-destructive hover:text-destructive"
                     onClick={() => onDeleteCard(card.card_id)}
+                    aria-label="Delete card"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

@@ -130,20 +130,12 @@ describe('Cards Page', () => {
       expect(screen.getByText('1 cards')).toBeInTheDocument()
     })
 
-    // Card row should now be visible with delete button (Trash2 icon, text-destructive class)
+    // Card row should now be visible with delete button
     await waitFor(() => {
-      const allButtons = screen.getAllByRole('button')
-      const deleteButtons = allButtons.filter(
-        (btn) => btn.className.includes('text-destructive'),
-      )
-      expect(deleteButtons.length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByLabelText('Delete card').length).toBeGreaterThanOrEqual(1)
     })
 
-    const allButtons = screen.getAllByRole('button')
-    const deleteButtons = allButtons.filter(
-      (btn) => btn.className.includes('text-destructive'),
-    )
-    await user.click(deleteButtons[0])
+    await user.click(screen.getAllByLabelText('Delete card')[0])
 
     // Confirm deletion in dialog if it shows
     const confirmButton = screen.queryByRole('button', { name: /confirm|delete|yes/i })

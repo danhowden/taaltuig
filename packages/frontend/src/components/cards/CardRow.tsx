@@ -226,6 +226,7 @@ export const CardRow = memo(function CardRow({
               variant="ghost"
               className="h-6 w-6"
               onClick={startEditing}
+              aria-label="Edit card"
             >
               <Pencil className="h-3 w-3" />
             </Button>
@@ -234,6 +235,7 @@ export const CardRow = memo(function CardRow({
               variant="ghost"
               className="h-6 w-6 text-destructive hover:text-destructive"
               onClick={() => onDelete(card)}
+              aria-label="Delete card"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
