@@ -1,4 +1,4 @@
-import { Home, CreditCard, Settings, LogOut, Brain, Loader2, Theater, Lightbulb } from 'lucide-react'
+import { Home, CreditCard, Settings, LogOut, Brain, Loader2, Theater, Lightbulb, PencilLine } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { TaaltuigLogo } from '@/components/TaaltuigLogo'
@@ -19,6 +19,7 @@ import {
 import { useCards } from '@/hooks/useCards'
 import { useReviewQueue } from '@/hooks/useReviewQueue'
 import { useInsightsQueue } from '@/hooks/useInsights'
+import { useWritingQueue } from '@/hooks/useWritingSession'
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -28,15 +29,18 @@ export function AppSidebar() {
   const { cards, isLoading: isCardsLoading } = useCards()
   const { data: reviewData, isLoading: isReviewLoading } = useReviewQueue()
   const { data: insightsData, isLoading: isInsightsLoading } = useInsightsQueue()
+  const { data: writingData, isLoading: isWritingLoading } = useWritingQueue()
 
   const isCollapsed = state === 'collapsed'
   const totalCardCount = cards.length
   const reviewCount = reviewData?.stats?.total_count || 0
   const insightsCount = insightsData?.total || 0
+  const writingCount = writingData?.exercises?.length || 0
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Brain, label: 'Review', path: '/review' },
+    { icon: PencilLine, label: 'Writing', path: '/writing' },
     { icon: CreditCard, label: 'Cards', path: '/cards' },
     { icon: Lightbulb, label: 'Insights', path: '/insights' },
     { icon: Settings, label: 'Settings', path: '/settings' },
@@ -86,6 +90,13 @@ export function AppSidebar() {
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     totalCardCount
+                  )
+                } else if (item.path === '/writing') {
+                  showBadge = writingCount > 0
+                  badgeContent = isWritingLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    writingCount
                   )
                 } else if (item.path === '/insights') {
                   showBadge = insightsCount > 0

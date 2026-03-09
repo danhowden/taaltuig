@@ -36,6 +36,9 @@ import type {
   ReviewInsightResponse,
   InsightsQueueResponse,
   InsightsMetricsResponse,
+  WritingQueueResponse,
+  SubmitWritingRequest,
+  SubmitWritingResponse,
 } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
@@ -393,6 +396,30 @@ class ApiClient {
         },
       }
     )
+  }
+  // ============================================================================
+  // Writing exercise endpoints
+  // ============================================================================
+
+  async getWritingQueue(token: string): Promise<WritingQueueResponse> {
+    return this.request<WritingQueueResponse>('/api/writing/queue', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
+  async submitWritingAttempt(
+    token: string,
+    data: SubmitWritingRequest
+  ): Promise<SubmitWritingResponse> {
+    return this.request<SubmitWritingResponse>('/api/writing/submit', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
   }
 }
 

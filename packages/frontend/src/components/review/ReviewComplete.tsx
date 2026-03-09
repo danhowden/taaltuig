@@ -1,10 +1,14 @@
 import { useEffect, useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { PencilLine } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { Button } from '@/components/ui/button'
 import { ExtraCardsCard } from './ExtraCardsCard'
 
 interface ReviewCompleteProps {
   onContinue?: (extraCards: number) => void
   loadingExtraCards?: number | null
+  writingExerciseCount?: number
 }
 
 const dutchPhrases = [
@@ -18,7 +22,7 @@ const dutchPhrases = [
 // Dutch flag colors
 const dutchColors = ['#AE1C28', '#FFFFFF', '#21468B']
 
-export function ReviewComplete({ onContinue, loadingExtraCards }: ReviewCompleteProps) {
+export function ReviewComplete({ onContinue, loadingExtraCards, writingExerciseCount }: ReviewCompleteProps) {
   const [phrase] = useState(() => dutchPhrases[Math.floor(Math.random() * dutchPhrases.length)])
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -86,6 +90,18 @@ export function ReviewComplete({ onContinue, loadingExtraCards }: ReviewComplete
         <div className="text-center pb-8">
           <h2 className="text-4xl font-bold">{phrase}</h2>
         </div>
+
+        {writingExerciseCount !== undefined && writingExerciseCount > 0 && (
+          <div className="rounded-2xl bg-white/50 backdrop-blur-sm border border-white/60 p-6 text-center space-y-3">
+            <PencilLine className="h-8 w-8 mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground">
+              {writingExerciseCount} writing {writingExerciseCount === 1 ? 'exercise' : 'exercises'} available
+            </p>
+            <Button asChild>
+              <Link to="/writing">Continue to Writing Practice</Link>
+            </Button>
+          </div>
+        )}
 
         {onContinue && (
           <ExtraCardsCard

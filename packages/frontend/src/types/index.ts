@@ -329,6 +329,49 @@ export interface InsightsQueueResponse {
 }
 
 // ============================================================================
+// Writing Exercise Types
+// ============================================================================
+
+export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
+export type AssessmentMatchType = 'exact' | 'alternative' | 'fuzzy' | 'wrong'
+
+export interface WritingExercise {
+  exercise_id: string
+  type: ExerciseType
+  prompt: string
+  reference_answer: string
+  alternatives: string[]
+  card_id?: string
+}
+
+export interface WritingQueueResponse {
+  exercises: WritingExercise[]
+  stats: {
+    total_available: number
+    exercises_today: number
+    exercises_remaining: number
+  }
+}
+
+export interface SubmitWritingRequest {
+  exercise_id: string
+  exercise_type: ExerciseType
+  user_answer: string
+  reference_answer: string
+  alternatives?: string[]
+  duration_ms: number
+  card_id?: string
+}
+
+export interface SubmitWritingResponse {
+  correct: boolean
+  grade: Grade
+  feedback: string
+  match_type: AssessmentMatchType
+  reference_answer: string
+}
+
+// ============================================================================
 // Metrics API Types
 // ============================================================================
 

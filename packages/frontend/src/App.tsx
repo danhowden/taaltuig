@@ -12,6 +12,7 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { CardsPage } from '@/pages/CardsPage'
 import { DebugPage } from '@/pages/DebugPage'
 import { InsightsReviewPage } from '@/pages/InsightsReviewPage'
+import { WritingSession } from '@/pages/WritingSession'
 import { Toaster } from '@/components/ui/toaster'
 import { AppLayout } from '@/components/AppLayout'
 
@@ -79,6 +80,14 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <InsightsReviewPage />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/writing"
+                    element={
+                      <ErrorBoundary>
+                        <WritingSession />
                       </ErrorBoundary>
                     }
                   />
