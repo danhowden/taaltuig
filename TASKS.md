@@ -9,9 +9,9 @@ Frontend: 61% statements, 82% branches. Lambdas: 21/22 tested.
 - [x] Add tests for `get-metrics` lambda (only untested package)
 - [x] Add tests for `useSubmitReview` hook (6% coverage)
 - [x] Add tests for `useReviewQueue` hook (15% coverage)
-- [ ] Fix pre-existing `ProtectedRoute.test.tsx` failure (2 tests)
+- [x] Fix pre-existing `ProtectedRoute.test.tsx` failure (2 tests)
 
-## AI Insights (In Progress ~85%)
+## AI Insights (In Progress ~90%)
 
 Backend and review UI are functional. Missing UX integration points.
 
@@ -28,10 +28,10 @@ Backend and review UI are functional. Missing UX integration points.
 - [x] "Generate Insights" button in cards list/detail UI
 - [x] Batch generate UI (select cards → generate)
 - [x] Display approved insights during review session
-- [ ] Trigger validation from insights review page
-- [ ] Metrics/stats display on insights review page
-- [ ] Settings UI for `proficiency_level` and `show_unreviewed_insights`
-- [ ] Auto-generate insights on Anki import
+- [SKIP] Trigger validation from insights review page
+- [SKIP] Metrics/stats display on insights review page
+- [x] Settings UI for `proficiency_level` and `show_unreviewed_insights`
+- [SKIP] Auto-generate insights on Anki import
 - [ ] Generation metrics tracking (only validation is tracked)
 - [ ] Error recovery / retry for failed generations
 

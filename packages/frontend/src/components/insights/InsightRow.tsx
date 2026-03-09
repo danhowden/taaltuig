@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { InsightStatusBadge, getDisplayStatus } from './InsightStatusBadge'
 import { InsightEditForm } from './InsightEditForm'
@@ -10,6 +11,8 @@ interface InsightRowProps {
   row: FlatInsightRow
   editingInsight: { content: string } | null
   isPending: boolean
+  isRejected: boolean
+  onToggleRejected: () => void
   onApprove: () => void
   onReject: () => void
   onEdit: (content: string) => void
@@ -22,6 +25,8 @@ export function InsightRow({
   row,
   editingInsight,
   isPending,
+  isRejected,
+  onToggleRejected,
   onApprove,
   onReject,
   onEdit,
@@ -39,15 +44,29 @@ export function InsightRow({
       className={cn(
         'hover:bg-black/[0.02] transition-colors',
         isHumanReviewed && 'opacity-50',
+        isRejected && 'bg-red-50/50',
       )}
       style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
     >
+      {/* Checkbox for bulk rejection */}
+      <td className="px-4 py-2.5 align-top">
+        {needsReview && (
+          <Checkbox
+            checked={isRejected}
+            onCheckedChange={onToggleRejected}
+            className={cn(
+              isRejected && 'border-red-500 data-[state=checked]:bg-red-500',
+            )}
+          />
+        )}
+      </td>
+
       {/* Card name - only show for first insight of each card */}
       <td className="px-4 py-2.5 align-top">
         {row.isFirstForCard ? (
           <div>
             <span className="font-medium">{row.front}</span>
-            <span className="text-muted-foreground mx-1">→</span>
+            <span className="text-muted-foreground mx-1">&rarr;</span>
             <span className="text-muted-foreground">{row.back}</span>
           </div>
         ) : null}
@@ -71,7 +90,7 @@ export function InsightRow({
             onCancel={onCancelEdit}
           />
         ) : (
-          <div>
+          <div className={cn(isRejected && 'line-through text-muted-foreground')}>
             <span className="md:hidden">
               <Badge variant="outline" className="text-xs mr-2 border-black/15">
                 {INSIGHT_TYPE_LABELS[row.type]}
