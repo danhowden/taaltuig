@@ -28,39 +28,42 @@ const SYSTEM_PROMPT = `You are a Dutch language exercise generator. Create natur
 
 ## Exercise Types
 
-Generate a mix of these three types:
+You MUST generate a mix of these three types in the ratio specified by the user.
 
-### fill_blank (preferred — generate ~50% of these)
-Show a Dutch sentence with one word replaced by "___". The user fills in the missing word.
+### fill_blank
+Show a Dutch sentence with one word replaced by "___". The user types the missing word.
 - Blank a verb, article, preposition, or target vocabulary word
-- The sentence with the blank must be unambiguous — only one word should fit naturally
+- The surrounding context should make only a small set of valid words correct
 - reference_answer is the single missing word (NOT the full sentence)
-- alternatives: other valid words that could fill the blank
+- alternatives: other valid words that could fill the blank (2-4 alternatives)
+- Sentences should be 5-10 words long
 - Example: { "type": "fill_blank", "prompt": "Ik ___ naar de winkel", "reference_answer": "loop", "alternatives": ["ga", "wandel"] }
 
-### word_reorder (~25%)
+### word_reorder
 Show Dutch words in scrambled order. The user arranges them into the correct sentence.
-- Only generate these when word order is pedagogically interesting (inversion, subordinate clauses, verb-final)
-- prompt: words separated by " / " in scrambled order
+- Only use when word order is pedagogically interesting (inversion, subordinate clauses, verb-final, time-manner-place)
+- prompt: words separated by " / " in scrambled order — scramble thoroughly
 - reference_answer: the correctly ordered sentence
-- alternatives: other valid orderings if they exist (usually empty)
+- alternatives: other valid orderings if they exist (usually empty for Dutch)
+- Sentences should be 5-8 words long
 - Example: { "type": "word_reorder", "prompt": "winkel / naar / de / loop / Ik", "reference_answer": "Ik loop naar de winkel", "alternatives": [] }
 
-### translation (~25%)
+### translation
 Show an English sentence. The user writes the Dutch translation.
-- The English prompt must be unambiguous
+- The English prompt must be unambiguous — avoid sentences with multiple valid interpretations
 - reference_answer: the primary correct Dutch translation
-- alternatives: other valid Dutch translations
+- alternatives: other valid Dutch translations (2-4 alternatives)
+- Sentences should be 5-10 words long
 - Example: { "type": "translation", "prompt": "I walk to the store", "reference_answer": "Ik loop naar de winkel", "alternatives": ["Ik wandel naar de winkel"] }
 
 ## Rules
 - Sentences must be natural Dutch that a native speaker would actually say
 - Difficulty should match the specified CEFR level
 - Each exercise must use at least one target vocabulary word
-- Vary sentence structures and grammar patterns across the batch
+- Vary sentence structures and grammar patterns — do NOT repeat the same pattern
+- Each exercise should test a different grammar point or vocabulary usage
 - Focus on phrases and sentences, not single words
-- For fill_blank: ensure the blank is unambiguous — the surrounding context should make only one word (or a small set) correct
-- For word_reorder: scramble thoroughly — don't just swap two adjacent words
+- Do NOT generate trivially easy exercises (e.g., "De ___ is groot" where the blank is obvious from context)
 
 ## Output
 Return a JSON array only, no markdown. Start directly with [
@@ -211,11 +214,20 @@ async function generateExercisesFromAI(
     .map((v) => `- ${v.front} → ${v.back}`)
     .join('\n')
 
-  const userPrompt = `Generate ${exerciseCount} exercises using these Dutch vocabulary words:
+  const fillCount = Math.round(exerciseCount * 0.5)
+  const reorderCount = Math.round(exerciseCount * 0.25)
+  const translationCount = exerciseCount - fillCount - reorderCount
+
+  const userPrompt = `Generate exactly ${exerciseCount} exercises using these Dutch vocabulary words:
 
 ${vocabList}
 
-Create a mix of exercise types: ~50% fill_blank, ~25% word_reorder, ~25% translation. Vary the grammar patterns. Target CEFR A1-A2 level.`
+Generate this exact mix:
+- ${fillCount} fill_blank exercises
+- ${reorderCount} word_reorder exercises
+- ${translationCount} translation exercises
+
+Target CEFR A1-A2 level. Each exercise should test a different grammar point or word usage.`
 
   const response = await bedrockClient.send(
     new InvokeModelCommand({
