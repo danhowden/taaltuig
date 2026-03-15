@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const { mockGetExercisesForCard, mockGetAllExercises, mockClearIncompleteExercises, mockRejectExercise } = vi.hoisted(() => ({
+const { mockGetExercisesForCard, mockGetAllExercises, mockClearIncompleteExercises, mockRejectExercise, mockResetExercise, mockGetWritingAttemptsByExercise } = vi.hoisted(() => ({
   mockGetExercisesForCard: vi.fn(),
   mockGetAllExercises: vi.fn(),
   mockClearIncompleteExercises: vi.fn(),
   mockRejectExercise: vi.fn(),
+  mockResetExercise: vi.fn(),
+  mockGetWritingAttemptsByExercise: vi.fn(),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -15,6 +17,8 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
       getAllExercises: mockGetAllExercises,
       clearIncompleteExercises: mockClearIncompleteExercises,
       rejectExercise: mockRejectExercise,
+      resetExercise: mockResetExercise,
+      getWritingAttemptsByExercise: mockGetWritingAttemptsByExercise,
     })),
   }
 })
@@ -64,18 +68,22 @@ describe('writing-exercises handler', () => {
     expect(mockGetExercisesForCard).toHaveBeenCalledWith('user-123', 'card-1')
   })
 
-  it('should return all exercises when no card_id', async () => {
+  it('should return all exercises with attempt data when no card_id', async () => {
     mockGetAllExercises.mockResolvedValue([
       { exercise_id: 'ex-1', status: 'pending' },
       { exercise_id: 'ex-2', status: 'completed' },
     ])
+    mockGetWritingAttemptsByExercise.mockResolvedValue(
+      new Map([['ex-2', { user_answer: 'de kat', score: 3, feedback: 'Correct!', match_type: 'exact', created_at: '2026-03-15T12:00:00Z' }]])
+    )
 
     const result = await handler(makeEvent('user-123'))
 
     expect(result.statusCode).toBe(200)
     const body = JSON.parse(result.body as string)
     expect(body).toHaveLength(2)
-    expect(mockGetAllExercises).toHaveBeenCalledWith('user-123')
+    expect(body[0].attempt).toBeNull()
+    expect(body[1].attempt).toMatchObject({ user_answer: 'de kat', score: 3 })
   })
 
   it('should clear incomplete exercises on DELETE', async () => {
