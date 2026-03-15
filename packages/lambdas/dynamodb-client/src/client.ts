@@ -1868,6 +1868,61 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Delete all incomplete (non-completed) exercises and their card-exercise links.
+   * Returns count of deleted items.
+   */
+  async clearIncompleteExercises(userId: string): Promise<{ deleted: number }> {
+    // Get all exercises from the pool (all statuses)
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+        },
+      })
+    )
+
+    const exercises = (response.Items as WritingExercise[]) || []
+    const toDelete = exercises.filter((e) => e.status !== 'completed')
+
+    if (toDelete.length === 0) {
+      return { deleted: 0 }
+    }
+
+    // Collect all items to delete: exercises + their card-exercise links
+    const deleteKeys: { PK: string; SK: string }[] = []
+
+    for (const exercise of toDelete) {
+      deleteKeys.push({ PK: exercise.PK, SK: exercise.SK })
+
+      for (const cardId of exercise.target_vocabulary) {
+        deleteKeys.push({
+          PK: `USER#${userId}`,
+          SK: `CARD_EXERCISE#${cardId}#${exercise.exercise_id}`,
+        })
+      }
+    }
+
+    // Batch delete in chunks of 25
+    for (let i = 0; i < deleteKeys.length; i += 25) {
+      const chunk = deleteKeys.slice(i, i + 25)
+      await this.client.send(
+        new BatchWriteCommand({
+          RequestItems: {
+            [this.tableName]: chunk.map((key) => ({
+              DeleteRequest: { Key: key },
+            })),
+          },
+        })
+      )
+    }
+
+    return { deleted: toDelete.length }
+  }
+
+  /**
    * Get vocabulary cards suitable for exercise generation.
    * Queries ReviewItems across all states, weighted by recency and difficulty.
    * Returns deduplicated cards with their review metadata.

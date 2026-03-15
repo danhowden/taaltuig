@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const { mockGetExercisesForCard, mockGetAllExercises } = vi.hoisted(() => ({
+const { mockGetExercisesForCard, mockGetAllExercises, mockClearIncompleteExercises } = vi.hoisted(() => ({
   mockGetExercisesForCard: vi.fn(),
   mockGetAllExercises: vi.fn(),
+  mockClearIncompleteExercises: vi.fn(),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -11,6 +12,7 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
     TaaltuigDynamoDBClient: vi.fn().mockImplementation(() => ({
       getExercisesForCard: mockGetExercisesForCard,
       getAllExercises: mockGetAllExercises,
+      clearIncompleteExercises: mockClearIncompleteExercises,
     })),
   }
 })
@@ -25,13 +27,15 @@ describe('writing-exercises handler', () => {
 
   const makeEvent = (
     userId?: string,
-    queryParams?: Record<string, string>
+    queryParams?: Record<string, string>,
+    method?: string
   ): APIGatewayProxyEventV2 =>
     ({
       requestContext: {
         authorizer: userId
           ? { jwt: { claims: { sub: userId } } }
           : {},
+        http: { method: method || 'GET' },
       },
       queryStringParameters: queryParams || null,
     }) as unknown as APIGatewayProxyEventV2
@@ -68,6 +72,17 @@ describe('writing-exercises handler', () => {
     const body = JSON.parse(result.body as string)
     expect(body).toHaveLength(2)
     expect(mockGetAllExercises).toHaveBeenCalledWith('user-123')
+  })
+
+  it('should clear incomplete exercises on DELETE', async () => {
+    mockClearIncompleteExercises.mockResolvedValue({ deleted: 15 })
+
+    const result = await handler(makeEvent('user-123', undefined, 'DELETE'))
+
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.deleted).toBe(15)
+    expect(mockClearIncompleteExercises).toHaveBeenCalledWith('user-123')
   })
 
   it('should return 401 when unauthorized', async () => {

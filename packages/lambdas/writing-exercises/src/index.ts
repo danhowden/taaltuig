@@ -11,11 +11,8 @@ const TABLE_NAME = process.env.TABLE_NAME!
 const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
 
 /**
- * GET /api/writing/exercises
- *
- * List exercises. Supports:
- * - ?card_id=<id> — exercises linked to a specific card
- * - No params — all exercises (for admin view)
+ * GET /api/writing/exercises — list exercises
+ * DELETE /api/writing/exercises — clear incomplete exercises
  */
 export async function handler(
   event: APIGatewayProxyEventV2
@@ -26,17 +23,25 @@ export async function handler(
       return unauthorizedResponse()
     }
 
+    const method = event.requestContext?.http?.method
+
+    if (method === 'DELETE') {
+      const result = await dbClient.clearIncompleteExercises(userId)
+      return jsonResponse({
+        message: 'Incomplete exercises cleared',
+        deleted: result.deleted,
+      })
+    }
+
+    // GET
     const cardId = event.queryStringParameters?.card_id
 
     if (cardId) {
-      // Return card-exercise links for a specific card
       const links = await dbClient.getExercisesForCard(userId, cardId)
       return jsonResponse(links)
     }
 
-    // Return all exercises (for admin view)
     const exercises = await dbClient.getAllExercises(userId)
-
     return jsonResponse(exercises)
   } catch (error) {
     console.error('Error in writingExercises:', error)

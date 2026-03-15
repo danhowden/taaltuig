@@ -461,6 +461,15 @@ class ApiClient {
     )
   }
 
+  async clearIncompleteExercises(token: string): Promise<{ deleted: number }> {
+    return this.request<{ deleted: number }>('/api/writing/exercises', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
   async getExercisesList(
     token: string,
     params?: { status?: string; type?: string }

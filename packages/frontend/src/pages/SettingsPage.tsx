@@ -59,6 +59,7 @@ export function SettingsPage() {
   const [loadingDebug, setLoadingDebug] = useState(false)
   const [resettingReviews, setResettingReviews] = useState(false)
   const [clearingInsights, setClearingInsights] = useState(false)
+  const [clearingExercises, setClearingExercises] = useState(false)
 
   // SRS Settings state
   const [settings, setSettings] = useState<UserSettings | null>(null)
@@ -287,6 +288,31 @@ export function SettingsPage() {
       })
     } finally {
       setClearingInsights(false)
+      stopLoading()
+    }
+  }
+
+  const handleClearExercises = async () => {
+    if (!token) return
+
+    try {
+      setClearingExercises(true)
+      startLoading()
+      const result = await apiClient.clearIncompleteExercises(token)
+
+      toast({
+        title: 'Exercises cleared',
+        description: `Deleted ${result.deleted} incomplete exercises`,
+      })
+    } catch (error) {
+      console.error('Failed to clear exercises:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to clear exercises',
+        variant: 'destructive',
+      })
+    } finally {
+      setClearingExercises(false)
       stopLoading()
     }
   }
@@ -758,6 +784,27 @@ export function SettingsPage() {
                     className="ml-4"
                   >
                     {clearingInsights ? 'Clearing...' : 'Clear Insights'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Clear Incomplete Exercises */}
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 mb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm mb-1">Clear Incomplete Exercises</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Delete all pending, served, and expired writing exercises. Completed exercises are kept.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearExercises}
+                    disabled={clearingExercises}
+                    className="ml-4"
+                  >
+                    {clearingExercises ? 'Clearing...' : 'Clear Exercises'}
                   </Button>
                 </div>
               </div>
