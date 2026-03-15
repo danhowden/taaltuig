@@ -317,8 +317,11 @@ export async function handler(
   try {
     const userId = getUserIdFromEvent(event)
     if (!userId) {
+      console.log('No userId found in event')
       return unauthorizedResponse()
     }
+
+    console.log(`Starting exercise generation for user ${userId}`)
 
     // Parse optional body
     let cardId: string | undefined
@@ -333,6 +336,8 @@ export async function handler(
     const source = cardId ? 'user_requested' : 'auto'
     const batchSize = cardId ? 5 : 20
 
+    console.log(`Mode: ${source}, batchSize: ${batchSize}, cardId: ${cardId || 'none'}`)
+
     // Get vocabulary
     let vocabulary: VocabCard[]
 
@@ -341,6 +346,7 @@ export async function handler(
       const allVocab = await dbClient.getVocabularyForGeneration(userId)
       const targetCard = allVocab.find((v) => v.card_id === cardId)
       if (!targetCard) {
+        console.log(`Card ${cardId} not found in vocabulary`)
         return badRequestResponse('Card not found')
       }
 
@@ -356,9 +362,12 @@ export async function handler(
         dbClient.getRecentExerciseCardIds(userId),
       ])
 
+      console.log(`Vocabulary pool: ${allVocab.length} cards, ${recentCardIds.size} already in exercises`)
+
       vocabulary = selectVocabulary(allVocab, recentCardIds, batchSize, new Date())
 
       if (vocabulary.length === 0) {
+        console.log('No eligible vocabulary for exercise generation')
         return jsonResponse({
           exercises_generated: 0,
           message: 'No eligible vocabulary for exercise generation',
@@ -366,10 +375,15 @@ export async function handler(
       }
     }
 
+    console.log(`Selected ${vocabulary.length} vocabulary words for generation`)
+
     // Generate exercises via AI
+    console.log('Calling Bedrock for exercise generation...')
     const generated = await generateExercisesFromAI(vocabulary, batchSize)
+    console.log(`Bedrock returned ${generated.length} exercises`)
 
     if (generated.length === 0) {
+      console.log('AI generated no exercises')
       return jsonResponse({
         exercises_generated: 0,
         message: 'AI generated no exercises',
@@ -380,7 +394,9 @@ export async function handler(
     const timestamp = new Date().toISOString()
     const exercises = buildExerciseEntities(userId, generated, vocabulary, source, timestamp)
 
+    console.log(`Storing ${exercises.length} exercises...`)
     await dbClient.storeExercises(userId, exercises)
+    console.log(`Successfully stored ${exercises.length} exercises`)
 
     return jsonResponse({
       exercises_generated: exercises.length,
