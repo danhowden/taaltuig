@@ -372,6 +372,43 @@ export interface SubmitWritingResponse {
   reference_answer: string
 }
 
+export type ExerciseStatus = 'pending' | 'validated' | 'served' | 'completed' | 'expired' | 'rejected'
+
+export interface CardExerciseLink {
+  exercise_id: string
+  exercise_type: ExerciseType
+  exercise_status: ExerciseStatus
+  prompt: string
+  generated_at: string
+}
+
+export interface StoredWritingExercise {
+  exercise_id: string
+  type: ExerciseType
+  status: ExerciseStatus
+  source: 'auto' | 'user_requested'
+  priority: 'normal' | 'high'
+  prompt: string
+  reference_answer: string
+  alternatives: string[]
+  target_vocabulary: string[]
+  grammar_focus?: string
+  generated_at: string
+  served_at?: string
+  completed_at?: string
+}
+
+export interface GenerateExercisesRequest {
+  card_id?: string
+  exercise_type?: ExerciseType
+}
+
+export interface GenerateExercisesResponse {
+  exercises_generated: number
+  source: 'auto' | 'user_requested'
+  message?: string
+}
+
 // ============================================================================
 // Metrics API Types
 // ============================================================================

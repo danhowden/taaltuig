@@ -497,6 +497,19 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const writingExercisesLambda = new lambda.Function(
+      this,
+      'WritingExercisesFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-writing-exercises',
+        description: 'List writing exercises (by card or all)',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/writing-exercises/dist')
+        ),
+      }
+    )
+
     // Grant Bedrock permissions for exercise generation
     writingGenerateLambda.addToRolePolicy(
       new iam.PolicyStatement({
@@ -597,6 +610,7 @@ export class ApiStack extends cdk.Stack {
       writingQueueLambda,
       writingSubmitLambda,
       writingGenerateLambda,
+      writingExercisesLambda,
     ]
 
     // Import the DynamoDB table from the database stack
@@ -863,6 +877,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'WritingSubmitIntegration',
         writingSubmitLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/writing/exercises',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'WritingExercisesIntegration',
+        writingExercisesLambda
       ),
       authorizer: jwtAuthorizer,
     })

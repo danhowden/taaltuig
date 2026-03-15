@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { CategorySection } from './CategorySection'
 import type { Card } from '@/types'
 
+vi.mock('@/components/cards/CardExercisesPopover', () => ({
+  CardExercisesPopover: () => <span>-</span>,
+}))
+
 const mockCards: Card[] = [
   {
     id: 'CARD#1',

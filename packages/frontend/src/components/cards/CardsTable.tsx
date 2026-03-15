@@ -84,6 +84,7 @@ export const CardsTable = memo(function CardsTable({
             <TableHead className="w-[200px] py-1.5">Back (English)</TableHead>
             <TableHead className="w-[150px] py-1.5">Explanation</TableHead>
             <TableHead className="w-[100px] py-1.5">Insights</TableHead>
+            <TableHead className="w-[70px] py-1.5">Exercises</TableHead>
             <TableHead className="w-[80px] py-1.5">Source</TableHead>
             <TableHead className="w-[80px] py-1.5">Created</TableHead>
             <TableHead className="w-[70px] py-1.5">Actions</TableHead>

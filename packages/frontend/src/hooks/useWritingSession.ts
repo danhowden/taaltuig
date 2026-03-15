@@ -30,6 +30,7 @@ type WritingAction =
   | { type: 'INIT_QUEUE'; exercises: WritingExercise[] }
   | { type: 'SUBMIT_ANSWER'; result: SubmitWritingResponse }
   | { type: 'NEXT_EXERCISE' }
+  | { type: 'LOAD_MORE'; exercises: WritingExercise[] }
 
 const initialState: WritingSessionState = {
   phase: 'loading',
@@ -79,6 +80,20 @@ export function writingSessionReducer(
         phase: 'writing',
         currentIndex: nextIndex,
         currentExercise: state.exercises[nextIndex],
+      }
+    }
+    case 'LOAD_MORE': {
+      if (action.exercises.length === 0) {
+        return state
+      }
+      const allExercises = [...state.exercises, ...action.exercises]
+      return {
+        ...state,
+        phase: 'writing',
+        exercises: allExercises,
+        currentIndex: state.exercises.length,
+        currentExercise: action.exercises[0],
+        totalCount: allExercises.length,
       }
     }
     default:
@@ -146,9 +161,14 @@ export function useWritingSession(
     dispatch({ type: 'NEXT_EXERCISE' })
   }, [])
 
+  const loadMore = useCallback((newExercises: WritingExercise[]) => {
+    dispatch({ type: 'LOAD_MORE', exercises: newExercises })
+  }, [])
+
   return {
     ...state,
     submitAnswer,
     nextExercise,
+    loadMore,
   }
 }

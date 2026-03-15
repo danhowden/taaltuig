@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { CardRow } from './CardRow'
 import type { Card } from '@/types'
 
+vi.mock('@/components/cards/CardExercisesPopover', () => ({
+  CardExercisesPopover: () => <span>-</span>,
+}))
+
 const mockCard: Card = {
   id: 'CARD#123',
   card_id: '123',
@@ -201,8 +205,8 @@ describe('CardRow', () => {
 
     expect(screen.getByText('kat')).toBeInTheDocument()
     expect(screen.getByText('cat')).toBeInTheDocument()
-    // Should show '-' for empty fields (explanation and insights)
-    expect(screen.getAllByText('-')).toHaveLength(2)
+    // Should show '-' for empty fields (explanation, insights, exercises)
+    expect(screen.getAllByText('-')).toHaveLength(3)
   })
 
   it('should display insight badges when card has insights', () => {

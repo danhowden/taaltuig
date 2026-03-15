@@ -1848,6 +1848,26 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Get all exercises across all statuses (for admin view).
+   */
+  async getAllExercises(userId: string, limit: number = 200): Promise<WritingExercise[]> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+        },
+        Limit: limit,
+        ScanIndexForward: false, // newest first
+      })
+    )
+
+    return (response.Items as WritingExercise[]) || []
+  }
+
+  /**
    * Get vocabulary cards suitable for exercise generation.
    * Queries ReviewItems across all states, weighted by recency and difficulty.
    * Returns deduplicated cards with their review metadata.

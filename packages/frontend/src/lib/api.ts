@@ -39,6 +39,10 @@ import type {
   WritingQueueResponse,
   SubmitWritingRequest,
   SubmitWritingResponse,
+  GenerateExercisesRequest,
+  GenerateExercisesResponse,
+  CardExerciseLink,
+  StoredWritingExercise,
 } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
@@ -420,6 +424,51 @@ class ApiClient {
       },
       body: JSON.stringify(data),
     })
+  }
+
+  async generateWritingExercises(
+    token: string,
+    data: GenerateExercisesRequest
+  ): Promise<GenerateExercisesResponse> {
+    return this.request<GenerateExercisesResponse>('/api/writing/generate', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getExercisesForCard(
+    token: string,
+    cardId: string
+  ): Promise<CardExerciseLink[]> {
+    return this.request<CardExerciseLink[]>(
+      `/api/writing/exercises?card_id=${encodeURIComponent(cardId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+  }
+
+  async getExercisesList(
+    token: string,
+    params?: { status?: string; type?: string }
+  ): Promise<StoredWritingExercise[]> {
+    const searchParams = new URLSearchParams()
+    if (params?.status) searchParams.set('status', params.status)
+    if (params?.type) searchParams.set('type', params.type)
+    const query = searchParams.toString()
+    return this.request<StoredWritingExercise[]>(
+      `/api/writing/exercises${query ? `?${query}` : ''}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
   }
 }
 

@@ -14,6 +14,10 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }))
 
+vi.mock('@/components/cards/CardExercisesPopover', () => ({
+  CardExercisesPopover: () => <span>-</span>,
+}))
+
 vi.mock('@/lib/api', () => ({
   apiClient: {
     listCards: vi.fn(),

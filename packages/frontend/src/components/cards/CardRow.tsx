@@ -10,6 +10,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
+import { CardExercisesPopover } from '@/components/cards/CardExercisesPopover'
 import type { Card, InsightStatus } from '@/types'
 
 interface CardRowProps {
@@ -192,6 +193,9 @@ export const CardRow = memo(function CardRow({
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
+      </TableCell>
+      <TableCell className="py-1">
+        <CardExercisesPopover cardId={card.card_id} />
       </TableCell>
       <TableCell className="py-1 text-xs">{card.source || 'manual'}</TableCell>
       <TableCell className="py-1">

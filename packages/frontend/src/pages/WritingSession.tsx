@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Check, X, ArrowRight, PencilLine } from 'lucide-react'
+import { ArrowLeft, Check, X, ArrowRight, PencilLine, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingCards } from '@/components/review/LoadingCards'
+import { useAuth } from '@/contexts/AuthContext'
+import { apiClient } from '@/lib/api'
 import {
   useWritingQueue,
   useWritingSession,
@@ -188,9 +190,15 @@ function FeedbackDisplay({
 function WritingComplete({
   correctCount,
   totalCount,
+  canCompleteMore,
+  onCompleteMore,
+  isLoadingMore,
 }: {
   correctCount: number
   totalCount: number
+  canCompleteMore: boolean
+  onCompleteMore: () => void
+  isLoadingMore: boolean
 }) {
   const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0
 
@@ -208,6 +216,16 @@ function WritingComplete({
         <Button asChild variant="outline">
           <Link to="/">Back to Home</Link>
         </Button>
+        {canCompleteMore && (
+          <Button onClick={onCompleteMore} disabled={isLoadingMore}>
+            {isLoadingMore ? (
+              <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="mr-2 h-4 w-4" />
+            )}
+            Complete More
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -231,9 +249,11 @@ function EmptyState() {
 
 export function WritingSession() {
   const { data, isLoading } = useWritingQueue()
+  const { token } = useAuth()
   const session = useWritingSession(data?.exercises, !isLoading && !!data)
   const submitWriting = useSubmitWriting()
   const exerciseStartRef = useRef(Date.now())
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   // Reset timer when exercise changes
   useEffect(() => {
@@ -263,6 +283,19 @@ export function WritingSession() {
     },
     [session, submitWriting]
   )
+
+  const handleCompleteMore = useCallback(async () => {
+    if (!token) return
+    setIsLoadingMore(true)
+    try {
+      const result = await apiClient.getWritingQueue(token)
+      if (result.exercises.length > 0) {
+        session.loadMore(result.exercises)
+      }
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [token, session])
 
   // Loading state
   if (isLoading || !data) {
@@ -294,6 +327,9 @@ export function WritingSession() {
           <WritingComplete
             correctCount={session.correctCount}
             totalCount={session.totalCount}
+            canCompleteMore={data?.stats?.can_complete_more ?? false}
+            onCompleteMore={handleCompleteMore}
+            isLoadingMore={isLoadingMore}
           />
         </div>
       </div>

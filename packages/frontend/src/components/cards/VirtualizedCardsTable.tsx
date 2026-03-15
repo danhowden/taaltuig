@@ -9,6 +9,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { Pencil, Trash2 } from 'lucide-react'
+import { CardExercisesPopover } from '@/components/cards/CardExercisesPopover'
 import type { Card } from '@/types'
 
 interface VirtualizedCardsTableProps {
@@ -68,6 +69,7 @@ export function VirtualizedCardsTable({
         <div className="w-[180px] flex-shrink-0 px-2">Back</div>
         <div className="w-[120px] flex-shrink-0 px-2">Category</div>
         <div className="w-[100px] flex-shrink-0 px-2">Insights</div>
+        <div className="w-[70px] flex-shrink-0 px-2">Exercises</div>
         <div className="w-[70px] flex-shrink-0 px-2">Source</div>
         <div className="w-[60px] flex-shrink-0 px-2">Actions</div>
       </div>
@@ -152,6 +154,9 @@ export function VirtualizedCardsTable({
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
+                </div>
+                <div className="w-[70px] flex-shrink-0 px-2">
+                  <CardExercisesPopover cardId={card.card_id} />
                 </div>
                 <div className="w-[70px] flex-shrink-0 px-2 text-muted-foreground">
                   {card.source || 'manual'}

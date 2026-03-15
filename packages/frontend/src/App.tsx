@@ -13,6 +13,7 @@ import { CardsPage } from '@/pages/CardsPage'
 import { DebugPage } from '@/pages/DebugPage'
 import { InsightsReviewPage } from '@/pages/InsightsReviewPage'
 import { WritingSession } from '@/pages/WritingSession'
+import { ExerciseAdminPage } from '@/pages/ExerciseAdminPage'
 import { Toaster } from '@/components/ui/toaster'
 import { AppLayout } from '@/components/AppLayout'
 
@@ -88,6 +89,14 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <WritingSession />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/writing/admin"
+                    element={
+                      <ErrorBoundary>
+                        <ExerciseAdminPage />
                       </ErrorBoundary>
                     }
                   />

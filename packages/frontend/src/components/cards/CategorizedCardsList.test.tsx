@@ -3,6 +3,10 @@ import { render, screen } from '@testing-library/react'
 import { CategorizedCardsList } from './CategorizedCardsList'
 import type { Card } from '@/types'
 
+vi.mock('@/components/cards/CardExercisesPopover', () => ({
+  CardExercisesPopover: () => <span>-</span>,
+}))
+
 const mockCards: Card[] = [
   {
     id: 'CARD#1',
