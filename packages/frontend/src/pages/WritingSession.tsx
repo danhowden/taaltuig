@@ -251,12 +251,8 @@ export function WritingSession() {
       submitWriting.mutate(
         {
           exercise_id: session.currentExercise.exercise_id,
-          exercise_type: session.currentExercise.type,
           user_answer: answer,
-          reference_answer: session.currentExercise.reference_answer,
-          alternatives: session.currentExercise.alternatives,
           duration_ms: durationMs,
-          card_id: session.currentExercise.card_id,
         },
         {
           onSuccess: (result) => {

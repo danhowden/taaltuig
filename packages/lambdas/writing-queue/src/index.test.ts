@@ -1,12 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const mockGetWritingQueue = vi.fn()
+const {
+  mockGetSettings,
+  mockCountWritingAttemptsToday,
+  mockGetExercisePoolCount,
+  mockGetExercisePool,
+  mockMarkExercisesServed,
+} = vi.hoisted(() => ({
+  mockGetSettings: vi.fn(),
+  mockCountWritingAttemptsToday: vi.fn(),
+  mockGetExercisePoolCount: vi.fn(),
+  mockGetExercisePool: vi.fn(),
+  mockMarkExercisesServed: vi.fn(),
+}))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
   return {
     TaaltuigDynamoDBClient: vi.fn().mockImplementation(() => ({
-      getWritingQueue: mockGetWritingQueue,
+      getSettings: mockGetSettings,
+      countWritingAttemptsToday: mockCountWritingAttemptsToday,
+      getExercisePoolCount: mockGetExercisePoolCount,
+      getExercisePool: mockGetExercisePool,
+      markExercisesServed: mockMarkExercisesServed,
     })),
   }
 })
@@ -29,46 +45,80 @@ describe('writing-queue handler', () => {
       queryStringParameters: null,
     }) as unknown as APIGatewayProxyEventV2
 
-  it('should return writing exercises and stats', async () => {
-    mockGetWritingQueue.mockResolvedValue({
-      exercises: [
-        {
-          exercise_id: 'card-linked:c1:translation',
-          type: 'translation',
-          prompt: 'the cat',
-          reference_answer: 'de kat',
-          alternatives: [],
-          card_id: 'c1',
-        },
-      ],
-      stats: {
-        total_available: 5,
-        exercises_today: 2,
-        exercises_remaining: 8,
+  const defaultSettings = {
+    writing_session_enabled: true,
+    writing_exercises_per_day: 10,
+  }
+
+  it('should return exercises from pool', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(2)
+    mockGetExercisePoolCount.mockResolvedValue(15)
+    mockGetExercisePool.mockResolvedValue([
+      {
+        exercise_id: 'ex-1',
+        type: 'translation',
+        prompt: 'I walk to the store',
+        reference_answer: 'Ik loop naar de winkel',
+        alternatives: ['Ik wandel naar de winkel'],
+        grammar_focus: 'present tense',
+        target_vocabulary: ['card-1', 'card-2'],
+        status: 'pending',
+        priority: 'normal',
       },
-    })
+    ])
+    mockMarkExercisesServed.mockResolvedValue(undefined)
 
     const result = await handler(makeEvent('user-123'))
 
     expect(result.statusCode).toBe(200)
     const body = JSON.parse(result.body as string)
     expect(body.exercises).toHaveLength(1)
+    expect(body.exercises[0].exercise_id).toBe('ex-1')
     expect(body.exercises[0].type).toBe('translation')
+    expect(body.exercises[0].prompt).toBe('I walk to the store')
     expect(body.stats.exercises_remaining).toBe(8)
-    expect(mockGetWritingQueue).toHaveBeenCalledWith('user-123')
+    expect(body.stats.pool_size).toBe(15)
+    expect(body.stats.can_complete_more).toBe(true)
+    expect(mockMarkExercisesServed).toHaveBeenCalledWith('user-123', ['ex-1'])
   })
 
-  it('should return empty queue when no exercises available', async () => {
-    mockGetWritingQueue.mockResolvedValue({
-      exercises: [],
-      stats: { total_available: 0, exercises_today: 0, exercises_remaining: 0 },
-    })
+  it('should return empty when writing disabled', async () => {
+    mockGetSettings.mockResolvedValue({ ...defaultSettings, writing_session_enabled: false })
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(5)
 
     const result = await handler(makeEvent('user-123'))
 
     expect(result.statusCode).toBe(200)
     const body = JSON.parse(result.body as string)
     expect(body.exercises).toHaveLength(0)
+    expect(mockGetExercisePool).not.toHaveBeenCalled()
+  })
+
+  it('should return empty when daily limit reached', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(10)
+    mockGetExercisePoolCount.mockResolvedValue(5)
+
+    const result = await handler(makeEvent('user-123'))
+
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.exercises).toHaveLength(0)
+    expect(body.stats.exercises_remaining).toBe(0)
+  })
+
+  it('should not mark served when pool is empty', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(0)
+    mockGetExercisePool.mockResolvedValue([])
+
+    const result = await handler(makeEvent('user-123'))
+
+    expect(result.statusCode).toBe(200)
+    expect(mockMarkExercisesServed).not.toHaveBeenCalled()
   })
 
   it('should return 401 when unauthorized', async () => {
@@ -77,7 +127,9 @@ describe('writing-queue handler', () => {
   })
 
   it('should return 500 on error', async () => {
-    mockGetWritingQueue.mockRejectedValue(new Error('DB error'))
+    mockGetSettings.mockRejectedValue(new Error('DB error'))
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(0)
 
     const result = await handler(makeEvent('user-123'))
     expect(result.statusCode).toBe(500)

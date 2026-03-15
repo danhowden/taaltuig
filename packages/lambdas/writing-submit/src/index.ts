@@ -7,6 +7,7 @@ import {
   missingBodyResponse,
   invalidJsonResponse,
   badRequestResponse,
+  notFoundResponse,
   serverErrorResponse,
   jsonResponse,
 } from '@taaltuig/lambda-utils'
@@ -26,6 +27,7 @@ const VALID_EXERCISE_TYPES: ExerciseType[] = [
  * POST /api/writing/submit
  *
  * Submit a writing exercise answer for assessment.
+ * Looks up the exercise from DynamoDB for the reference answer (server-side validation).
  * Returns the assessment result with feedback.
  */
 export async function handler(
@@ -43,34 +45,19 @@ export async function handler(
 
     const {
       exercise_id,
-      exercise_type,
       user_answer,
-      reference_answer,
-      alternatives,
       duration_ms,
-      card_id,
     } = parsed.data as {
       exercise_id: string
-      exercise_type: ExerciseType
       user_answer: string
-      reference_answer: string
-      alternatives?: string[]
       duration_ms: number
-      card_id?: string
     }
 
     // Validate required fields
-    if (!exercise_id || !exercise_type || user_answer === undefined || !reference_answer) {
+    if (!exercise_id || user_answer === undefined) {
       return badRequestResponse(
-        'Missing required fields: exercise_id, exercise_type, user_answer, reference_answer',
+        'Missing required fields: exercise_id, user_answer',
         'MISSING_FIELDS'
-      )
-    }
-
-    if (!VALID_EXERCISE_TYPES.includes(exercise_type)) {
-      return badRequestResponse(
-        `Invalid exercise_type. Must be one of: ${VALID_EXERCISE_TYPES.join(', ')}`,
-        'INVALID_EXERCISE_TYPE'
       )
     }
 
@@ -78,24 +65,39 @@ export async function handler(
       return badRequestResponse('duration_ms must be >= 0', 'INVALID_DURATION')
     }
 
+    // Look up the exercise from DynamoDB (server-side reference answer)
+    const exercise = await dbClient.getExercise(userId, exercise_id)
+    if (!exercise) {
+      return notFoundResponse('Exercise not found')
+    }
+
+    if (!VALID_EXERCISE_TYPES.includes(exercise.type)) {
+      return badRequestResponse(
+        `Invalid exercise_type. Must be one of: ${VALID_EXERCISE_TYPES.join(', ')}`,
+        'INVALID_EXERCISE_TYPE'
+      )
+    }
+
     // Create the attempt (assessment happens inside createWritingAttempt)
     const attempt = await dbClient.createWritingAttempt(
       userId,
-      exercise_id,
-      exercise_type,
+      exercise.exercise_id,
+      exercise.type,
       user_answer,
-      reference_answer,
-      alternatives || [],
-      duration_ms,
-      card_id
+      exercise.reference_answer,
+      exercise.alternatives,
+      duration_ms
     )
+
+    // Mark exercise as completed
+    await dbClient.markExerciseCompleted(userId, exercise_id)
 
     return jsonResponse({
       correct: attempt.score > 0,
       grade: attempt.score,
       feedback: attempt.feedback,
       match_type: attempt.match_type,
-      reference_answer,
+      reference_answer: exercise.reference_answer,
     })
   } catch (error) {
     console.error('Error in writingSubmit:', error)

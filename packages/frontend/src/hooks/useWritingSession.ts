@@ -111,12 +111,8 @@ export function useSubmitWriting() {
     SubmitWritingResponse,
     {
       exercise_id: string
-      exercise_type: WritingExercise['type']
       user_answer: string
-      reference_answer: string
-      alternatives?: string[]
       duration_ms: number
-      card_id?: string
     }
   >({
     mutationFn: async (data) => {

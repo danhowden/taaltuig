@@ -482,6 +482,33 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const writingGenerateLambda = new lambda.Function(
+      this,
+      'WritingGenerateFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-writing-generate',
+        description: 'Generate writing exercises from vocabulary via AI',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/writing-generate/dist')
+        ),
+        timeout: cdk.Duration.seconds(60),
+        memorySize: 256,
+      }
+    )
+
+    // Grant Bedrock permissions for exercise generation
+    writingGenerateLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock:InvokeModel'],
+        resources: [
+          'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+          `arn:aws:bedrock:*:${this.account}:inference-profile/*`,
+        ],
+      })
+    )
+
     // ============================================================================
     // ANKI IMPORT LAMBDAS
     // ============================================================================
@@ -569,6 +596,7 @@ export class ApiStack extends cdk.Stack {
       clearInsightsLambda,
       writingQueueLambda,
       writingSubmitLambda,
+      writingGenerateLambda,
     ]
 
     // Import the DynamoDB table from the database stack
@@ -835,6 +863,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'WritingSubmitIntegration',
         writingSubmitLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/writing/generate',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'WritingGenerateIntegration',
+        writingGenerateLambda
       ),
       authorizer: jwtAuthorizer,
     })

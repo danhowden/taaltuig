@@ -1,12 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const mockCreateWritingAttempt = vi.fn()
+const { mockCreateWritingAttempt, mockGetExercise, mockMarkExerciseCompleted } = vi.hoisted(() => ({
+  mockCreateWritingAttempt: vi.fn(),
+  mockGetExercise: vi.fn(),
+  mockMarkExerciseCompleted: vi.fn(),
+}))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
   return {
     TaaltuigDynamoDBClient: vi.fn().mockImplementation(() => ({
       createWritingAttempt: mockCreateWritingAttempt,
+      getExercise: mockGetExercise,
+      markExerciseCompleted: mockMarkExerciseCompleted,
     })),
   }
 })
@@ -32,22 +38,30 @@ describe('writing-submit handler', () => {
       body: body ? JSON.stringify(body) : undefined,
     }) as unknown as APIGatewayProxyEventV2
 
+  const mockExercise = {
+    exercise_id: 'ex-1',
+    type: 'translation',
+    status: 'served',
+    prompt: 'I walk to the store',
+    reference_answer: 'Ik loop naar de winkel',
+    alternatives: ['Ik wandel naar de winkel'],
+    target_vocabulary: ['card-1', 'card-2'],
+  }
+
   it('should assess and return correct answer result', async () => {
+    mockGetExercise.mockResolvedValue(mockExercise)
     mockCreateWritingAttempt.mockResolvedValue({
       score: 3,
       feedback: 'Correct!',
       match_type: 'exact',
     })
+    mockMarkExerciseCompleted.mockResolvedValue(undefined)
 
     const result = await handler(
       makeEvent('user-123', {
-        exercise_id: 'card-linked:c1:translation',
-        exercise_type: 'translation',
-        user_answer: 'de kat',
-        reference_answer: 'de kat',
-        alternatives: [],
+        exercise_id: 'ex-1',
+        user_answer: 'Ik loop naar de winkel',
         duration_ms: 5000,
-        card_id: 'c1',
       })
     )
 
@@ -57,32 +71,33 @@ describe('writing-submit handler', () => {
     expect(body.grade).toBe(3)
     expect(body.feedback).toBe('Correct!')
     expect(body.match_type).toBe('exact')
+    expect(body.reference_answer).toBe('Ik loop naar de winkel')
+    expect(mockGetExercise).toHaveBeenCalledWith('user-123', 'ex-1')
     expect(mockCreateWritingAttempt).toHaveBeenCalledWith(
       'user-123',
-      'card-linked:c1:translation',
+      'ex-1',
       'translation',
-      'de kat',
-      'de kat',
-      [],
-      5000,
-      'c1'
+      'Ik loop naar de winkel',
+      'Ik loop naar de winkel',
+      ['Ik wandel naar de winkel'],
+      5000
     )
+    expect(mockMarkExerciseCompleted).toHaveBeenCalledWith('user-123', 'ex-1')
   })
 
   it('should return incorrect answer result', async () => {
+    mockGetExercise.mockResolvedValue(mockExercise)
     mockCreateWritingAttempt.mockResolvedValue({
       score: 0,
-      feedback: 'The correct answer is: "de kat"',
+      feedback: 'The correct answer is: "Ik loop naar de winkel"',
       match_type: 'wrong',
     })
+    mockMarkExerciseCompleted.mockResolvedValue(undefined)
 
     const result = await handler(
       makeEvent('user-123', {
-        exercise_id: 'card-linked:c1:translation',
-        exercise_type: 'translation',
+        exercise_id: 'ex-1',
         user_answer: 'het hond',
-        reference_answer: 'de kat',
-        alternatives: [],
         duration_ms: 3000,
       })
     )
@@ -91,6 +106,20 @@ describe('writing-submit handler', () => {
     const body = JSON.parse(result.body as string)
     expect(body.correct).toBe(false)
     expect(body.grade).toBe(0)
+  })
+
+  it('should return 404 when exercise not found', async () => {
+    mockGetExercise.mockResolvedValue(null)
+
+    const result = await handler(
+      makeEvent('user-123', {
+        exercise_id: 'nonexistent',
+        user_answer: 'test',
+        duration_ms: 1000,
+      })
+    )
+
+    expect(result.statusCode).toBe(404)
   })
 
   it('should return 401 when unauthorized', async () => {
@@ -107,7 +136,7 @@ describe('writing-submit handler', () => {
     const result = await handler(
       makeEvent('user-123', {
         exercise_id: 'test',
-        // missing exercise_type, user_answer, reference_answer
+        // missing user_answer
       })
     )
 
@@ -116,29 +145,13 @@ describe('writing-submit handler', () => {
     expect(body.code).toBe('MISSING_FIELDS')
   })
 
-  it('should return 400 for invalid exercise type', async () => {
-    const result = await handler(
-      makeEvent('user-123', {
-        exercise_id: 'test',
-        exercise_type: 'invalid_type',
-        user_answer: 'answer',
-        reference_answer: 'ref',
-        duration_ms: 1000,
-      })
-    )
-
-    expect(result.statusCode).toBe(400)
-    const body = JSON.parse(result.body as string)
-    expect(body.code).toBe('INVALID_EXERCISE_TYPE')
-  })
-
   it('should return 400 for invalid duration', async () => {
+    mockGetExercise.mockResolvedValue(mockExercise)
+
     const result = await handler(
       makeEvent('user-123', {
-        exercise_id: 'test',
-        exercise_type: 'translation',
+        exercise_id: 'ex-1',
         user_answer: 'answer',
-        reference_answer: 'ref',
         duration_ms: -1,
       })
     )
@@ -149,14 +162,12 @@ describe('writing-submit handler', () => {
   })
 
   it('should return 500 on error', async () => {
-    mockCreateWritingAttempt.mockRejectedValue(new Error('DB error'))
+    mockGetExercise.mockRejectedValue(new Error('DB error'))
 
     const result = await handler(
       makeEvent('user-123', {
         exercise_id: 'test',
-        exercise_type: 'translation',
-        user_answer: 'de kat',
-        reference_answer: 'de kat',
+        user_answer: 'answer',
         duration_ms: 1000,
       })
     )

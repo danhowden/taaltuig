@@ -121,16 +121,42 @@ export interface ReviewHistory {
 
 // Writing exercise types
 export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
+export type ExerciseStatus = 'pending' | 'validated' | 'served' | 'completed' | 'expired' | 'rejected'
+export type ExerciseSource = 'auto' | 'user_requested'
+export type ExercisePriority = 'normal' | 'high'
 export type AssessmentMatchType = 'exact' | 'alternative' | 'fuzzy' | 'wrong'
 
+// Stored exercise entity in DynamoDB
 export interface WritingExercise {
+  PK: string // USER#<user_id>
+  SK: string // EXERCISE#<exercise_id>
+  GSI2PK: string // USER#<user_id>#WRITING_POOL
+  GSI2SK: string // <status>#<generated_at>
   exercise_id: string
   type: ExerciseType
+  status: ExerciseStatus
+  source: ExerciseSource
+  priority: ExercisePriority
   prompt: string // What the user sees (e.g., English sentence to translate)
   reference_answer: string // Correct Dutch answer
   alternatives: string[] // Other valid answers
-  card_id?: string // Source card for card-linked exercises
-  grammar_rules?: string[] // For AI grading context
+  target_vocabulary: string[] // card_ids used as generation input
+  grammar_focus?: string // e.g., "past tense", "word order"
+  cefr_level?: string
+  generated_at: string
+  served_at?: string
+  completed_at?: string
+}
+
+// Denormalized link for "show exercises for this card" queries
+export interface CardExerciseLink {
+  PK: string // USER#<user_id>
+  SK: string // CARD_EXERCISE#<card_id>#<exercise_id>
+  exercise_id: string
+  exercise_type: ExerciseType
+  exercise_status: ExerciseStatus
+  prompt: string // denormalized for display without join
+  generated_at: string
 }
 
 export interface WritingAttempt {
@@ -150,7 +176,6 @@ export interface WritingAttempt {
   duration_ms: number
   flagged: boolean
   flagged_reason?: string
-  card_id?: string
   created_at: string
 }
 

@@ -343,7 +343,8 @@ export interface WritingExercise {
   prompt: string
   reference_answer: string
   alternatives: string[]
-  card_id?: string
+  grammar_focus?: string
+  target_vocabulary?: string[]
 }
 
 export interface WritingQueueResponse {
@@ -352,17 +353,15 @@ export interface WritingQueueResponse {
     total_available: number
     exercises_today: number
     exercises_remaining: number
+    pool_size: number
+    can_complete_more?: boolean
   }
 }
 
 export interface SubmitWritingRequest {
   exercise_id: string
-  exercise_type: ExerciseType
   user_answer: string
-  reference_answer: string
-  alternatives?: string[]
   duration_ms: number
-  card_id?: string
 }
 
 export interface SubmitWritingResponse {

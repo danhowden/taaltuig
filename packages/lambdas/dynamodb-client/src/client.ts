@@ -7,6 +7,7 @@ import {
   QueryCommandInput,
   UpdateCommand,
   DeleteCommand,
+  BatchWriteCommand,
 } from '@aws-sdk/lib-dynamodb'
 import type {
   User,
@@ -16,6 +17,7 @@ import type {
   ReviewHistory,
   WritingAttempt,
   WritingExercise,
+  CardExerciseLink,
   ExerciseType,
   State,
   Grade,
@@ -1550,137 +1552,6 @@ export class TaaltuigDynamoDBClient {
   // ============================================================================
 
   /**
-   * Get today's review history to find cards the user has reviewed.
-   * Returns unique card IDs with their grades, prioritizing cards graded Again/Hard.
-   */
-  async getRecentlyReviewedCardIds(userId: string): Promise<
-    { card_id: string; review_item_id: string; grade: Grade; front: string; back: string }[]
-  > {
-    const today = new Date().toISOString().split('T')[0]
-
-    const response = await this.client.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        IndexName: 'GSI2',
-        KeyConditionExpression: 'GSI2PK = :pk',
-        ExpressionAttributeValues: {
-          ':pk': `USER#${userId}#HISTORY#${today}`,
-        },
-      })
-    )
-
-    if (!response.Items || response.Items.length === 0) {
-      return []
-    }
-
-    const historyItems = response.Items as ReviewHistory[]
-
-    // Deduplicate by card_id — take the worst grade per card (lowest = hardest)
-    // We need to look up the card data from the review items
-    const cardGrades = new Map<string, { grade: Grade; review_item_id: string }>()
-    for (const item of historyItems) {
-      const existing = cardGrades.get(item.review_item_id)
-      if (!existing || item.grade < existing.grade) {
-        cardGrades.set(item.review_item_id, {
-          grade: item.grade,
-          review_item_id: item.review_item_id,
-        })
-      }
-    }
-
-    // Fetch review items to get card content
-    const reviewItemIds = Array.from(cardGrades.keys())
-    const results: { card_id: string; review_item_id: string; grade: Grade; front: string; back: string }[] = []
-    const seenCardIds = new Set<string>()
-
-    for (const riId of reviewItemIds) {
-      const ri = await this.getReviewItem(userId, riId)
-      if (ri && !seenCardIds.has(ri.card_id)) {
-        seenCardIds.add(ri.card_id)
-        results.push({
-          card_id: ri.card_id,
-          review_item_id: riId,
-          grade: cardGrades.get(riId)!.grade,
-          front: ri.front,
-          back: ri.back,
-        })
-      }
-    }
-
-    return results
-  }
-
-  /**
-   * Build the writing exercise queue from recently reviewed cards.
-   * Generates translation exercises (show English, type Dutch).
-   * Prioritizes cards the user found difficult (Again/Hard grades).
-   */
-  async getWritingQueue(userId: string): Promise<{
-    exercises: WritingExercise[]
-    stats: {
-      total_available: number
-      exercises_today: number
-      exercises_remaining: number
-    }
-  }> {
-    const [settings, recentCards, attemptsToday] = await Promise.all([
-      this.getSettings(userId),
-      this.getRecentlyReviewedCardIds(userId),
-      this.countWritingAttemptsToday(userId),
-    ])
-
-    if (!settings) {
-      throw new Error('User settings not found')
-    }
-
-    if (settings.writing_session_enabled === false) {
-      return {
-        exercises: [],
-        stats: { total_available: 0, exercises_today: attemptsToday, exercises_remaining: 0 },
-      }
-    }
-
-    const dailyLimit = settings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day
-    const remaining = Math.max(0, dailyLimit - attemptsToday)
-
-    if (remaining === 0 || recentCards.length === 0) {
-      return {
-        exercises: [],
-        stats: {
-          total_available: recentCards.length,
-          exercises_today: attemptsToday,
-          exercises_remaining: 0,
-        },
-      }
-    }
-
-    // Sort: Again (0) and Hard (2) first, then Good (3) and Easy (4)
-    const sorted = [...recentCards].sort((a, b) => a.grade - b.grade)
-
-    // Take up to remaining limit
-    const selected = sorted.slice(0, remaining)
-
-    // Generate translation exercises: show English (back), user types Dutch (front)
-    const exercises: WritingExercise[] = selected.map((card) => ({
-      exercise_id: `card-linked:${card.card_id}:translation`,
-      type: 'translation' as ExerciseType,
-      prompt: card.back, // English — what the user sees
-      reference_answer: card.front, // Dutch — what the user must type
-      alternatives: [], // Could be expanded later
-      card_id: card.card_id,
-    }))
-
-    return {
-      exercises,
-      stats: {
-        total_available: recentCards.length,
-        exercises_today: attemptsToday,
-        exercises_remaining: remaining,
-      },
-    }
-  }
-
-  /**
    * Store a writing attempt and return the assessment result.
    */
   async createWritingAttempt(
@@ -1690,8 +1561,7 @@ export class TaaltuigDynamoDBClient {
     userAnswer: string,
     referenceAnswer: string,
     alternatives: string[],
-    durationMs: number,
-    cardId?: string
+    durationMs: number
   ): Promise<WritingAttempt> {
     const assessor = new TranslationAssessor()
     const assessment = assessor.assess(userAnswer, referenceAnswer, alternatives)
@@ -1715,7 +1585,6 @@ export class TaaltuigDynamoDBClient {
       assessment_mode_used: 'deterministic',
       duration_ms: durationMs,
       flagged: false,
-      card_id: cardId,
       created_at: timestamp,
     }
 
@@ -1748,5 +1617,309 @@ export class TaaltuigDynamoDBClient {
     )
 
     return response.Count || 0
+  }
+
+  // ============================================================================
+  // STORED EXERCISE OPERATIONS
+  // ============================================================================
+
+  /**
+   * Store a batch of AI-generated exercises and their card-exercise links.
+   * DynamoDB BatchWrite supports max 25 items per request.
+   */
+  async storeExercises(userId: string, exercises: WritingExercise[]): Promise<void> {
+    // Build all items: exercises + card-exercise links
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allItems: any[] = []
+
+    for (const exercise of exercises) {
+      allItems.push(exercise)
+
+      // Create a card-exercise link for each target vocabulary card
+      for (const cardId of exercise.target_vocabulary) {
+        const link: CardExerciseLink = {
+          PK: `USER#${userId}`,
+          SK: `CARD_EXERCISE#${cardId}#${exercise.exercise_id}`,
+          exercise_id: exercise.exercise_id,
+          exercise_type: exercise.type,
+          exercise_status: exercise.status,
+          prompt: exercise.prompt,
+          generated_at: exercise.generated_at,
+        }
+        allItems.push(link)
+      }
+    }
+
+    // BatchWrite in chunks of 25
+    for (let i = 0; i < allItems.length; i += 25) {
+      const chunk = allItems.slice(i, i + 25)
+      await this.client.send(
+        new BatchWriteCommand({
+          RequestItems: {
+            [this.tableName]: chunk.map((item: Record<string, unknown>) => ({
+              PutRequest: { Item: item },
+            })),
+          },
+        })
+      )
+    }
+  }
+
+  /**
+   * Get pending/validated exercises from the user's exercise pool.
+   * Returns exercises ordered by status (pending first), then generated_at.
+   * High-priority (user-requested) exercises are shuffled into the first 3 positions.
+   */
+  async getExercisePool(userId: string, limit: number): Promise<WritingExercise[]> {
+    // Query pending exercises
+    const pendingResponse = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+          ':status': 'pending#',
+        },
+        Limit: limit,
+      })
+    )
+
+    // Also query validated exercises
+    const validatedResponse = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+          ':status': 'validated#',
+        },
+        Limit: limit,
+      })
+    )
+
+    const allExercises = [
+      ...((pendingResponse.Items as WritingExercise[]) || []),
+      ...((validatedResponse.Items as WritingExercise[]) || []),
+    ].slice(0, limit)
+
+    // Shuffle high-priority exercises into first 3 positions
+    const highPriority = allExercises.filter((e) => e.priority === 'high')
+    const normal = allExercises.filter((e) => e.priority !== 'high')
+
+    if (highPriority.length === 0) {
+      return allExercises
+    }
+
+    const result = [...normal]
+    for (const hp of highPriority) {
+      const pos = Math.floor(Math.random() * Math.min(3, result.length + 1))
+      result.splice(pos, 0, hp)
+    }
+
+    return result.slice(0, limit)
+  }
+
+  /**
+   * Get a single exercise by ID.
+   */
+  async getExercise(userId: string, exerciseId: string): Promise<WritingExercise | null> {
+    const response = await this.client.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `EXERCISE#${exerciseId}`,
+        },
+      })
+    )
+
+    return (response.Item as WritingExercise) || null
+  }
+
+  /**
+   * Get exercises linked to a specific card.
+   */
+  async getExercisesForCard(userId: string, cardId: string): Promise<CardExerciseLink[]> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}`,
+          ':sk': `CARD_EXERCISE#${cardId}#`,
+        },
+      })
+    )
+
+    return (response.Items as CardExerciseLink[]) || []
+  }
+
+  /**
+   * Mark exercises as served (batch update).
+   */
+  async markExercisesServed(userId: string, exerciseIds: string[]): Promise<void> {
+    const timestamp = new Date().toISOString()
+
+    for (const exerciseId of exerciseIds) {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: `EXERCISE#${exerciseId}`,
+          },
+          UpdateExpression: 'SET #status = :status, served_at = :served_at, GSI2SK = :gsi2sk',
+          ExpressionAttributeNames: { '#status': 'status' },
+          ExpressionAttributeValues: {
+            ':status': 'served',
+            ':served_at': timestamp,
+            ':gsi2sk': `served#${timestamp}`,
+          },
+        })
+      )
+    }
+  }
+
+  /**
+   * Mark an exercise as completed and update its card-exercise link.
+   */
+  async markExerciseCompleted(userId: string, exerciseId: string): Promise<void> {
+    const timestamp = new Date().toISOString()
+
+    // Update the exercise status
+    const exercise = await this.getExercise(userId, exerciseId)
+    if (!exercise) return
+
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `EXERCISE#${exerciseId}`,
+        },
+        UpdateExpression: 'SET #status = :status, completed_at = :completed_at, GSI2SK = :gsi2sk',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':status': 'completed',
+          ':completed_at': timestamp,
+          ':gsi2sk': `completed#${timestamp}`,
+        },
+      })
+    )
+
+    // Update card-exercise links
+    for (const cardId of exercise.target_vocabulary) {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: `CARD_EXERCISE#${cardId}#${exerciseId}`,
+          },
+          UpdateExpression: 'SET exercise_status = :status',
+          ExpressionAttributeValues: {
+            ':status': 'completed',
+          },
+        })
+      )
+    }
+  }
+
+  /**
+   * Count pending exercises in the pool.
+   */
+  async getExercisePoolCount(userId: string): Promise<number> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+          ':status': 'pending#',
+        },
+        Select: 'COUNT',
+      })
+    )
+
+    return response.Count || 0
+  }
+
+  /**
+   * Get vocabulary cards suitable for exercise generation.
+   * Queries ReviewItems across all states, weighted by recency and difficulty.
+   * Returns deduplicated cards with their review metadata.
+   */
+  async getVocabularyForGeneration(userId: string): Promise<
+    { card_id: string; front: string; back: string; state: State; ease_factor: number; last_reviewed?: string; due_date: string }[]
+  > {
+    // Query review items across all states
+    const states: State[] = ['REVIEW', 'LEARNING', 'RELEARNING', 'NEW']
+    const allItems: ReviewItem[] = []
+
+    for (const state of states) {
+      const response = await this.client.send(
+        new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'GSI1',
+          KeyConditionExpression: 'GSI1PK = :pk',
+          ExpressionAttributeValues: {
+            ':pk': `USER#${userId}#${state}`,
+          },
+        })
+      )
+      allItems.push(...((response.Items as ReviewItem[]) || []))
+    }
+
+    // Deduplicate by card_id (forward and reverse review items point to same card)
+    const seenCardIds = new Set<string>()
+    const results: { card_id: string; front: string; back: string; state: State; ease_factor: number; last_reviewed?: string; due_date: string }[] = []
+
+    for (const item of allItems) {
+      if (seenCardIds.has(item.card_id)) continue
+      seenCardIds.add(item.card_id)
+
+      results.push({
+        card_id: item.card_id,
+        front: item.front,
+        back: item.back,
+        state: item.state,
+        ease_factor: item.ease_factor,
+        last_reviewed: item.last_reviewed,
+        due_date: item.due_date,
+      })
+    }
+
+    return results
+  }
+
+  /**
+   * Get card IDs already used in recent pending exercises (to avoid repetition).
+   */
+  async getRecentExerciseCardIds(userId: string): Promise<Set<string>> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#WRITING_POOL`,
+          ':status': 'pending#',
+        },
+        ProjectionExpression: 'target_vocabulary',
+      })
+    )
+
+    const cardIds = new Set<string>()
+    for (const item of (response.Items || [])) {
+      const exercise = item as WritingExercise
+      for (const cardId of exercise.target_vocabulary) {
+        cardIds.add(cardId)
+      }
+    }
+
+    return cardIds
   }
 }

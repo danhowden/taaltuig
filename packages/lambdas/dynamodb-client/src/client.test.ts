@@ -16,6 +16,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
   PutCommand: vi.fn((params) => params),
   UpdateCommand: vi.fn((params) => params),
   DeleteCommand: vi.fn((params) => params),
+  BatchWriteCommand: vi.fn((params) => params),
 }))
 
 vi.mock('@aws-sdk/client-dynamodb', () => ({
@@ -1454,184 +1455,6 @@ describe('TaaltuigDynamoDBClient', () => {
     })
   })
 
-  describe('getRecentlyReviewedCardIds', () => {
-    it('should return empty array when no history', async () => {
-      mockSend.mockResolvedValueOnce({ Items: [] })
-
-      const result = await client.getRecentlyReviewedCardIds('user-123')
-
-      expect(result).toEqual([])
-    })
-
-    it('should return cards with grades from review history', async () => {
-      // GSI2 query returns history items
-      mockSend.mockResolvedValueOnce({
-        Items: [
-          { review_item_id: 'ri-1', grade: 3, card_id: 'c-1' },
-          { review_item_id: 'ri-2', grade: 0, card_id: 'c-2' },
-        ],
-      })
-
-      // getReviewItem for ri-1
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-1', front: 'huis', back: 'house', review_item_id: 'ri-1' },
-      })
-
-      // getReviewItem for ri-2
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-2', front: 'kat', back: 'cat', review_item_id: 'ri-2' },
-      })
-
-      const result = await client.getRecentlyReviewedCardIds('user-123')
-
-      expect(result).toHaveLength(2)
-      expect(result[0]).toEqual({
-        card_id: 'c-1',
-        review_item_id: 'ri-1',
-        grade: 3,
-        front: 'huis',
-        back: 'house',
-      })
-      expect(result[1]).toEqual({
-        card_id: 'c-2',
-        review_item_id: 'ri-2',
-        grade: 0,
-        front: 'kat',
-        back: 'cat',
-      })
-    })
-
-    it('should deduplicate cards from the same review item', async () => {
-      // Same review item reviewed multiple times — take worst grade
-      mockSend.mockResolvedValueOnce({
-        Items: [
-          { review_item_id: 'ri-1', grade: 3 },
-          { review_item_id: 'ri-1', grade: 0 },
-        ],
-      })
-
-      // getReviewItem for ri-1
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-1', front: 'huis', back: 'house', review_item_id: 'ri-1' },
-      })
-
-      const result = await client.getRecentlyReviewedCardIds('user-123')
-
-      expect(result).toHaveLength(1)
-      expect(result[0].grade).toBe(0) // Worst grade kept
-    })
-
-    it('should skip review items that are not found', async () => {
-      mockSend.mockResolvedValueOnce({
-        Items: [{ review_item_id: 'ri-1', grade: 3 }],
-      })
-
-      // getReviewItem returns null
-      mockSend.mockResolvedValueOnce({ Item: undefined })
-
-      const result = await client.getRecentlyReviewedCardIds('user-123')
-
-      expect(result).toEqual([])
-    })
-  })
-
-  describe('getWritingQueue', () => {
-    it('should return empty queue when writing is disabled', async () => {
-      // getSettings
-      mockSend.mockResolvedValueOnce({
-        Item: { ...DEFAULT_SETTINGS, writing_session_enabled: false, user_id: 'user-123' },
-      })
-
-      // getRecentlyReviewedCardIds — GSI2 query
-      mockSend.mockResolvedValueOnce({ Items: [] })
-
-      // countWritingAttemptsToday
-      mockSend.mockResolvedValueOnce({ Count: 0 })
-
-      const result = await client.getWritingQueue('user-123')
-
-      expect(result.exercises).toEqual([])
-      expect(result.stats.exercises_remaining).toBe(0)
-    })
-
-    it('should return empty queue when daily limit reached', async () => {
-      // getSettings
-      mockSend.mockResolvedValueOnce({
-        Item: { ...DEFAULT_SETTINGS, writing_exercises_per_day: 5, writing_session_enabled: true, user_id: 'user-123' },
-      })
-
-      // getRecentlyReviewedCardIds — GSI2 query
-      mockSend.mockResolvedValueOnce({
-        Items: [{ review_item_id: 'ri-1', grade: 3 }],
-      })
-
-      // countWritingAttemptsToday
-      mockSend.mockResolvedValueOnce({ Count: 5 })
-
-      // getReviewItem for ri-1 (from getRecentlyReviewedCardIds)
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-1', front: 'huis', back: 'house' },
-      })
-
-      const result = await client.getWritingQueue('user-123')
-
-      expect(result.exercises).toEqual([])
-      expect(result.stats.exercises_remaining).toBe(0)
-      expect(result.stats.exercises_today).toBe(5)
-    })
-
-    it('should generate translation exercises sorted by difficulty', async () => {
-      // getSettings
-      mockSend.mockResolvedValueOnce({
-        Item: { ...DEFAULT_SETTINGS, writing_exercises_per_day: 10, writing_session_enabled: true, user_id: 'user-123' },
-      })
-
-      // getRecentlyReviewedCardIds — GSI2 query
-      mockSend.mockResolvedValueOnce({
-        Items: [
-          { review_item_id: 'ri-1', grade: 3 },
-          { review_item_id: 'ri-2', grade: 0 },
-        ],
-      })
-
-      // countWritingAttemptsToday
-      mockSend.mockResolvedValueOnce({ Count: 2 })
-
-      // getReviewItem for ri-1
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-1', front: 'huis', back: 'house' },
-      })
-
-      // getReviewItem for ri-2
-      mockSend.mockResolvedValueOnce({
-        Item: { card_id: 'c-2', front: 'kat', back: 'cat' },
-      })
-
-      const result = await client.getWritingQueue('user-123')
-
-      expect(result.exercises).toHaveLength(2)
-      // Again (grade 0) should come first
-      expect(result.exercises[0].card_id).toBe('c-2')
-      expect(result.exercises[0].prompt).toBe('cat') // English shown
-      expect(result.exercises[0].reference_answer).toBe('kat') // Dutch expected
-      expect(result.exercises[1].card_id).toBe('c-1')
-      expect(result.stats.exercises_remaining).toBe(8)
-    })
-
-    it('should throw when settings not found', async () => {
-      // getSettings returns null
-      mockSend.mockResolvedValueOnce({ Item: undefined })
-
-      // getRecentlyReviewedCardIds
-      mockSend.mockResolvedValueOnce({ Items: [] })
-
-      // countWritingAttemptsToday
-      mockSend.mockResolvedValueOnce({ Count: 0 })
-
-      await expect(client.getWritingQueue('user-123')).rejects.toThrow('User settings not found')
-    })
-  })
-
   describe('createWritingAttempt', () => {
     it('should create a writing attempt with correct assessment', async () => {
       mockSend.mockResolvedValueOnce({}) // PutCommand
@@ -1643,8 +1466,7 @@ describe('TaaltuigDynamoDBClient', () => {
         'huis',
         'huis',
         [],
-        5000,
-        'c-1'
+        5000
       )
 
       expect(result.user_id).toBe('user-123')
@@ -1655,7 +1477,6 @@ describe('TaaltuigDynamoDBClient', () => {
       expect(result.match_type).toBe('exact')
       expect(result.feedback).toContain('Correct')
       expect(result.assessment_mode_used).toBe('deterministic')
-      expect(result.card_id).toBe('c-1')
       expect(result.PK).toBe('USER#user-123')
       expect(result.SK).toMatch(/^ATTEMPT#/)
       expect(result.GSI2PK).toMatch(/^USER#user-123#WRITING#/)
@@ -1682,7 +1503,294 @@ describe('TaaltuigDynamoDBClient', () => {
 
       expect(result.score).toBe(0)
       expect(result.match_type).toBe('wrong')
-      expect(result.card_id).toBeUndefined()
+    })
+  })
+
+  // ==========================================================================
+  // STORED EXERCISE OPERATIONS
+  // ==========================================================================
+
+  describe('storeExercises', () => {
+    it('should batch write exercises and card-exercise links', async () => {
+      mockSend.mockResolvedValue({})
+
+      const exercises = [
+        {
+          PK: 'USER#user-1',
+          SK: 'EXERCISE#ex-1',
+          GSI2PK: 'USER#user-1#WRITING_POOL',
+          GSI2SK: 'pending#2026-03-15T12:00:00Z',
+          exercise_id: 'ex-1',
+          type: 'translation' as const,
+          status: 'pending' as const,
+          source: 'auto' as const,
+          priority: 'normal' as const,
+          prompt: 'I walk to the store',
+          reference_answer: 'Ik loop naar de winkel',
+          alternatives: [],
+          target_vocabulary: ['card-1', 'card-2'],
+          generated_at: '2026-03-15T12:00:00Z',
+        },
+      ]
+
+      await client.storeExercises('user-1', exercises)
+
+      // 1 exercise + 2 card-exercise links = 3 items in one batch
+      expect(mockSend).toHaveBeenCalledOnce()
+      const batchCall = mockSend.mock.calls[0][0]
+      expect(batchCall.RequestItems['test-table']).toHaveLength(3)
+    })
+
+    it('should chunk large batches into groups of 25', async () => {
+      mockSend.mockResolvedValue({})
+
+      // Create 10 exercises with 2 target cards each = 30 items total
+      const exercises = Array.from({ length: 10 }, (_, i) => ({
+        PK: 'USER#user-1',
+        SK: `EXERCISE#ex-${i}`,
+        GSI2PK: 'USER#user-1#WRITING_POOL',
+        GSI2SK: 'pending#2026-03-15T12:00:00Z',
+        exercise_id: `ex-${i}`,
+        type: 'translation' as const,
+        status: 'pending' as const,
+        source: 'auto' as const,
+        priority: 'normal' as const,
+        prompt: `Prompt ${i}`,
+        reference_answer: `Answer ${i}`,
+        alternatives: [] as string[],
+        target_vocabulary: ['card-1', 'card-2'],
+        generated_at: '2026-03-15T12:00:00Z',
+      }))
+
+      await client.storeExercises('user-1', exercises)
+
+      // 30 items should be split into 2 batches (25 + 5)
+      expect(mockSend).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('getExercisePool', () => {
+    it('should return pending and validated exercises', async () => {
+      // First call: pending exercises
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          {
+            exercise_id: 'ex-1',
+            status: 'pending',
+            priority: 'normal',
+            prompt: 'Test 1',
+          },
+        ],
+      })
+      // Second call: validated exercises
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          {
+            exercise_id: 'ex-2',
+            status: 'validated',
+            priority: 'normal',
+            prompt: 'Test 2',
+          },
+        ],
+      })
+
+      const result = await client.getExercisePool('user-1', 10)
+
+      expect(result).toHaveLength(2)
+      expect(mockSend).toHaveBeenCalledTimes(2)
+    })
+
+    it('should shuffle high-priority exercises into first 3 positions', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'normal-1', priority: 'normal' },
+          { exercise_id: 'normal-2', priority: 'normal' },
+          { exercise_id: 'normal-3', priority: 'normal' },
+          { exercise_id: 'normal-4', priority: 'normal' },
+        ],
+      })
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'high-1', priority: 'high' },
+        ],
+      })
+
+      const result = await client.getExercisePool('user-1', 10)
+
+      // high-1 should be somewhere in the first 3 positions
+      const highIdx = result.findIndex((e) => e.exercise_id === 'high-1')
+      expect(highIdx).toBeLessThan(3)
+      expect(result).toHaveLength(5)
+    })
+
+    it('should respect limit', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: Array.from({ length: 10 }, (_, i) => ({
+          exercise_id: `ex-${i}`,
+          priority: 'normal',
+        })),
+      })
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
+      const result = await client.getExercisePool('user-1', 5)
+      expect(result).toHaveLength(5)
+    })
+  })
+
+  describe('getExercise', () => {
+    it('should return exercise when found', async () => {
+      mockSend.mockResolvedValueOnce({
+        Item: { exercise_id: 'ex-1', prompt: 'Test' },
+      })
+
+      const result = await client.getExercise('user-1', 'ex-1')
+      expect(result).toMatchObject({ exercise_id: 'ex-1' })
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Key: { PK: 'USER#user-1', SK: 'EXERCISE#ex-1' },
+        })
+      )
+    })
+
+    it('should return null when not found', async () => {
+      mockSend.mockResolvedValueOnce({})
+
+      const result = await client.getExercise('user-1', 'nonexistent')
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('getExercisesForCard', () => {
+    it('should return card-exercise links', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'ex-1', exercise_type: 'translation', prompt: 'Test 1' },
+          { exercise_id: 'ex-2', exercise_type: 'fill_blank', prompt: 'Test 2' },
+        ],
+      })
+
+      const result = await client.getExercisesForCard('user-1', 'card-1')
+      expect(result).toHaveLength(2)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+          ExpressionAttributeValues: {
+            ':pk': 'USER#user-1',
+            ':sk': 'CARD_EXERCISE#card-1#',
+          },
+        })
+      )
+    })
+  })
+
+  describe('markExercisesServed', () => {
+    it('should update status for each exercise', async () => {
+      mockSend.mockResolvedValue({})
+
+      await client.markExercisesServed('user-1', ['ex-1', 'ex-2'])
+
+      expect(mockSend).toHaveBeenCalledTimes(2)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Key: { PK: 'USER#user-1', SK: 'EXERCISE#ex-1' },
+          ExpressionAttributeValues: expect.objectContaining({
+            ':status': 'served',
+          }),
+        })
+      )
+    })
+  })
+
+  describe('markExerciseCompleted', () => {
+    it('should update exercise and card-exercise links', async () => {
+      // getExercise call
+      mockSend.mockResolvedValueOnce({
+        Item: {
+          exercise_id: 'ex-1',
+          target_vocabulary: ['card-1', 'card-2'],
+        },
+      })
+      // update exercise
+      mockSend.mockResolvedValueOnce({})
+      // update card-exercise link 1
+      mockSend.mockResolvedValueOnce({})
+      // update card-exercise link 2
+      mockSend.mockResolvedValueOnce({})
+
+      await client.markExerciseCompleted('user-1', 'ex-1')
+
+      expect(mockSend).toHaveBeenCalledTimes(4)
+    })
+
+    it('should do nothing when exercise not found', async () => {
+      mockSend.mockResolvedValueOnce({}) // getExercise returns null
+
+      await client.markExerciseCompleted('user-1', 'nonexistent')
+
+      expect(mockSend).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('getExercisePoolCount', () => {
+    it('should return count of pending exercises', async () => {
+      mockSend.mockResolvedValueOnce({ Count: 15 })
+
+      const result = await client.getExercisePoolCount('user-1')
+
+      expect(result).toBe(15)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          IndexName: 'GSI2',
+          Select: 'COUNT',
+        })
+      )
+    })
+  })
+
+  describe('getVocabularyForGeneration', () => {
+    it('should query all states and deduplicate by card_id', async () => {
+      // REVIEW state
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { card_id: 'c1', front: 'huis', back: 'house', state: 'REVIEW', ease_factor: 2.5, due_date: '2026-03-20', direction: 'forward' },
+          { card_id: 'c1', front: 'house', back: 'huis', state: 'REVIEW', ease_factor: 2.5, due_date: '2026-03-20', direction: 'reverse' },
+        ],
+      })
+      // LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // NEW state
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { card_id: 'c2', front: 'kat', back: 'cat', state: 'NEW', ease_factor: 2.5, due_date: '2026-12-01' },
+        ],
+      })
+
+      const result = await client.getVocabularyForGeneration('user-1')
+
+      expect(result).toHaveLength(2)
+      expect(result[0].card_id).toBe('c1')
+      expect(result[1].card_id).toBe('c2')
+      expect(mockSend).toHaveBeenCalledTimes(4) // 4 states
+    })
+  })
+
+  describe('getRecentExerciseCardIds', () => {
+    it('should return card IDs from pending exercises', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { target_vocabulary: ['card-1', 'card-2'] },
+          { target_vocabulary: ['card-3'] },
+        ],
+      })
+
+      const result = await client.getRecentExerciseCardIds('user-1')
+
+      expect(result).toBeInstanceOf(Set)
+      expect(result.size).toBe(3)
+      expect(result.has('card-1')).toBe(true)
+      expect(result.has('card-3')).toBe(true)
     })
   })
 })
