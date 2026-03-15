@@ -43,22 +43,34 @@ function ProgressBar({
   )
 }
 
-function WritingInput({
-  exercise,
+interface ExerciseInputProps {
+  exercise: WritingExercise
+  onSubmit: (answer: string) => void
+  isSubmitting: boolean
+}
+
+function TextInput({
+  label,
+  prompt,
+  placeholder,
+  exerciseId,
   onSubmit,
   isSubmitting,
 }: {
-  exercise: WritingExercise
+  label: string
+  prompt: React.ReactNode
+  placeholder: string
+  exerciseId: string
   onSubmit: (answer: string) => void
   isSubmitting: boolean
 }) {
   const [answer, setAnswer] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus input on mount and when exercise changes
   useEffect(() => {
+    setAnswer('')
     inputRef.current?.focus()
-  }, [exercise.exercise_id])
+  }, [exerciseId])
 
   const handleSubmit = useCallback(() => {
     if (answer.trim() && !isSubmitting) {
@@ -80,9 +92,9 @@ function WritingInput({
     <div className="mx-auto max-w-2xl w-full space-y-8">
       <div className="text-center space-y-2">
         <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          Translate to Dutch
+          {label}
         </p>
-        <p className="text-2xl font-semibold">{exercise.prompt}</p>
+        <div className="text-2xl font-semibold">{prompt}</div>
       </div>
 
       <div className="space-y-4">
@@ -92,7 +104,7 @@ function WritingInput({
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your answer in Dutch..."
+          placeholder={placeholder}
           disabled={isSubmitting}
           autoComplete="off"
           autoCorrect="off"
@@ -110,6 +122,139 @@ function WritingInput({
       </div>
     </div>
   )
+}
+
+function FillBlankInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+  // Split prompt around "___" to render the blank inline
+  const parts = exercise.prompt.split('___')
+
+  return (
+    <TextInput
+      label="Fill in the blank"
+      prompt={
+        <p>
+          {parts[0]}
+          <span className="inline-block w-24 border-b-2 border-primary mx-1 align-bottom" />
+          {parts[1]}
+        </p>
+      }
+      placeholder="Type the missing word..."
+      exerciseId={exercise.exercise_id}
+      onSubmit={onSubmit}
+      isSubmitting={isSubmitting}
+    />
+  )
+}
+
+function WordReorderInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+  const [selectedWords, setSelectedWords] = useState<string[]>([])
+  const [availableWords, setAvailableWords] = useState<string[]>([])
+
+  // Reset when exercise changes
+  useEffect(() => {
+    const words = exercise.prompt.split(' / ')
+    setAvailableWords(words)
+    setSelectedWords([])
+  }, [exercise.exercise_id, exercise.prompt])
+
+  const addWord = useCallback((word: string, index: number) => {
+    setSelectedWords((prev) => [...prev, word])
+    setAvailableWords((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const removeWord = useCallback((index: number) => {
+    const word = selectedWords[index]
+    setSelectedWords((prev) => prev.filter((_, i) => i !== index))
+    setAvailableWords((prev) => [...prev, word])
+  }, [selectedWords])
+
+  const handleSubmit = useCallback(() => {
+    if (selectedWords.length > 0 && !isSubmitting) {
+      onSubmit(selectedWords.join(' '))
+    }
+  }, [selectedWords, isSubmitting, onSubmit])
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && selectedWords.length > 0) {
+        e.preventDefault()
+        handleSubmit()
+      }
+    },
+    [handleSubmit, selectedWords.length]
+  )
+
+  return (
+    <div className="mx-auto max-w-2xl w-full space-y-8" onKeyDown={handleKeyDown} tabIndex={-1}>
+      <div className="text-center space-y-2">
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          Put the words in order
+        </p>
+      </div>
+
+      {/* Selected words (answer being built) */}
+      <div className="min-h-[60px] rounded-xl border-2 border-muted bg-white/80 p-3 flex flex-wrap gap-2 items-start">
+        {selectedWords.length === 0 && (
+          <span className="text-muted-foreground text-sm">Tap words below to build the sentence...</span>
+        )}
+        {selectedWords.map((word, i) => (
+          <button
+            key={`selected-${i}`}
+            onClick={() => removeWord(i)}
+            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            {word}
+          </button>
+        ))}
+      </div>
+
+      {/* Available words to pick from */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {availableWords.map((word, i) => (
+          <button
+            key={`available-${i}`}
+            onClick={() => addWord(word, i)}
+            disabled={isSubmitting}
+            className="px-3 py-1.5 rounded-lg border-2 border-muted bg-white text-lg font-medium hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {word}
+          </button>
+        ))}
+      </div>
+
+      <Button
+        onClick={handleSubmit}
+        disabled={selectedWords.length === 0 || availableWords.length > 0 || isSubmitting}
+        className="w-full py-6 text-lg"
+      >
+        Check Answer
+      </Button>
+    </div>
+  )
+}
+
+function TranslationInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+  return (
+    <TextInput
+      label="Translate to Dutch"
+      prompt={<p>{exercise.prompt}</p>}
+      placeholder="Type your answer in Dutch..."
+      exerciseId={exercise.exercise_id}
+      onSubmit={onSubmit}
+      isSubmitting={isSubmitting}
+    />
+  )
+}
+
+function ExerciseInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+  switch (exercise.type) {
+    case 'fill_blank':
+      return <FillBlankInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+    case 'word_reorder':
+      return <WordReorderInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+    default:
+      return <TranslationInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+  }
 }
 
 function FeedbackDisplay({
@@ -147,7 +292,7 @@ function FeedbackDisplay({
     >
       <div className="text-center space-y-2">
         <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          Translate to Dutch
+          {exercise.type === 'fill_blank' ? 'Fill in the blank' : exercise.type === 'word_reorder' ? 'Put the words in order' : 'Translate to Dutch'}
         </p>
         <p className="text-2xl font-semibold">{exercise.prompt}</p>
       </div>
@@ -349,7 +494,7 @@ export function WritingSession() {
 
       <div className="flex flex-1 items-center justify-center px-4 py-8">
         {session.phase === 'writing' && session.currentExercise && (
-          <WritingInput
+          <ExerciseInput
             exercise={session.currentExercise}
             onSubmit={handleSubmit}
             isSubmitting={submitWriting.isPending}
