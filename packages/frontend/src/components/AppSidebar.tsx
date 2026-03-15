@@ -19,7 +19,7 @@ import {
 import { useCards } from '@/hooks/useCards'
 import { useReviewQueue } from '@/hooks/useReviewQueue'
 import { useInsightsQueue } from '@/hooks/useInsights'
-import { useWritingQueue } from '@/hooks/useWritingSession'
+import { useWritingQueueCount } from '@/hooks/useWritingSession'
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -29,13 +29,13 @@ export function AppSidebar() {
   const { cards, isLoading: isCardsLoading } = useCards()
   const { data: reviewData, isLoading: isReviewLoading } = useReviewQueue()
   const { data: insightsData, isLoading: isInsightsLoading } = useInsightsQueue()
-  const { data: writingData, isLoading: isWritingLoading } = useWritingQueue()
+  const { data: writingData, isLoading: isWritingLoading } = useWritingQueueCount()
 
   const isCollapsed = state === 'collapsed'
   const totalCardCount = cards.length
   const reviewCount = reviewData?.stats?.total_count || 0
   const insightsCount = insightsData?.total || 0
-  const writingCount = writingData?.exercises?.length || 0
+  const writingCount = writingData?.stats?.pool_size || 0
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },

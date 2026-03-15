@@ -48,8 +48,9 @@ async function triggerGenerationIfNeeded(userId: string, poolCount: number): Pro
 /**
  * GET /api/writing/queue
  *
- * Serve writing exercises from the stored exercise pool.
- * Triggers background generation when pool is low.
+ * Two modes:
+ * - ?mode=count — lightweight stats only (for sidebar badge). No serving, no generation trigger.
+ * - No mode param — full queue: fetches exercises, marks as served, triggers generation if low.
  */
 export async function handler(
   event: APIGatewayProxyEventV2
@@ -59,6 +60,8 @@ export async function handler(
     if (!userId) {
       return unauthorizedResponse()
     }
+
+    const mode = event.queryStringParameters?.mode
 
     const [settings, attemptsToday, poolCount] = await Promise.all([
       dbClient.getSettings(userId),
@@ -76,7 +79,21 @@ export async function handler(
     const dailyLimit = settings.writing_exercises_per_day ?? 10
     const remaining = Math.max(0, dailyLimit - attemptsToday)
 
-    // Trigger generation if pool is low
+    // Count mode: return stats only — no side effects
+    if (mode === 'count') {
+      return jsonResponse({
+        exercises: [],
+        stats: {
+          total_available: poolCount,
+          exercises_today: attemptsToday,
+          exercises_remaining: remaining,
+          pool_size: poolCount,
+          can_complete_more: poolCount > 0 && remaining > 0,
+        },
+      })
+    }
+
+    // Full mode: serve exercises, trigger generation if needed
     await triggerGenerationIfNeeded(userId, poolCount)
 
     if (remaining === 0) {

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useReviewQueue } from '@/hooks/useReviewQueue'
-import { useWritingQueue } from '@/hooks/useWritingSession'
+import { useWritingQueueCount } from '@/hooks/useWritingSession'
 import { useSubmitReview } from '@/hooks/useSubmitReview'
 import { useReviewSession } from '@/hooks/useReviewSession'
 import { useSettings } from '@/hooks/useSettings'
@@ -25,7 +25,7 @@ import { IS_IOS } from '@/constants/review'
 
 export function ReviewSession() {
   const { data, isLoading: isLoadingQueue } = useReviewQueue()
-  const { data: writingData } = useWritingQueue()
+  const { data: writingData } = useWritingQueueCount()
   const { data: settings } = useSettings()
   const submitReview = useSubmitReview()
   const { toast } = useToast()
@@ -198,7 +198,7 @@ export function ReviewSession() {
           <ReviewComplete
             onContinue={hasExtraCardsAvailable ? handleContinue : undefined}
             loadingExtraCards={session.loadingExtraCards}
-            writingExerciseCount={writingData?.exercises?.length}
+            writingExerciseCount={writingData?.stats?.pool_size}
           />
         </div>
       </div>

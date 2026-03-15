@@ -46,14 +46,14 @@ describe('writing-queue handler', () => {
     mockLambdaSend.mockResolvedValue({})
   })
 
-  const makeEvent = (userId?: string): APIGatewayProxyEventV2 =>
+  const makeEvent = (userId?: string, queryParams?: Record<string, string>): APIGatewayProxyEventV2 =>
     ({
       requestContext: {
         authorizer: userId
           ? { jwt: { claims: { sub: userId } } }
           : {},
       },
-      queryStringParameters: null,
+      queryStringParameters: queryParams || null,
     }) as unknown as APIGatewayProxyEventV2
 
   const defaultSettings = {
@@ -173,6 +173,24 @@ describe('writing-queue handler', () => {
   it('should return 401 when unauthorized', async () => {
     const result = await handler(makeEvent())
     expect(result.statusCode).toBe(401)
+  })
+
+  it('should return stats only in count mode without side effects', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(3)
+    mockGetExercisePoolCount.mockResolvedValue(15)
+
+    const result = await handler(makeEvent('user-123', { mode: 'count' }))
+
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.exercises).toHaveLength(0)
+    expect(body.stats.pool_size).toBe(15)
+    expect(body.stats.exercises_remaining).toBe(7)
+    // Should NOT fetch exercises, mark served, or trigger generation
+    expect(mockGetExercisePool).not.toHaveBeenCalled()
+    expect(mockMarkExercisesServed).not.toHaveBeenCalled()
+    expect(mockLambdaSend).not.toHaveBeenCalled()
   })
 
   it('should return 500 on error', async () => {

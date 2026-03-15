@@ -413,6 +413,14 @@ class ApiClient {
     })
   }
 
+  async getWritingQueueCount(token: string): Promise<WritingQueueResponse> {
+    return this.request<WritingQueueResponse>('/api/writing/queue?mode=count', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
   async submitWritingAttempt(
     token: string,
     data: SubmitWritingRequest

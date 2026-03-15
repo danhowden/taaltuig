@@ -119,6 +119,24 @@ export function useWritingQueue() {
   })
 }
 
+/**
+ * Lightweight count-only query for sidebar badge.
+ * Does not mark exercises as served or trigger generation.
+ */
+export function useWritingQueueCount() {
+  const { token } = useAuth()
+
+  return useApiQuery<WritingQueueResponse>({
+    queryKey: ['writing-queue-count'],
+    queryFn: async () => {
+      if (!token) throw new Error('No authentication token')
+      return apiClient.getWritingQueueCount(token)
+    },
+    enabled: !!token,
+    staleTime: 30_000,
+  })
+}
+
 export function useSubmitWriting() {
   const { token } = useAuth()
 
