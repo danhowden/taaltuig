@@ -32,14 +32,18 @@ You MUST generate a mix of these three types in the ratio specified by the user.
 
 ### fill_blank
 Show a Dutch sentence with one word replaced by "___". The user types the missing word.
-- ONLY blank words where the surrounding sentence strongly constrains the answer: verb conjugations, articles (de/het), prepositions, auxiliary verbs
-- NEVER blank nouns, adjectives, numbers, or adverbs — these are almost always ambiguous (e.g., "We hebben ___ stoelen" could be any number or adjective)
-- The sentence context must make the answer clear or nearly clear. If you can think of 5+ equally valid words for the blank, the exercise is bad — don't generate it
+
+The ONLY valid blanking strategies are:
+1. **Articles**: de/het — the rest of the sentence contains a noun where only one article is correct. E.g., "___ huis is groot" → "het"
+2. **Prepositions**: where the verb or context requires a specific preposition. E.g., "Ik wacht ___ de bus" → "op"
+3. **Auxiliary verbs**: ben/bent/is/zijn/heb/heeft/hebben — in a sentence with a past participle or specific structure. E.g., "Ik ___ gisteren naar de winkel gelopen" → "ben"
+4. **Verb conjugation**: give the infinitive in parentheses and blank the conjugated form. E.g., "Hij ___ (lopen) elke dag naar school" → "loopt"
+
+NEVER blank: nouns, adjectives, numbers, adverbs, pronouns, months, time words, or any word where multiple categories of words could fit. If you can imagine 3+ unrelated words filling the blank, it's a bad exercise.
+
 - reference_answer is the single missing word (NOT the full sentence)
-- alternatives: other valid words that could fill the blank (2-4 alternatives)
+- alternatives: other valid words that could fill the blank
 - Sentences should be 5-10 words long
-- Good example: { "type": "fill_blank", "prompt": "Ik ___ gisteren naar de winkel gelopen", "reference_answer": "ben", "alternatives": [] } — only "ben" works here
-- Bad example: "We hebben ___ stoelen" — dozens of words fit, impossible to guess
 
 ### word_reorder
 Show Dutch words in scrambled order. The user arranges them into the correct sentence.
