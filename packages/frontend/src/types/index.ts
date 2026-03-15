@@ -396,6 +396,8 @@ export interface StoredWritingExercise {
   generated_at: string
   served_at?: string
   completed_at?: string
+  rejected_at?: string
+  rejection_reason?: string
 }
 
 export interface GenerateExercisesRequest {

@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LoadingCards } from '@/components/review/LoadingCards'
-import { PencilLine, Check, Circle, Clock, Ban, RotateCw } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { PencilLine, Check, Circle, Clock, Ban, RotateCw, Trash2 } from 'lucide-react'
 import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
 
 function StatusBadge({ status }: { status: ExerciseStatus }) {
@@ -46,6 +47,125 @@ function exerciseTypeLabel(type: ExerciseType): string {
     case 'paragraph_write': return 'Paragraph'
     default: return type
   }
+}
+
+function ExerciseCard({
+  exercise,
+  onReject,
+}: {
+  exercise: StoredWritingExercise
+  onReject: (exerciseId: string, reason: string) => Promise<void>
+}) {
+  const [showReject, setShowReject] = useState(false)
+  const [reason, setReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
+
+  const handleReject = async () => {
+    if (!reason.trim()) return
+    setRejecting(true)
+    try {
+      await onReject(exercise.exercise_id, reason.trim())
+    } finally {
+      setRejecting(false)
+      setShowReject(false)
+      setReason('')
+    }
+  }
+
+  const canReject = exercise.status !== 'completed' && exercise.status !== 'rejected'
+
+  return (
+    <div className={`rounded-lg border p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="outline" className="text-xs">
+            {exerciseTypeLabel(exercise.type)}
+          </Badge>
+          <StatusBadge status={exercise.status} />
+          {exercise.source === 'user_requested' && (
+            <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-5 bg-indigo-100 text-indigo-800">
+              user requested
+            </Badge>
+          )}
+          {exercise.priority === 'high' && (
+            <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-5 bg-orange-100 text-orange-800">
+              high priority
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {new Date(exercise.generated_at).toLocaleDateString()}
+          </span>
+          {canReject && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 text-destructive hover:text-destructive"
+              onClick={() => setShowReject(!showReject)}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <p className="text-sm font-medium">{exercise.prompt}</p>
+        <p className="text-sm text-muted-foreground">
+          → {exercise.reference_answer}
+        </p>
+        {exercise.alternatives.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Alts: {exercise.alternatives.join(', ')}
+          </p>
+        )}
+      </div>
+
+      {exercise.grammar_focus && (
+        <p className="text-xs text-muted-foreground">
+          Grammar: {exercise.grammar_focus}
+        </p>
+      )}
+
+      {exercise.rejection_reason && (
+        <p className="text-xs text-red-600">
+          Rejected: {exercise.rejection_reason}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>{exercise.target_vocabulary.length} target words</span>
+        {exercise.served_at && (
+          <span>· served {new Date(exercise.served_at).toLocaleDateString()}</span>
+        )}
+        {exercise.completed_at && (
+          <span>· completed {new Date(exercise.completed_at).toLocaleDateString()}</span>
+        )}
+      </div>
+
+      {showReject && (
+        <div className="flex gap-2 pt-1">
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason for rejection..."
+            className="h-8 text-xs"
+            onKeyDown={(e) => e.key === 'Enter' && handleReject()}
+          />
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-8 text-xs"
+            onClick={handleReject}
+            disabled={!reason.trim() || rejecting}
+          >
+            {rejecting ? 'Rejecting...' : 'Reject'}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function ExerciseAdminPage() {
@@ -185,60 +305,15 @@ export function ExerciseAdminPage() {
       {exercises && exercises.length > 0 ? (
         <div className="space-y-3">
           {exercises.map((exercise) => (
-            <div
+            <ExerciseCard
               key={exercise.exercise_id}
-              className="rounded-lg border p-4 space-y-2"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-xs">
-                    {exerciseTypeLabel(exercise.type)}
-                  </Badge>
-                  <StatusBadge status={exercise.status} />
-                  {exercise.source === 'user_requested' && (
-                    <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-5 bg-indigo-100 text-indigo-800">
-                      user requested
-                    </Badge>
-                  )}
-                  {exercise.priority === 'high' && (
-                    <Badge variant="secondary" className="text-[11px] px-1.5 py-0 h-5 bg-orange-100 text-orange-800">
-                      high priority
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(exercise.generated_at).toLocaleDateString()}
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{exercise.prompt}</p>
-                <p className="text-sm text-muted-foreground">
-                  → {exercise.reference_answer}
-                </p>
-                {exercise.alternatives.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Alts: {exercise.alternatives.join(', ')}
-                  </p>
-                )}
-              </div>
-
-              {exercise.grammar_focus && (
-                <p className="text-xs text-muted-foreground">
-                  Grammar: {exercise.grammar_focus}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>{exercise.target_vocabulary.length} target words</span>
-                {exercise.served_at && (
-                  <span>· served {new Date(exercise.served_at).toLocaleDateString()}</span>
-                )}
-                {exercise.completed_at && (
-                  <span>· completed {new Date(exercise.completed_at).toLocaleDateString()}</span>
-                )}
-              </div>
-            </div>
+              exercise={exercise}
+              onReject={async (exerciseId, reason) => {
+                if (!token) return
+                await apiClient.rejectExercise(token, exerciseId, reason)
+                refetch()
+              }}
+            />
           ))}
         </div>
       ) : (

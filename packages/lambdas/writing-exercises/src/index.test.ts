@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const { mockGetExercisesForCard, mockGetAllExercises, mockClearIncompleteExercises } = vi.hoisted(() => ({
+const { mockGetExercisesForCard, mockGetAllExercises, mockClearIncompleteExercises, mockRejectExercise } = vi.hoisted(() => ({
   mockGetExercisesForCard: vi.fn(),
   mockGetAllExercises: vi.fn(),
   mockClearIncompleteExercises: vi.fn(),
+  mockRejectExercise: vi.fn(),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -13,6 +14,7 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
       getExercisesForCard: mockGetExercisesForCard,
       getAllExercises: mockGetAllExercises,
       clearIncompleteExercises: mockClearIncompleteExercises,
+      rejectExercise: mockRejectExercise,
     })),
   }
 })
@@ -28,7 +30,8 @@ describe('writing-exercises handler', () => {
   const makeEvent = (
     userId?: string,
     queryParams?: Record<string, string>,
-    method?: string
+    method?: string,
+    body?: Record<string, unknown>
   ): APIGatewayProxyEventV2 =>
     ({
       requestContext: {
@@ -38,6 +41,7 @@ describe('writing-exercises handler', () => {
         http: { method: method || 'GET' },
       },
       queryStringParameters: queryParams || null,
+      body: body ? JSON.stringify(body) : undefined,
     }) as unknown as APIGatewayProxyEventV2
 
   it('should return exercises for a specific card', async () => {
@@ -83,6 +87,33 @@ describe('writing-exercises handler', () => {
     const body = JSON.parse(result.body as string)
     expect(body.deleted).toBe(15)
     expect(mockClearIncompleteExercises).toHaveBeenCalledWith('user-123')
+  })
+
+  it('should reject an exercise with a reason on PUT', async () => {
+    mockRejectExercise.mockResolvedValue(undefined)
+
+    const result = await handler(makeEvent(
+      'user-123',
+      undefined,
+      'PUT',
+      { exercise_id: 'ex-1', reason: 'Unnatural Dutch phrasing' }
+    ))
+
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.exercise_id).toBe('ex-1')
+    expect(mockRejectExercise).toHaveBeenCalledWith('user-123', 'ex-1', 'Unnatural Dutch phrasing')
+  })
+
+  it('should return 400 when rejecting without reason', async () => {
+    const result = await handler(makeEvent(
+      'user-123',
+      undefined,
+      'PUT',
+      { exercise_id: 'ex-1' }
+    ))
+
+    expect(result.statusCode).toBe(400)
   })
 
   it('should return 401 when unauthorized', async () => {

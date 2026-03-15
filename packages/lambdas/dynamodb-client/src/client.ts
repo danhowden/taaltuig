@@ -1757,6 +1757,53 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Reject an exercise with a reason. Updates status to 'rejected' and stores the reason.
+   */
+  async rejectExercise(userId: string, exerciseId: string, reason: string): Promise<void> {
+    const timestamp = new Date().toISOString()
+
+    // Get the exercise first for target_vocabulary
+    const exercise = await this.getExercise(userId, exerciseId)
+    if (!exercise) return
+
+    // Update the exercise status
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `EXERCISE#${exerciseId}`,
+        },
+        UpdateExpression: 'SET #status = :status, rejected_at = :rejected_at, rejection_reason = :reason, GSI2SK = :gsi2sk',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':status': 'rejected',
+          ':rejected_at': timestamp,
+          ':reason': reason,
+          ':gsi2sk': `rejected#${timestamp}`,
+        },
+      })
+    )
+
+    // Update card-exercise links
+    for (const cardId of exercise.target_vocabulary) {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: `CARD_EXERCISE#${cardId}#${exerciseId}`,
+          },
+          UpdateExpression: 'SET exercise_status = :status',
+          ExpressionAttributeValues: {
+            ':status': 'rejected',
+          },
+        })
+      )
+    }
+  }
+
+  /**
    * Mark exercises as served (batch update).
    */
   async markExercisesServed(userId: string, exerciseIds: string[]): Promise<void> {

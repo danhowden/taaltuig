@@ -2,7 +2,9 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { TaaltuigDynamoDBClient } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
+  parseJsonBody,
   unauthorizedResponse,
+  badRequestResponse,
   serverErrorResponse,
   jsonResponse,
 } from '@taaltuig/lambda-utils'
@@ -13,6 +15,7 @@ const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
 /**
  * GET /api/writing/exercises — list exercises
  * DELETE /api/writing/exercises — clear incomplete exercises
+ * PUT /api/writing/exercises — reject an exercise with a reason
  */
 export async function handler(
   event: APIGatewayProxyEventV2
@@ -31,6 +34,21 @@ export async function handler(
         message: 'Incomplete exercises cleared',
         deleted: result.deleted,
       })
+    }
+
+    if (method === 'PUT') {
+      const parsed = parseJsonBody(event)
+      if (parsed.error) {
+        return badRequestResponse('Invalid request body')
+      }
+
+      const { exercise_id, reason } = parsed.data as { exercise_id?: string; reason?: string }
+      if (!exercise_id || !reason) {
+        return badRequestResponse('Missing required fields: exercise_id, reason')
+      }
+
+      await dbClient.rejectExercise(userId, exercise_id, reason)
+      return jsonResponse({ message: 'Exercise rejected', exercise_id })
     }
 
     // GET

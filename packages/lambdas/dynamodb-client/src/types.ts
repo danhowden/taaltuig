@@ -146,6 +146,8 @@ export interface WritingExercise {
   generated_at: string
   served_at?: string
   completed_at?: string
+  rejected_at?: string
+  rejection_reason?: string
 }
 
 // Denormalized link for "show exercises for this card" queries
