@@ -1793,4 +1793,121 @@ describe('TaaltuigDynamoDBClient', () => {
       expect(result.has('card-3')).toBe(true)
     })
   })
+
+  describe('rejectExercise', () => {
+    it('should update exercise status and card-exercise links', async () => {
+      // getExercise
+      mockSend.mockResolvedValueOnce({
+        Item: { exercise_id: 'ex-1', target_vocabulary: ['card-1'] },
+      })
+      // update exercise
+      mockSend.mockResolvedValueOnce({})
+      // update card-exercise link
+      mockSend.mockResolvedValueOnce({})
+
+      await client.rejectExercise('user-1', 'ex-1', 'Bad grammar')
+
+      expect(mockSend).toHaveBeenCalledTimes(3)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ExpressionAttributeValues: expect.objectContaining({
+            ':status': 'rejected',
+            ':reason': 'Bad grammar',
+          }),
+        })
+      )
+    })
+
+    it('should do nothing when exercise not found', async () => {
+      mockSend.mockResolvedValueOnce({}) // getExercise returns null
+
+      await client.rejectExercise('user-1', 'nonexistent', 'reason')
+
+      expect(mockSend).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('resetExercise', () => {
+    it('should reset exercise to pending and delete attempts', async () => {
+      // getExercise
+      mockSend.mockResolvedValueOnce({
+        Item: { exercise_id: 'ex-1', target_vocabulary: ['card-1'], generated_at: '2026-03-15T12:00:00Z' },
+      })
+      // update exercise
+      mockSend.mockResolvedValueOnce({})
+      // update card-exercise link
+      mockSend.mockResolvedValueOnce({})
+      // query attempts
+      mockSend.mockResolvedValueOnce({
+        Items: [{ PK: 'USER#user-1', SK: 'ATTEMPT#2026-03-15T12:05:00Z#ex-1' }],
+      })
+      // delete attempt
+      mockSend.mockResolvedValueOnce({})
+
+      await client.resetExercise('user-1', 'ex-1')
+
+      expect(mockSend).toHaveBeenCalledTimes(5)
+    })
+
+    it('should do nothing when exercise not found', async () => {
+      mockSend.mockResolvedValueOnce({})
+
+      await client.resetExercise('user-1', 'nonexistent')
+
+      expect(mockSend).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('getAllExercises', () => {
+    it('should return all exercises from GSI2', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'ex-1', status: 'pending' },
+          { exercise_id: 'ex-2', status: 'completed' },
+        ],
+      })
+
+      const result = await client.getAllExercises('user-1')
+
+      expect(result).toHaveLength(2)
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          IndexName: 'GSI2',
+          ScanIndexForward: false,
+        })
+      )
+    })
+  })
+
+  describe('clearIncompleteExercises', () => {
+    it('should delete non-completed exercises and their links', async () => {
+      // getAllExercises query
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { PK: 'USER#user-1', SK: 'EXERCISE#ex-1', exercise_id: 'ex-1', status: 'pending', target_vocabulary: ['card-1'] },
+          { PK: 'USER#user-1', SK: 'EXERCISE#ex-2', exercise_id: 'ex-2', status: 'completed', target_vocabulary: ['card-2'] },
+        ],
+      })
+      // batch delete (1 exercise + 1 link = 2 items)
+      mockSend.mockResolvedValueOnce({})
+
+      const result = await client.clearIncompleteExercises('user-1')
+
+      expect(result.deleted).toBe(1) // only pending, not completed
+      expect(mockSend).toHaveBeenCalledTimes(2)
+    })
+
+    it('should return 0 when no incomplete exercises', async () => {
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'ex-1', status: 'completed', target_vocabulary: [] },
+        ],
+      })
+
+      const result = await client.clearIncompleteExercises('user-1')
+
+      expect(result.deleted).toBe(0)
+      expect(mockSend).toHaveBeenCalledTimes(1)
+    })
+  })
 })
