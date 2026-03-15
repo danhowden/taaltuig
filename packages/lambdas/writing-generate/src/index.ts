@@ -211,11 +211,11 @@ async function generateExercisesFromAI(
     .map((v) => `- ${v.front} → ${v.back}`)
     .join('\n')
 
-  const userPrompt = `Generate ${exerciseCount} translation exercises using these Dutch vocabulary words:
+  const userPrompt = `Generate ${exerciseCount} exercises using these Dutch vocabulary words:
 
 ${vocabList}
 
-Create natural sentences that use these words in context. Vary the grammar patterns. Target CEFR A1-A2 level.`
+Create a mix of exercise types: ~50% fill_blank, ~25% word_reorder, ~25% translation. Vary the grammar patterns. Target CEFR A1-A2 level.`
 
   const response = await bedrockClient.send(
     new InvokeModelCommand({
