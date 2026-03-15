@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApiQuery } from '@/hooks/useApiQuery'
+import { useApiMutation } from '@/hooks/useApiMutation'
 import { apiClient } from '@/lib/api'
+import { useWritingQueue } from '@/hooks/useWritingSession'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -11,8 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { LoadingCards } from '@/components/review/LoadingCards'
-import { PencilLine, Check, Circle, Clock, Ban } from 'lucide-react'
-import type { StoredWritingExercise, ExerciseStatus, ExerciseType } from '@/types'
+import { PencilLine, Check, Circle, Clock, Ban, RotateCw } from 'lucide-react'
+import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
 
 function StatusBadge({ status }: { status: ExerciseStatus }) {
   const config: Record<ExerciseStatus, { className: string; icon: typeof Check }> = {
@@ -50,7 +53,17 @@ export function ExerciseAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const { data: exercises, isLoading } = useApiQuery<StoredWritingExercise[]>({
+  const { data: queueData } = useWritingQueue()
+
+  const generateMutation = useApiMutation<GenerateExercisesResponse, void>({
+    mutationFn: async () => {
+      if (!token) throw new Error('No token')
+      return apiClient.generateWritingExercises(token, {})
+    },
+    showLoader: false,
+  })
+
+  const { data: exercises, isLoading, refetch } = useApiQuery<StoredWritingExercise[]>({
     queryKey: ['exercises-admin', statusFilter, typeFilter],
     queryFn: async () => {
       if (!token) throw new Error('No token')
@@ -89,12 +102,41 @@ export function ExerciseAdminPage() {
           <PencilLine className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Exercise Admin</h1>
         </div>
-        {stats && (
-          <div className="text-sm text-muted-foreground">
-            {stats.total} exercises
-          </div>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => generateMutation.mutate(undefined, { onSuccess: () => refetch() })}
+          disabled={generateMutation.isPending}
+        >
+          {generateMutation.isPending ? (
+            <RotateCw className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <RotateCw className="h-4 w-4 mr-2" />
+          )}
+          Generate Batch
+        </Button>
       </div>
+
+      {/* Pool status */}
+      {queueData && (
+        <div className={`rounded-lg border p-4 flex items-center justify-between ${
+          queueData.stats.pool_size < 20
+            ? 'border-orange-300 bg-orange-50/80'
+            : 'border-green-300 bg-green-50/80'
+        }`}>
+          <div>
+            <p className="text-sm font-medium">
+              Pool: {queueData.stats.pool_size} pending exercises
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {queueData.stats.exercises_today} completed today · {queueData.stats.exercises_remaining} remaining in daily limit
+            </p>
+          </div>
+          <Badge variant={queueData.stats.pool_size < 20 ? 'destructive' : 'secondary'} className="text-xs">
+            {queueData.stats.pool_size < 20 ? 'Low — generation will trigger automatically' : 'Healthy'}
+          </Badge>
+        </div>
+      )}
 
       {/* Stats summary */}
       {stats && stats.total > 0 && (

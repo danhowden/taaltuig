@@ -3,7 +3,6 @@ import { TaaltuigDynamoDBClient } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
   unauthorizedResponse,
-  badRequestResponse,
   serverErrorResponse,
   jsonResponse,
 } from '@taaltuig/lambda-utils'

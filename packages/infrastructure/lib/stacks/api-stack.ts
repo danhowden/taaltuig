@@ -462,7 +462,7 @@ export class ApiStack extends cdk.Stack {
       {
         ...lambdaDefaults,
         functionName: 'taaltuig-writing-queue',
-        description: 'Get writing exercise queue from recently reviewed cards',
+        description: 'Serve writing exercises from pool, trigger generation when low',
         code: lambda.Code.fromAsset(
           path.join(__dirname, '../../../lambdas/writing-queue/dist')
         ),
@@ -509,6 +509,10 @@ export class ApiStack extends cdk.Stack {
         ),
       }
     )
+
+    // Wire writing-queue to trigger writing-generate when pool is low
+    writingQueueLambda.addEnvironment('GENERATE_FUNCTION_NAME', writingGenerateLambda.functionName)
+    writingGenerateLambda.grantInvoke(writingQueueLambda)
 
     // Grant Bedrock permissions for exercise generation
     writingGenerateLambda.addToRolePolicy(

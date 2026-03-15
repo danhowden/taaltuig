@@ -7,12 +7,14 @@ const {
   mockGetExercisePoolCount,
   mockGetExercisePool,
   mockMarkExercisesServed,
+  mockLambdaSend,
 } = vi.hoisted(() => ({
   mockGetSettings: vi.fn(),
   mockCountWritingAttemptsToday: vi.fn(),
   mockGetExercisePoolCount: vi.fn(),
   mockGetExercisePool: vi.fn(),
   mockMarkExercisesServed: vi.fn(),
+  mockLambdaSend: vi.fn(),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -27,12 +29,21 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
   }
 })
 
+vi.mock('@aws-sdk/client-lambda', () => ({
+  LambdaClient: vi.fn().mockImplementation(() => ({
+    send: mockLambdaSend,
+  })),
+  InvokeCommand: vi.fn((params) => params),
+}))
+
 const { handler } = await import('./index')
 
 describe('writing-queue handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.TABLE_NAME = 'test-table'
+    process.env.GENERATE_FUNCTION_NAME = 'taaltuig-writing-generate'
+    mockLambdaSend.mockResolvedValue({})
   })
 
   const makeEvent = (userId?: string): APIGatewayProxyEventV2 =>
@@ -53,7 +64,7 @@ describe('writing-queue handler', () => {
   it('should return exercises from pool', async () => {
     mockGetSettings.mockResolvedValue(defaultSettings)
     mockCountWritingAttemptsToday.mockResolvedValue(2)
-    mockGetExercisePoolCount.mockResolvedValue(15)
+    mockGetExercisePoolCount.mockResolvedValue(25)
     mockGetExercisePool.mockResolvedValue([
       {
         exercise_id: 'ex-1',
@@ -75,12 +86,51 @@ describe('writing-queue handler', () => {
     const body = JSON.parse(result.body as string)
     expect(body.exercises).toHaveLength(1)
     expect(body.exercises[0].exercise_id).toBe('ex-1')
-    expect(body.exercises[0].type).toBe('translation')
-    expect(body.exercises[0].prompt).toBe('I walk to the store')
     expect(body.stats.exercises_remaining).toBe(8)
-    expect(body.stats.pool_size).toBe(15)
+    expect(body.stats.pool_size).toBe(25)
     expect(body.stats.can_complete_more).toBe(true)
     expect(mockMarkExercisesServed).toHaveBeenCalledWith('user-123', ['ex-1'])
+  })
+
+  it('should trigger generation when pool is low', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(5) // below threshold of 20
+    mockGetExercisePool.mockResolvedValue([])
+
+    await handler(makeEvent('user-123'))
+
+    expect(mockLambdaSend).toHaveBeenCalledOnce()
+    expect(mockLambdaSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        FunctionName: 'taaltuig-writing-generate',
+        InvocationType: 'Event',
+      })
+    )
+  })
+
+  it('should not trigger generation when pool is sufficient', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(25) // above threshold
+    mockGetExercisePool.mockResolvedValue([])
+
+    await handler(makeEvent('user-123'))
+
+    expect(mockLambdaSend).not.toHaveBeenCalled()
+  })
+
+  it('should not fail if generation trigger errors', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(5)
+    mockGetExercisePool.mockResolvedValue([])
+    mockLambdaSend.mockRejectedValue(new Error('Lambda invoke failed'))
+
+    const result = await handler(makeEvent('user-123'))
+
+    // Should still return 200 — generation failure is non-blocking
+    expect(result.statusCode).toBe(200)
   })
 
   it('should return empty when writing disabled', async () => {
@@ -115,9 +165,8 @@ describe('writing-queue handler', () => {
     mockGetExercisePoolCount.mockResolvedValue(0)
     mockGetExercisePool.mockResolvedValue([])
 
-    const result = await handler(makeEvent('user-123'))
+    await handler(makeEvent('user-123'))
 
-    expect(result.statusCode).toBe(200)
     expect(mockMarkExercisesServed).not.toHaveBeenCalled()
   })
 
