@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useApiQuery } from '@/hooks/useApiQuery'
 import { useApiMutation } from '@/hooks/useApiMutation'
 import { apiClient } from '@/lib/api'
-import { useWritingQueue } from '@/hooks/useWritingSession'
+import { useWritingQueueCount } from '@/hooks/useWritingSession'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,7 +53,7 @@ export function ExerciseAdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  const { data: queueData } = useWritingQueue()
+  const { data: queueData } = useWritingQueueCount()
 
   const generateMutation = useApiMutation<GenerateExercisesResponse, void>({
     mutationFn: async () => {
