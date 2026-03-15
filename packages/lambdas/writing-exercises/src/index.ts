@@ -69,13 +69,23 @@ export async function handler(
 
     // GET
     const cardId = event.queryStringParameters?.card_id
+    const statusFilter = event.queryStringParameters?.status
+    const typeFilter = event.queryStringParameters?.type
 
     if (cardId) {
       const links = await dbClient.getExercisesForCard(userId, cardId)
       return jsonResponse(links)
     }
 
-    const exercises = await dbClient.getAllExercises(userId)
+    let exercises = await dbClient.getAllExercises(userId)
+
+    if (statusFilter) {
+      exercises = exercises.filter((e) => e.status === statusFilter)
+    }
+    if (typeFilter) {
+      exercises = exercises.filter((e) => e.type === typeFilter)
+    }
+
     return jsonResponse(exercises)
   } catch (error) {
     console.error('Error in writingExercises:', error)
