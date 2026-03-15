@@ -461,6 +461,16 @@ class ApiClient {
     )
   }
 
+  async resetExercise(token: string, exerciseId: string): Promise<{ exercise_id: string }> {
+    return this.request<{ exercise_id: string }>('/api/writing/exercises', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ exercise_id: exerciseId }),
+    })
+  }
+
   async rejectExercise(token: string, exerciseId: string, reason: string): Promise<{ exercise_id: string }> {
     return this.request<{ exercise_id: string }>('/api/writing/exercises', {
       method: 'PUT',

@@ -260,10 +260,12 @@ function ExerciseInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps)
 function FeedbackDisplay({
   result,
   exercise,
+  userAnswer,
   onNext,
 }: {
   result: SubmitWritingResponse
   exercise: WritingExercise
+  userAnswer: string
   onNext: () => void
 }) {
   const feedbackRef = useRef<HTMLDivElement>(null)
@@ -319,9 +321,14 @@ function FeedbackDisplay({
           </span>
         </div>
         {!result.correct && (
-          <p className="text-sm text-muted-foreground">
-            Correct answer: <span className="font-medium text-foreground">{result.reference_answer}</span>
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-red-600">
+              Your answer: <span className="font-medium">{userAnswer}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Correct answer: <span className="font-medium text-foreground">{result.reference_answer}</span>
+            </p>
+          </div>
         )}
       </div>
 
@@ -421,7 +428,7 @@ export function WritingSession() {
         },
         {
           onSuccess: (result) => {
-            session.submitAnswer(result)
+            session.submitAnswer(result, answer)
           },
         }
       )
@@ -483,6 +490,7 @@ export function WritingSession() {
 
   // Writing + Feedback states
   const lastResult = session.results[session.results.length - 1]
+  const lastUserAnswer = session.userAnswers[session.userAnswers.length - 1]
 
   return (
     <div className="relative flex h-full flex-col">
@@ -505,6 +513,7 @@ export function WritingSession() {
           <FeedbackDisplay
             result={lastResult}
             exercise={session.exercises[session.currentIndex]}
+            userAnswer={lastUserAnswer}
             onNext={session.nextExercise}
           />
         )}

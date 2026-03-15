@@ -887,7 +887,7 @@ export class ApiStack extends cdk.Stack {
 
     httpApi.addRoutes({
       path: '/api/writing/exercises',
-      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.DELETE, apigatewayv2.HttpMethod.PUT],
+      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.DELETE, apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.PATCH],
       integration: new integrations.HttpLambdaIntegration(
         'WritingExercisesIntegration',
         writingExercisesLambda

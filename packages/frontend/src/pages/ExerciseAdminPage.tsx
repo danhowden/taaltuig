@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { Input } from '@/components/ui/input'
-import { PencilLine, Check, Circle, Clock, Ban, RotateCw, Trash2 } from 'lucide-react'
+import { PencilLine, Check, Circle, Clock, Ban, RotateCw, Trash2, Undo2 } from 'lucide-react'
 import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
 
 function StatusBadge({ status }: { status: ExerciseStatus }) {
@@ -52,9 +52,11 @@ function exerciseTypeLabel(type: ExerciseType): string {
 function ExerciseCard({
   exercise,
   onReject,
+  onReset,
 }: {
   exercise: StoredWritingExercise
   onReject: (exerciseId: string, reason: string) => Promise<void>
+  onReset: (exerciseId: string) => Promise<void>
 }) {
   const [showReject, setShowReject] = useState(false)
   const [reason, setReason] = useState('')
@@ -72,7 +74,9 @@ function ExerciseCard({
     }
   }
 
+  const [resetting, setResetting] = useState(false)
   const canReject = exercise.status !== 'completed' && exercise.status !== 'rejected'
+  const canReset = exercise.status === 'served' || exercise.status === 'completed' || exercise.status === 'rejected'
 
   return (
     <div className={`rounded-lg border p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
@@ -97,6 +101,21 @@ function ExerciseCard({
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {new Date(exercise.generated_at).toLocaleDateString()}
           </span>
+          {canReset && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              title="Reset to pending"
+              disabled={resetting}
+              onClick={async () => {
+                setResetting(true)
+                try { await onReset(exercise.exercise_id) } finally { setResetting(false) }
+              }}
+            >
+              {resetting ? <RotateCw className="h-3 w-3 animate-spin" /> : <Undo2 className="h-3 w-3" />}
+            </Button>
+          )}
           {canReject && (
             <Button
               size="icon"
@@ -311,6 +330,11 @@ export function ExerciseAdminPage() {
               onReject={async (exerciseId, reason) => {
                 if (!token) return
                 await apiClient.rejectExercise(token, exerciseId, reason)
+                refetch()
+              }}
+              onReset={async (exerciseId) => {
+                if (!token) return
+                await apiClient.resetExercise(token, exerciseId)
                 refetch()
               }}
             />

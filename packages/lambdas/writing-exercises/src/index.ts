@@ -16,6 +16,7 @@ const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
  * GET /api/writing/exercises — list exercises
  * DELETE /api/writing/exercises — clear incomplete exercises
  * PUT /api/writing/exercises — reject an exercise with a reason
+ * PATCH /api/writing/exercises — reset an exercise back to pending
  */
 export async function handler(
   event: APIGatewayProxyEventV2
@@ -34,6 +35,21 @@ export async function handler(
         message: 'Incomplete exercises cleared',
         deleted: result.deleted,
       })
+    }
+
+    if (method === 'PATCH') {
+      const parsed = parseJsonBody(event)
+      if (parsed.error) {
+        return badRequestResponse('Invalid request body')
+      }
+
+      const { exercise_id } = parsed.data as { exercise_id?: string }
+      if (!exercise_id) {
+        return badRequestResponse('Missing required field: exercise_id')
+      }
+
+      await dbClient.resetExercise(userId, exercise_id)
+      return jsonResponse({ message: 'Exercise reset to pending', exercise_id })
     }
 
     if (method === 'PUT') {

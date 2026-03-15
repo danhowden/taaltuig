@@ -1804,6 +1804,77 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Reset an exercise back to pending. Deletes any associated WritingAttempt
+   * and resets the exercise and card-exercise link statuses.
+   */
+  async resetExercise(userId: string, exerciseId: string): Promise<void> {
+    const exercise = await this.getExercise(userId, exerciseId)
+    if (!exercise) return
+
+    const timestamp = exercise.generated_at
+
+    // Reset the exercise to pending
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `EXERCISE#${exerciseId}`,
+        },
+        UpdateExpression: 'SET #status = :status, GSI2SK = :gsi2sk REMOVE served_at, completed_at, rejected_at, rejection_reason',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':status': 'pending',
+          ':gsi2sk': `pending#${timestamp}`,
+        },
+      })
+    )
+
+    // Reset card-exercise links
+    for (const cardId of exercise.target_vocabulary) {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.tableName,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: `CARD_EXERCISE#${cardId}#${exerciseId}`,
+          },
+          UpdateExpression: 'SET exercise_status = :status',
+          ExpressionAttributeValues: {
+            ':status': 'pending',
+          },
+        })
+      )
+    }
+
+    // Delete associated WritingAttempt(s) — query by exercise_id
+    const attemptsResponse = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+        FilterExpression: 'exercise_id = :eid',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}`,
+          ':sk': 'ATTEMPT#',
+          ':eid': exerciseId,
+        },
+      })
+    )
+
+    for (const item of attemptsResponse.Items || []) {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.tableName,
+          Key: {
+            PK: item.PK as string,
+            SK: item.SK as string,
+          },
+        })
+      )
+    }
+  }
+
+  /**
    * Mark exercises as served (batch update).
    */
   async markExercisesServed(userId: string, exerciseIds: string[]): Promise<void> {

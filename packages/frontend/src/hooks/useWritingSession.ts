@@ -21,6 +21,7 @@ export interface WritingSessionState {
   currentIndex: number
   currentExercise: WritingExercise | null
   results: SubmitWritingResponse[]
+  userAnswers: string[]
   correctCount: number
   totalCount: number
   startTime: number | null
@@ -28,7 +29,7 @@ export interface WritingSessionState {
 
 type WritingAction =
   | { type: 'INIT_QUEUE'; exercises: WritingExercise[] }
-  | { type: 'SUBMIT_ANSWER'; result: SubmitWritingResponse }
+  | { type: 'SUBMIT_ANSWER'; result: SubmitWritingResponse; userAnswer: string }
   | { type: 'NEXT_EXERCISE' }
   | { type: 'LOAD_MORE'; exercises: WritingExercise[] }
 
@@ -38,6 +39,7 @@ const initialState: WritingSessionState = {
   currentIndex: 0,
   currentExercise: null,
   results: [],
+  userAnswers: [],
   correctCount: 0,
   totalCount: 0,
   startTime: null,
@@ -67,6 +69,7 @@ export function writingSessionReducer(
         ...state,
         phase: 'feedback',
         results: [...state.results, action.result],
+        userAnswers: [...state.userAnswers, action.userAnswer],
         correctCount: state.correctCount + (action.result.correct ? 1 : 0),
       }
     }
@@ -171,8 +174,8 @@ export function useWritingSession(
     }
   }, [isDataLoaded, exercises])
 
-  const submitAnswer = useCallback((result: SubmitWritingResponse) => {
-    dispatch({ type: 'SUBMIT_ANSWER', result })
+  const submitAnswer = useCallback((result: SubmitWritingResponse, userAnswer: string) => {
+    dispatch({ type: 'SUBMIT_ANSWER', result, userAnswer })
   }, [])
 
   const nextExercise = useCallback(() => {
