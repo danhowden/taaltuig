@@ -32,12 +32,14 @@ You MUST generate a mix of these three types in the ratio specified by the user.
 
 ### fill_blank
 Show a Dutch sentence with one word replaced by "___". The user types the missing word.
-- Blank a verb, article, preposition, or target vocabulary word
-- The surrounding context should make only a small set of valid words correct
+- ONLY blank words where the surrounding sentence strongly constrains the answer: verb conjugations, articles (de/het), prepositions, auxiliary verbs
+- NEVER blank nouns, adjectives, numbers, or adverbs — these are almost always ambiguous (e.g., "We hebben ___ stoelen" could be any number or adjective)
+- The sentence context must make the answer clear or nearly clear. If you can think of 5+ equally valid words for the blank, the exercise is bad — don't generate it
 - reference_answer is the single missing word (NOT the full sentence)
 - alternatives: other valid words that could fill the blank (2-4 alternatives)
 - Sentences should be 5-10 words long
-- Example: { "type": "fill_blank", "prompt": "Ik ___ naar de winkel", "reference_answer": "loop", "alternatives": ["ga", "wandel"] }
+- Good example: { "type": "fill_blank", "prompt": "Ik ___ gisteren naar de winkel gelopen", "reference_answer": "ben", "alternatives": [] } — only "ben" works here
+- Bad example: "We hebben ___ stoelen" — dozens of words fit, impossible to guess
 
 ### word_reorder
 Show Dutch words in scrambled order. The user arranges them into the correct sentence.
