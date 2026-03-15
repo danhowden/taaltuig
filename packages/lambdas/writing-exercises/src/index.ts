@@ -86,7 +86,24 @@ export async function handler(
       exercises = exercises.filter((e) => e.type === typeFilter)
     }
 
-    return jsonResponse(exercises)
+    // Join with attempts to show user's answer and score
+    const attempts = await dbClient.getWritingAttemptsByExercise(userId)
+
+    const enriched = exercises.map((e) => {
+      const attempt = attempts.get(e.exercise_id)
+      return {
+        ...e,
+        attempt: attempt ? {
+          user_answer: attempt.user_answer,
+          score: attempt.score,
+          feedback: attempt.feedback,
+          match_type: attempt.match_type,
+          created_at: attempt.created_at,
+        } : null,
+      }
+    })
+
+    return jsonResponse(enriched)
   } catch (error) {
     console.error('Error in writingExercises:', error)
     return serverErrorResponse()

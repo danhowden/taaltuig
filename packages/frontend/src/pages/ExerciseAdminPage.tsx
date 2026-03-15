@@ -147,6 +147,20 @@ function ExerciseCard({
         </p>
       )}
 
+      {exercise.attempt && (
+        <div className={`rounded-md px-3 py-2 text-xs ${
+          exercise.attempt.score > 0
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+        }`}>
+          <span className={exercise.attempt.score > 0 ? 'text-green-700' : 'text-red-700'}>
+            {exercise.attempt.score > 0 ? 'Correct' : 'Incorrect'}
+          </span>
+          <span className="text-muted-foreground"> — answered: </span>
+          <span className="font-medium">{exercise.attempt.user_answer}</span>
+        </div>
+      )}
+
       {exercise.rejection_reason && (
         <p className="text-xs text-red-600">
           Rejected: {exercise.rejection_reason}

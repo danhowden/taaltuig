@@ -1619,6 +1619,34 @@ export class TaaltuigDynamoDBClient {
     return response.Count || 0
   }
 
+  /**
+   * Get all writing attempts for a user, keyed by exercise_id.
+   * Returns the most recent attempt per exercise.
+   */
+  async getWritingAttemptsByExercise(userId: string): Promise<Map<string, WritingAttempt>> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}`,
+          ':sk': 'ATTEMPT#',
+        },
+        ScanIndexForward: false, // newest first
+      })
+    )
+
+    const byExercise = new Map<string, WritingAttempt>()
+    for (const item of (response.Items as WritingAttempt[]) || []) {
+      // Keep only the most recent attempt per exercise
+      if (!byExercise.has(item.exercise_id)) {
+        byExercise.set(item.exercise_id, item)
+      }
+    }
+
+    return byExercise
+  }
+
   // ============================================================================
   // STORED EXERCISE OPERATIONS
   // ============================================================================

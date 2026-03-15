@@ -398,6 +398,13 @@ export interface StoredWritingExercise {
   completed_at?: string
   rejected_at?: string
   rejection_reason?: string
+  attempt?: {
+    user_answer: string
+    score: number
+    feedback: string
+    match_type: string
+    created_at: string
+  } | null
 }
 
 export interface GenerateExercisesRequest {
