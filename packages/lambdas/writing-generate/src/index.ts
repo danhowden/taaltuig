@@ -45,10 +45,12 @@ Show a Dutch sentence with one word replaced by "___". The user types the missin
 Show Dutch words in scrambled order. The user arranges them into the correct sentence.
 - Only use when word order is pedagogically interesting (inversion, subordinate clauses, verb-final, time-manner-place)
 - prompt: words separated by " / " in scrambled order — scramble thoroughly
+- CRITICAL: all words must be in their final conjugated/declined forms as they appear in the answer. The user is testing word ORDER, not conjugation. If the answer is "Ik word twintig", the prompt must contain "word" NOT "worden"
+- The first word should NOT be capitalized in the scramble (the user figures out which word starts the sentence)
 - reference_answer: the correctly ordered sentence
 - alternatives: other valid orderings if they exist (usually empty for Dutch)
 - Sentences should be 5-8 words long
-- Example: { "type": "word_reorder", "prompt": "winkel / naar / de / loop / Ik", "reference_answer": "Ik loop naar de winkel", "alternatives": [] }
+- Example: { "type": "word_reorder", "prompt": "de / naar / loop / winkel / ik", "reference_answer": "Ik loop naar de winkel", "alternatives": [] }
 
 ### translation
 Show an English sentence. The user writes the Dutch translation.
