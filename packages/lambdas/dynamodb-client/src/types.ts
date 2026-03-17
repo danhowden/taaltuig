@@ -148,6 +148,8 @@ export interface WritingExercise {
   completed_at?: string
   rejected_at?: string
   rejection_reason?: string
+  retry_after?: string  // ISO timestamp — don't serve before this time (set on failed attempt)
+  attempt_count?: number // how many times this exercise has been attempted
 }
 
 // Denormalized link for "show exercises for this card" queries

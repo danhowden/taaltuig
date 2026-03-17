@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const { mockCreateWritingAttempt, mockGetExercise, mockMarkExerciseCompleted, mockGetExercisePoolCount, mockLambdaSend } = vi.hoisted(() => ({
+const { mockCreateWritingAttempt, mockGetExercise, mockMarkExerciseCompleted, mockRescheduleFailedExercise, mockGetExercisePoolCount, mockLambdaSend } = vi.hoisted(() => ({
   mockCreateWritingAttempt: vi.fn(),
   mockGetExercise: vi.fn(),
   mockMarkExerciseCompleted: vi.fn(),
+  mockRescheduleFailedExercise: vi.fn(),
   mockGetExercisePoolCount: vi.fn(),
   mockLambdaSend: vi.fn(),
 }))
@@ -15,6 +16,7 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
       createWritingAttempt: mockCreateWritingAttempt,
       getExercise: mockGetExercise,
       markExerciseCompleted: mockMarkExerciseCompleted,
+      rescheduleFailedExercise: mockRescheduleFailedExercise,
       getExercisePoolCount: mockGetExercisePoolCount,
     })),
   }
@@ -36,6 +38,8 @@ describe('writing-submit handler', () => {
     process.env.GENERATE_FUNCTION_NAME = 'taaltuig-writing-generate'
     mockGetExercisePoolCount.mockResolvedValue(25) // above threshold by default
     mockLambdaSend.mockResolvedValue({})
+    mockMarkExerciseCompleted.mockResolvedValue(undefined)
+    mockRescheduleFailedExercise.mockResolvedValue(undefined)
   })
 
   const makeEvent = (
@@ -68,7 +72,6 @@ describe('writing-submit handler', () => {
       feedback: 'Correct!',
       match_type: 'exact',
     })
-    mockMarkExerciseCompleted.mockResolvedValue(undefined)
 
     const result = await handler(
       makeEvent('user-123', {
@@ -96,12 +99,12 @@ describe('writing-submit handler', () => {
       5000
     )
     expect(mockMarkExerciseCompleted).toHaveBeenCalledWith('user-123', 'ex-1')
+    expect(mockRescheduleFailedExercise).not.toHaveBeenCalled()
   })
 
   it('should trigger generation when pool is low after completion', async () => {
     mockGetExercise.mockResolvedValue(mockExercise)
     mockCreateWritingAttempt.mockResolvedValue({ score: 3, feedback: 'Correct!', match_type: 'exact' })
-    mockMarkExerciseCompleted.mockResolvedValue(undefined)
     mockGetExercisePoolCount.mockResolvedValue(5) // below threshold
 
     await handler(makeEvent('user-123', { exercise_id: 'ex-1', user_answer: 'Ik loop naar de winkel', duration_ms: 5000 }))
@@ -123,14 +126,13 @@ describe('writing-submit handler', () => {
     expect(mockLambdaSend).not.toHaveBeenCalled()
   })
 
-  it('should return incorrect answer result', async () => {
+  it('should reschedule exercise for tomorrow on incorrect answer', async () => {
     mockGetExercise.mockResolvedValue(mockExercise)
     mockCreateWritingAttempt.mockResolvedValue({
       score: 0,
       feedback: 'The correct answer is: "Ik loop naar de winkel"',
       match_type: 'wrong',
     })
-    mockMarkExerciseCompleted.mockResolvedValue(undefined)
 
     const result = await handler(
       makeEvent('user-123', {
@@ -144,6 +146,8 @@ describe('writing-submit handler', () => {
     const body = JSON.parse(result.body as string)
     expect(body.correct).toBe(false)
     expect(body.grade).toBe(0)
+    expect(mockRescheduleFailedExercise).toHaveBeenCalledWith('user-123', 'ex-1')
+    expect(mockMarkExerciseCompleted).not.toHaveBeenCalled()
   })
 
   it('should return 404 when exercise not found', async () => {

@@ -1635,6 +1635,23 @@ describe('TaaltuigDynamoDBClient', () => {
       const result = await client.getExercisePool('user-1', 5)
       expect(result).toHaveLength(5)
     })
+
+    it('should filter out exercises with future retry_after', async () => {
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      const pastDate = new Date(Date.now() - 60 * 1000).toISOString()
+      mockSend.mockResolvedValueOnce({
+        Items: [
+          { exercise_id: 'available', priority: 'normal', retry_after: pastDate },
+          { exercise_id: 'not-yet', priority: 'normal', retry_after: futureDate },
+          { exercise_id: 'no-retry', priority: 'normal' },
+        ],
+      })
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
+      const result = await client.getExercisePool('user-1', 10)
+      expect(result.map((e) => e.exercise_id)).toEqual(expect.arrayContaining(['available', 'no-retry']))
+      expect(result.map((e) => e.exercise_id)).not.toContain('not-yet')
+    })
   })
 
   describe('getExercise', () => {
@@ -1742,8 +1759,52 @@ describe('TaaltuigDynamoDBClient', () => {
         expect.objectContaining({
           IndexName: 'GSI2',
           Select: 'COUNT',
+          FilterExpression: 'attribute_not_exists(retry_after) OR retry_after <= :now',
         })
       )
+    })
+  })
+
+  describe('rescheduleFailedExercise', () => {
+    it('should set retry_after to tomorrow and increment attempt_count', async () => {
+      // getExercise call
+      mockSend.mockResolvedValueOnce({
+        Item: { exercise_id: 'ex-1', status: 'pending', attempt_count: 1, target_vocabulary: [] },
+      })
+      // UpdateCommand
+      mockSend.mockResolvedValueOnce({})
+
+      await client.rescheduleFailedExercise('user-1', 'ex-1')
+
+      const updateCall = mockSend.mock.calls[1][0]
+      expect(updateCall.ExpressionAttributeValues[':attempt_count']).toBe(2)
+      expect(updateCall.ExpressionAttributeValues[':status']).toBe('pending')
+      // retry_after should be ~24h from now
+      const retryAt = new Date(updateCall.ExpressionAttributeValues[':retry_after'])
+      const expectedMin = new Date(Date.now() + 23 * 60 * 60 * 1000)
+      const expectedMax = new Date(Date.now() + 25 * 60 * 60 * 1000)
+      expect(retryAt.getTime()).toBeGreaterThan(expectedMin.getTime())
+      expect(retryAt.getTime()).toBeLessThan(expectedMax.getTime())
+    })
+
+    it('should default attempt_count to 1 when not previously set', async () => {
+      mockSend.mockResolvedValueOnce({
+        Item: { exercise_id: 'ex-1', status: 'pending', target_vocabulary: [] },
+      })
+      mockSend.mockResolvedValueOnce({})
+
+      await client.rescheduleFailedExercise('user-1', 'ex-1')
+
+      const updateCall = mockSend.mock.calls[1][0]
+      expect(updateCall.ExpressionAttributeValues[':attempt_count']).toBe(1)
+    })
+
+    it('should do nothing when exercise not found', async () => {
+      mockSend.mockResolvedValueOnce({ Item: undefined })
+
+      await client.rescheduleFailedExercise('user-1', 'nonexistent')
+
+      expect(mockSend).toHaveBeenCalledTimes(1)
     })
   })
 

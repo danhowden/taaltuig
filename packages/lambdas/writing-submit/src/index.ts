@@ -128,8 +128,12 @@ export async function handler(
       duration_ms
     )
 
-    // Mark exercise as completed
-    await dbClient.markExerciseCompleted(userId, exercise_id)
+    // Complete on correct, reschedule for tomorrow on incorrect
+    if (attempt.score > 0) {
+      await dbClient.markExerciseCompleted(userId, exercise_id)
+    } else {
+      await dbClient.rescheduleFailedExercise(userId, exercise_id)
+    }
 
     // Trigger generation if pool is running low (fire and forget)
     triggerGenerationIfNeeded(userId).catch(() => {})

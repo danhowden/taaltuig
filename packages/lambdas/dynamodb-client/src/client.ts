@@ -1699,45 +1699,52 @@ export class TaaltuigDynamoDBClient {
    * High-priority (user-requested) exercises are shuffled into the first 3 positions.
    */
   async getExercisePool(userId: string, limit: number): Promise<WritingExercise[]> {
-    // Query pending exercises
-    const pendingResponse = await this.client.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        IndexName: 'GSI2',
-        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
-        ExpressionAttributeValues: {
-          ':pk': `USER#${userId}#WRITING_POOL`,
-          ':status': 'pending#',
-        },
-        Limit: limit,
-      })
-    )
+    const now = new Date().toISOString()
 
-    // Also query validated exercises
-    const validatedResponse = await this.client.send(
-      new QueryCommand({
-        TableName: this.tableName,
-        IndexName: 'GSI2',
-        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
-        ExpressionAttributeValues: {
-          ':pk': `USER#${userId}#WRITING_POOL`,
-          ':status': 'validated#',
-        },
-        Limit: limit,
-      })
-    )
+    // Fetch all pending and validated exercises (no DynamoDB Limit — we filter in code)
+    const [pendingResponse, validatedResponse] = await Promise.all([
+      this.client.send(
+        new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'GSI2',
+          KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+          ExpressionAttributeValues: {
+            ':pk': `USER#${userId}#WRITING_POOL`,
+            ':status': 'pending#',
+          },
+        })
+      ),
+      this.client.send(
+        new QueryCommand({
+          TableName: this.tableName,
+          IndexName: 'GSI2',
+          KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+          ExpressionAttributeValues: {
+            ':pk': `USER#${userId}#WRITING_POOL`,
+            ':status': 'validated#',
+          },
+        })
+      ),
+    ])
 
     const allExercises = [
       ...((pendingResponse.Items as WritingExercise[]) || []),
       ...((validatedResponse.Items as WritingExercise[]) || []),
-    ].slice(0, limit)
+    ]
+
+    // Filter out exercises not yet due for retry
+    const available = allExercises.filter(
+      (e) => !e.retry_after || e.retry_after <= now
+    )
+
+    const capped = available.slice(0, limit)
 
     // Shuffle high-priority exercises into first 3 positions
-    const highPriority = allExercises.filter((e) => e.priority === 'high')
-    const normal = allExercises.filter((e) => e.priority !== 'high')
+    const highPriority = capped.filter((e) => e.priority === 'high')
+    const normal = capped.filter((e) => e.priority !== 'high')
 
     if (highPriority.length === 0) {
-      return allExercises
+      return capped
     }
 
     const result = [...normal]
@@ -1974,17 +1981,53 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Reschedule a failed exercise to re-appear after a 1-day delay.
+   * The exercise stays 'pending' but won't be served until retry_after passes.
+   */
+  async rescheduleFailedExercise(userId: string, exerciseId: string): Promise<void> {
+    const exercise = await this.getExercise(userId, exerciseId)
+    if (!exercise) return
+
+    const retryAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    const newAttemptCount = (exercise.attempt_count ?? 0) + 1
+
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `EXERCISE#${exerciseId}`,
+        },
+        UpdateExpression:
+          'SET retry_after = :retry_after, attempt_count = :attempt_count, #status = :status, GSI2SK = :gsi2sk',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':retry_after': retryAt,
+          ':attempt_count': newAttemptCount,
+          ':status': 'pending',
+          ':gsi2sk': `pending#${retryAt}`,
+        },
+      })
+    )
+  }
+
+  /**
    * Count pending exercises in the pool.
    */
   async getExercisePoolCount(userId: string): Promise<number> {
+    const now = new Date().toISOString()
+
+    // Only count exercises available right now (retry_after not set, or already passed)
     const response = await this.client.send(
       new QueryCommand({
         TableName: this.tableName,
         IndexName: 'GSI2',
         KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
+        FilterExpression: 'attribute_not_exists(retry_after) OR retry_after <= :now',
         ExpressionAttributeValues: {
           ':pk': `USER#${userId}#WRITING_POOL`,
           ':status': 'pending#',
+          ':now': now,
         },
         Select: 'COUNT',
       })
