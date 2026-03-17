@@ -406,6 +406,16 @@ export interface StoredWritingExercise {
   } | null
 }
 
+export interface ChallengeWritingRequest {
+  exercise_id: string
+  user_answer: string
+}
+
+export interface ChallengeWritingResponse {
+  correct: boolean
+  feedback: string
+}
+
 export interface GenerateExercisesRequest {
   card_id?: string
   exercise_type?: ExerciseType

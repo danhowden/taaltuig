@@ -1,0 +1,19 @@
+{
+  "name": "@taaltuig/lambda-writing-challenge",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "pnpm lint && pnpm test:coverage",
+    "build": "node ../shared-esbuild.config.cjs",
+    "lint": "eslint . && secretlint \"**/*\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
+  },
+  "dependencies": {
+    "@taaltuig/dynamodb-client": "workspace:*",
+    "@taaltuig/lambda-utils": "workspace:*",
+    "@aws-sdk/client-bedrock-runtime": "^3.500.0"
+  }
+}

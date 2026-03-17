@@ -199,7 +199,7 @@ function ExerciseCard({
 
 export function ExerciseAdminPage() {
   const { token } = useAuth()
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('active')
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
   const { data: queueData } = useWritingQueueCount()
@@ -231,7 +231,8 @@ export function ExerciseAdminPage() {
         ex.status === 'failed' || ex.status === 'completed' || ex.status === 'rejected'
           ? ex.status
           : 'pending'
-      if (statusFilter !== 'all' && effectiveStatus !== statusFilter) return false
+      if (statusFilter === 'active' && effectiveStatus !== 'pending' && effectiveStatus !== 'failed') return false
+      if (statusFilter !== 'all' && statusFilter !== 'active' && effectiveStatus !== statusFilter) return false
       if (typeFilter !== 'all' && ex.type !== typeFilter) return false
       return true
     })
@@ -281,13 +282,17 @@ export function ExerciseAdminPage() {
         <div className="space-y-4">
 
           {/* Filters */}
-          <div className="flex justify-end gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm font-medium text-muted-foreground">
+              {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
+            </p>
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="All statuses" />
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <SelectValue placeholder="Pending + Failed" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="active">Pending + Failed</SelectItem>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>

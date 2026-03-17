@@ -510,6 +510,33 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const writingChallengeLambda = new lambda.Function(
+      this,
+      'WritingChallengeFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-writing-challenge',
+        description: 'AI re-evaluation of writing exercise answers',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/writing-challenge/dist')
+        ),
+        timeout: cdk.Duration.seconds(30),
+        memorySize: 256,
+      }
+    )
+
+    // Grant Bedrock permissions for challenge assessment
+    writingChallengeLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock:InvokeModel'],
+        resources: [
+          'arn:aws:bedrock:*::foundation-model/anthropic.claude-*',
+          `arn:aws:bedrock:*:${this.account}:inference-profile/*`,
+        ],
+      })
+    )
+
     // Wire writing-submit and writing-queue to trigger writing-generate when pool is low
     writingSubmitLambda.addEnvironment('GENERATE_FUNCTION_NAME', writingGenerateLambda.functionName)
     writingGenerateLambda.grantInvoke(writingSubmitLambda)
@@ -617,6 +644,7 @@ export class ApiStack extends cdk.Stack {
       writingSubmitLambda,
       writingGenerateLambda,
       writingExercisesLambda,
+      writingChallengeLambda,
     ]
 
     // Import the DynamoDB table from the database stack
@@ -903,6 +931,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'WritingGenerateIntegration',
         writingGenerateLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/writing/challenge',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'WritingChallengeIntegration',
+        writingChallengeLambda
       ),
       authorizer: jwtAuthorizer,
     })

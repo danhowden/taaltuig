@@ -43,6 +43,8 @@ import type {
   GenerateExercisesResponse,
   CardExerciseLink,
   StoredWritingExercise,
+  ChallengeWritingRequest,
+  ChallengeWritingResponse,
 } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
@@ -487,6 +489,20 @@ class ApiClient {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    })
+  }
+
+  async challengeWritingAssessment(
+    token: string,
+    data: ChallengeWritingRequest
+  ): Promise<ChallengeWritingResponse> {
+    return this.request<ChallengeWritingResponse>('/api/writing/challenge', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     })
   }
 

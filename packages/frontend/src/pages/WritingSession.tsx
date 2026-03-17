@@ -10,7 +10,7 @@ import {
   useWritingSession,
   useSubmitWriting,
 } from '@/hooks/useWritingSession'
-import type { WritingExercise, SubmitWritingResponse } from '@/types'
+import type { WritingExercise, SubmitWritingResponse, ChallengeWritingResponse } from '@/types'
 
 function ProgressBar({
   current,
@@ -279,17 +279,17 @@ function FeedbackDisplay({
   exercise,
   userAnswer,
   onNext,
-  onFlagIncorrect,
+  onChallenge,
 }: {
   result: SubmitWritingResponse
   exercise: WritingExercise
   userAnswer: string
   onNext: () => void
-  onFlagIncorrect?: () => Promise<void>
+  onChallenge?: () => Promise<ChallengeWritingResponse>
 }) {
   const feedbackRef = useRef<HTMLDivElement>(null)
-  const [flagged, setFlagged] = useState(false)
-  const [flagging, setFlagging] = useState(false)
+  const [challengeResult, setChallengeResult] = useState<ChallengeWritingResponse | null>(null)
+  const [isChallenging, setIsChallenging] = useState(false)
 
   useEffect(() => {
     feedbackRef.current?.focus()
@@ -305,16 +305,16 @@ function FeedbackDisplay({
     [onNext]
   )
 
-  const handleFlag = useCallback(async () => {
-    if (!onFlagIncorrect || flagging || flagged) return
-    setFlagging(true)
+  const handleChallenge = useCallback(async () => {
+    if (!onChallenge || isChallenging || challengeResult) return
+    setIsChallenging(true)
     try {
-      await onFlagIncorrect()
-      setFlagged(true)
+      const cr = await onChallenge()
+      setChallengeResult(cr)
     } finally {
-      setFlagging(false)
+      setIsChallenging(false)
     }
-  }, [onFlagIncorrect, flagging, flagged])
+  }, [onChallenge, isChallenging, challengeResult])
 
   const typeLabel =
     exercise.type === 'fill_blank'
@@ -322,6 +322,9 @@ function FeedbackDisplay({
       : exercise.type === 'word_reorder'
         ? 'Put the words in order'
         : 'Translate to Dutch'
+
+  const isCorrect = result.correct || challengeResult?.correct === true
+  const feedback = challengeResult ? challengeResult.feedback : result.feedback
 
   return (
     <div
@@ -337,13 +340,13 @@ function FeedbackDisplay({
 
       <div className="rounded-2xl bg-black/40 p-6 space-y-3">
         <div className="flex items-center gap-2">
-          {result.correct ? (
+          {isCorrect ? (
             <Check className="h-5 w-5 text-green-400 shrink-0" />
           ) : (
             <X className="h-5 w-5 text-red-400 shrink-0" />
           )}
           <span className="font-semibold text-white">
-            {result.feedback}
+            {feedback}
           </span>
         </div>
         <div className="space-y-1">
@@ -358,14 +361,14 @@ function FeedbackDisplay({
         </div>
       </div>
 
-      {!result.correct && onFlagIncorrect && userAnswer && (
+      {!result.correct && !challengeResult && onChallenge && userAnswer && (
         <div className="text-center">
           <button
-            onClick={handleFlag}
-            disabled={flagging || flagged}
+            onClick={handleChallenge}
+            disabled={isChallenging}
             className="text-xs text-black/30 hover:text-black/50 underline underline-offset-2 transition-colors disabled:opacity-50"
           >
-            {flagged ? 'Flagged — thanks' : flagging ? 'Flagging...' : 'My answer was actually correct'}
+            {isChallenging ? 'Asking AI...' : 'Challenge this assessment'}
           </button>
         </div>
       )}
@@ -561,8 +564,11 @@ export function WritingSession() {
             exercise={session.exercises[session.currentIndex]}
             userAnswer={lastUserAnswer}
             onNext={session.nextExercise}
-            onFlagIncorrect={!lastResult.correct && lastUserAnswer && token ? async () => {
-              await apiClient.rejectExercise(token, session.exercises[session.currentIndex].exercise_id, 'Flagged: my answer was correct')
+            onChallenge={!lastResult.correct && lastUserAnswer && token ? async () => {
+              return apiClient.challengeWritingAssessment(token, {
+                exercise_id: session.exercises[session.currentIndex].exercise_id,
+                user_answer: lastUserAnswer,
+              })
             } : undefined}
           />
         )}

@@ -56,10 +56,10 @@ Show Dutch words in scrambled order. The user arranges them into the correct sen
 - prompt: words separated by " / " in scrambled order — scramble thoroughly
 - CRITICAL: every word in the scramble must EXACTLY match a word in the reference_answer (case-insensitive). The user is testing word ORDER, not conjugation. If the answer is "Ik krijg vijf euro", the prompt must contain "krijg" NOT "krijgen". Check each word in your prompt against the answer before including it.
 - The first word should NOT be capitalized in the scramble (the user figures out which word starts the sentence)
-- reference_answer: the correctly ordered sentence
-- alternatives: other valid orderings if they exist (usually empty for Dutch)
+- reference_answer: the primary correctly ordered sentence
+- alternatives: ALL other valid Dutch orderings of these words. Dutch V2 word order often allows multiple valid arrangements (e.g. subject-first "Ik loop naar de winkel" AND time-adverbial-first "Op maandag eet ik soep"). You MUST include every grammatically valid alternative ordering — do NOT leave this empty if alternatives exist.
 - Sentences should be 5-8 words long
-- Example: { "type": "word_reorder", "prompt": "de / naar / loop / winkel / ik", "reference_answer": "Ik loop naar de winkel", "alternatives": [] }
+- Example: { "type": "word_reorder", "prompt": "maandag / eet / ik / soep / op", "reference_answer": "Op maandag eet ik soep", "alternatives": ["Ik eet soep op maandag"] }
 
 ### translation
 Show an English sentence. The user writes the Dutch translation.
