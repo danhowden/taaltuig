@@ -257,12 +257,13 @@ export function ExerciseAdminPage() {
         actions={
           <div className="flex items-center gap-2">
             {queueData && (
-              <Badge
-                variant={queueData.stats.pool_size < 20 ? 'destructive' : 'secondary'}
-                className="text-xs"
-              >
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                queueData.stats.pool_size < 20
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-black/10 text-black/50'
+              }`}>
                 {queueData.stats.pool_size} available
-              </Badge>
+              </span>
             )}
             <Button
               variant="outline"
