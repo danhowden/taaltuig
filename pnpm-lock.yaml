@@ -603,6 +603,9 @@ importers:
 
   packages/lambdas/writing-submit:
     dependencies:
+      '@aws-sdk/client-lambda':
+        specifier: ^3.500.0
+        version: 3.1009.0
       '@taaltuig/dynamodb-client':
         specifier: workspace:*
         version: link:../dynamodb-client
