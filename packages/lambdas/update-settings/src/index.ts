@@ -73,7 +73,13 @@ export async function handler(
       starting_ease: settings.starting_ease,
       easy_bonus: settings.easy_bonus,
       interval_modifier: settings.interval_modifier,
+      lapse_new_interval: settings.lapse_new_interval,
+      maximum_interval: settings.maximum_interval,
       disabled_categories: settings.disabled_categories,
+      show_unreviewed_insights: settings.show_unreviewed_insights,
+      proficiency_level: settings.proficiency_level,
+      writing_exercises_per_day: settings.writing_exercises_per_day,
+      writing_session_enabled: settings.writing_session_enabled,
       updated_at: settings.updated_at,
     }
 
