@@ -105,7 +105,7 @@ function ExerciseCard({
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-black/10"
               title="Reset to pending"
               disabled={resetting}
               onClick={async () => {
@@ -120,7 +120,7 @@ function ExerciseCard({
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 text-destructive hover:text-destructive"
+              className="h-6 w-6 text-destructive hover:text-destructive hover:bg-black/10"
               onClick={() => setShowReject(!showReject)}
             >
               <Trash2 className="h-3 w-3" />
@@ -167,12 +167,11 @@ function ExerciseCard({
         </p>
       )}
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{exercise.target_vocabulary.length} target words</span>
-        {exercise.completed_at && (
-          <span>· completed {new Date(exercise.completed_at).toLocaleDateString()}</span>
-        )}
-      </div>
+      {exercise.completed_at && (
+        <p className="text-xs text-muted-foreground">
+          completed {new Date(exercise.completed_at).toLocaleDateString()}
+        </p>
+      )}
 
       {showReject && (
         <div className="flex gap-2 pt-1">
@@ -315,7 +314,7 @@ export function ExerciseAdminPage() {
 
           {/* Exercise list */}
           {exercises.length > 0 ? (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.exercise_id}
