@@ -410,7 +410,22 @@ function WritingComplete({
   )
 }
 
-function EmptyState() {
+function EmptyState({ reason }: { reason: 'limit_reached' | 'no_exercises' }) {
+  if (reason === 'limit_reached') {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 text-center">
+        <PencilLine className="h-12 w-12 mx-auto text-primary" />
+        <h2 className="text-2xl font-bold">All done for today</h2>
+        <p className="text-muted-foreground">
+          You've reached your daily writing limit. Come back tomorrow — any exercises you got wrong will be waiting for you.
+        </p>
+        <Button asChild variant="outline">
+          <Link to="/">Back to Home</Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 text-center">
       <PencilLine className="h-12 w-12 mx-auto text-muted-foreground" />
@@ -489,10 +504,11 @@ export function WritingSession() {
 
   // Empty state
   if (session.phase === 'empty') {
+    const emptyReason = data?.stats?.exercises_remaining === 0 ? 'limit_reached' : 'no_exercises'
     return (
       <div className="relative flex h-full flex-col">
         <div className="flex flex-1 items-center justify-center py-8">
-          <EmptyState />
+          <EmptyState reason={emptyReason} />
         </div>
       </div>
     )
