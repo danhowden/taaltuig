@@ -36,7 +36,7 @@ You MUST generate a mix of these three types in the ratio specified by the user.
 Show a Dutch sentence with one word replaced by "___". The user types the missing word.
 
 The ONLY valid blanking strategies are:
-1. **Articles**: de/het — the rest of the sentence contains a noun where only one article is correct. E.g., "___ huis is groot" → "het"
+1. **Articles**: de/het — the rest of the sentence contains a noun where only ONE article is correct. Do NOT generate article blanks where both de and het could work. The answer must be definitively de OR het, not both. E.g., "___ huis is groot" → "het" (het-word, no alternative)
 2. **Prepositions**: where the verb or context requires a specific preposition. E.g., "Ik wacht ___ de bus" → "op"
 3. **Auxiliary verbs**: ben/bent/is/zijn/heb/heeft/hebben — in a sentence with a past participle or specific structure. E.g., "Ik ___ gisteren naar de winkel gelopen" → "ben"
 4. **Verb conjugation**: give the infinitive in parentheses and blank the conjugated form. E.g., "Hij ___ (lopen) elke dag naar school" → "loopt"
@@ -51,7 +51,7 @@ NEVER blank: nouns, adjectives, numbers, adverbs, pronouns, months, time words, 
 Show Dutch words in scrambled order. The user arranges them into the correct sentence.
 - Only use when word order is pedagogically interesting (inversion, subordinate clauses, verb-final, time-manner-place)
 - prompt: words separated by " / " in scrambled order — scramble thoroughly
-- CRITICAL: all words must be in their final conjugated/declined forms as they appear in the answer. The user is testing word ORDER, not conjugation. If the answer is "Ik word twintig", the prompt must contain "word" NOT "worden"
+- CRITICAL: every word in the scramble must EXACTLY match a word in the reference_answer (case-insensitive). The user is testing word ORDER, not conjugation. If the answer is "Ik krijg vijf euro", the prompt must contain "krijg" NOT "krijgen". Check each word in your prompt against the answer before including it.
 - The first word should NOT be capitalized in the scramble (the user figures out which word starts the sentence)
 - reference_answer: the correctly ordered sentence
 - alternatives: other valid orderings if they exist (usually empty for Dutch)
@@ -271,8 +271,8 @@ Target CEFR A1-A2 level. Each exercise should test a different grammar point or 
 const VALIDATION_PROMPT = `You are a Dutch language exercise quality reviewer. For each exercise, determine if it is VALID or INVALID.
 
 An exercise is INVALID if:
-- **fill_blank**: The blank is ambiguous — 3 or more unrelated words could fill it. Valid blanks test: articles (de/het), specific prepositions, auxiliary verbs, verb conjugations. Invalid blanks: nouns, adjectives, pronouns, numbers, months, any open category.
-- **word_reorder**: The scrambled words are not in their conjugated/declined forms (e.g., infinitive "worden" instead of conjugated "word"). Or the sentence is too short (< 4 words) to be interesting.
+- **fill_blank**: The blank is ambiguous — 3 or more unrelated words could fill it. Valid blanks test: articles (de/het where only one is correct), specific prepositions, auxiliary verbs, verb conjugations. Invalid blanks: nouns, adjectives, pronouns, numbers, months, any open category. Also invalid if both "de" and "het" are listed as answer/alternative — the article must be unambiguous.
+- **word_reorder**: Check each word in the prompt against the reference_answer. If any word in the prompt does not appear in the answer (e.g., infinitive "krijgen" when answer has "krijg"), the exercise is INVALID. The words must exactly match.
 - **translation**: The English sentence is ambiguous and could have many unrelated Dutch translations.
 - **Any type**: The Dutch is unnatural, has grammar errors, or is trivially easy.
 
