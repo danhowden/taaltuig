@@ -227,11 +227,12 @@ function WordReorderInput({ exercise, onSubmit, onPass, isSubmitting }: Exercise
         ))}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex-1" />
         <Button
           onClick={handleSubmit}
           disabled={selectedWords.length === 0 || availableWords.length > 0 || isSubmitting}
-          className="flex-1 rounded-full py-6 text-lg"
+          className="rounded-full px-6 shrink-0"
         >
           Check Answer
         </Button>
@@ -239,7 +240,7 @@ function WordReorderInput({ exercise, onSubmit, onPass, isSubmitting }: Exercise
           variant="outline"
           onClick={onPass}
           disabled={isSubmitting}
-          className="rounded-full px-6"
+          className="rounded-full px-6 shrink-0"
         >
           Pass
         </Button>
@@ -334,33 +335,27 @@ function FeedbackDisplay({
         <p className="text-2xl font-semibold">{exercise.prompt}</p>
       </div>
 
-      <div
-        className={`rounded-2xl border p-6 space-y-3 ${
-          result.correct
-            ? 'border-green-300 bg-green-50/80'
-            : 'border-red-300 bg-red-50/80'
-        }`}
-      >
+      <div className="rounded-2xl bg-black/40 p-6 space-y-3">
         <div className="flex items-center gap-2">
           {result.correct ? (
-            <Check className="h-5 w-5 text-green-600 shrink-0" />
+            <Check className="h-5 w-5 text-green-400 shrink-0" />
           ) : (
-            <X className="h-5 w-5 text-red-600 shrink-0" />
+            <X className="h-5 w-5 text-red-400 shrink-0" />
           )}
-          <span className={`font-semibold ${result.correct ? 'text-green-700' : 'text-red-700'}`}>
+          <span className="font-semibold text-white">
             {result.feedback}
           </span>
         </div>
-        {!result.correct && (
-          <div className="space-y-1">
-            <p className="text-sm text-red-600">
-              Your answer: <span className="font-medium">{userAnswer || '(passed)'}</span>
+        <div className="space-y-1">
+          {!result.correct && (
+            <p className="text-sm text-white/50">
+              Your answer: <span className="font-medium text-white/70">{userAnswer || '(passed)'}</span>
             </p>
-            <p className="text-sm text-black/50">
-              Correct answer: <span className="font-medium text-foreground">{result.reference_answer}</span>
-            </p>
-          </div>
-        )}
+          )}
+          <p className="text-sm text-white/50">
+            Correct answer: <span className="font-medium text-white">{result.reference_answer}</span>
+          </p>
+        </div>
       </div>
 
       {!result.correct && onFlagIncorrect && userAnswer && (
