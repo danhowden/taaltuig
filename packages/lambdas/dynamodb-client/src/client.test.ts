@@ -1700,24 +1700,6 @@ describe('TaaltuigDynamoDBClient', () => {
     })
   })
 
-  describe('markExercisesServed', () => {
-    it('should update status for each exercise', async () => {
-      mockSend.mockResolvedValue({})
-
-      await client.markExercisesServed('user-1', ['ex-1', 'ex-2'])
-
-      expect(mockSend).toHaveBeenCalledTimes(2)
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          Key: { PK: 'USER#user-1', SK: 'EXERCISE#ex-1' },
-          ExpressionAttributeValues: expect.objectContaining({
-            ':status': 'served',
-          }),
-        })
-      )
-    })
-  })
-
   describe('markExerciseCompleted', () => {
     it('should update exercise and card-exercise links', async () => {
       // getExercise call
@@ -1778,7 +1760,7 @@ describe('TaaltuigDynamoDBClient', () => {
 
       const updateCall = mockSend.mock.calls[1][0]
       expect(updateCall.ExpressionAttributeValues[':attempt_count']).toBe(2)
-      expect(updateCall.ExpressionAttributeValues[':status']).toBe('pending')
+      expect(updateCall.ExpressionAttributeValues[':status']).toBe('failed')
       // retry_after should be ~24h from now
       const retryAt = new Date(updateCall.ExpressionAttributeValues[':retry_after'])
       const expectedMin = new Date(Date.now() + 23 * 60 * 60 * 1000)

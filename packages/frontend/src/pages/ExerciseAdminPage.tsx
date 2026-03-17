@@ -16,16 +16,14 @@ import {
 } from '@/components/ui/select'
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { Input } from '@/components/ui/input'
-import { PencilLine, Check, Circle, Clock, Ban, RotateCw, Trash2, Undo2 } from 'lucide-react'
+import { PencilLine, Check, Circle, Ban, RotateCw, Trash2, Undo2 } from 'lucide-react'
 import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
 
 function StatusBadge({ status }: { status: ExerciseStatus }) {
   const config: Record<ExerciseStatus, { className: string; icon: typeof Check }> = {
     pending: { className: 'bg-yellow-100 text-yellow-800', icon: Circle },
-    validated: { className: 'bg-blue-100 text-blue-800', icon: Check },
-    served: { className: 'bg-purple-100 text-purple-800', icon: Clock },
+    failed: { className: 'bg-orange-100 text-orange-800', icon: RotateCw },
     completed: { className: 'bg-green-100 text-green-800', icon: Check },
-    expired: { className: 'bg-gray-100 text-gray-600', icon: Clock },
     rejected: { className: 'bg-red-100 text-red-800', icon: Ban },
   }
 
@@ -77,10 +75,10 @@ function ExerciseCard({
   }
 
   const canReject = exercise.status !== 'completed' && exercise.status !== 'rejected'
-  const canReset = exercise.status === 'served' || exercise.status === 'completed' || exercise.status === 'rejected'
+  const canReset = exercise.status === 'failed' || exercise.status === 'completed' || exercise.status === 'rejected'
 
   return (
-    <div className={`rounded-lg border bg-white/60 p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
+    <div className={`rounded-[6px] bg-white/60 p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-xs">
@@ -99,9 +97,6 @@ function ExerciseCard({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {new Date(exercise.generated_at).toLocaleDateString()}
-          </span>
           {canReset && (
             <Button
               size="icon"
@@ -261,40 +256,30 @@ export function ExerciseAdminPage() {
         title="Exercise Admin"
         description="Review and manage generated writing exercises"
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => generateMutation.mutate(undefined, { onSuccess: () => refetch() })}
-            disabled={generateMutation.isPending}
-          >
-            <RotateCw className={`h-4 w-4 mr-2 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
-            Generate Batch
-          </Button>
+          <div className="flex items-center gap-2">
+            {queueData && (
+              <Badge
+                variant={queueData.stats.pool_size < 20 ? 'destructive' : 'secondary'}
+                className="text-xs"
+              >
+                {queueData.stats.pool_size} available
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateMutation.mutate(undefined, { onSuccess: () => refetch() })}
+              disabled={generateMutation.isPending}
+            >
+              <RotateCw className={`h-4 w-4 mr-2 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
+              Generate Batch
+            </Button>
+          </div>
         }
       />
 
       <PageLayout.Content>
         <div className="space-y-4">
-          {/* Pool status */}
-          {queueData && (
-            <div className={`rounded-lg border p-3 flex items-center justify-between ${
-              queueData.stats.pool_size < 20
-                ? 'border-orange-200 bg-orange-50/60'
-                : 'border-green-200 bg-green-50/60'
-            }`}>
-              <div>
-                <p className="text-sm font-medium">
-                  Pool: {queueData.stats.pool_size} available
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {queueData.stats.exercises_today} done today · {queueData.stats.exercises_remaining} remaining today
-                </p>
-              </div>
-              <Badge variant={queueData.stats.pool_size < 20 ? 'destructive' : 'secondary'} className="text-xs">
-                {queueData.stats.pool_size < 20 ? 'Low' : 'Healthy'}
-              </Badge>
-            </div>
-          )}
 
           {/* Status summary + filters */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -322,6 +307,7 @@ export function ExerciseAdminPage() {
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>

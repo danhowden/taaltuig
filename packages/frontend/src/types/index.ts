@@ -372,7 +372,7 @@ export interface SubmitWritingResponse {
   reference_answer: string
 }
 
-export type ExerciseStatus = 'pending' | 'validated' | 'served' | 'completed' | 'expired' | 'rejected'
+export type ExerciseStatus = 'pending' | 'failed' | 'completed' | 'rejected'
 
 export interface CardExerciseLink {
   exercise_id: string
@@ -394,7 +394,6 @@ export interface StoredWritingExercise {
   target_vocabulary: string[]
   grammar_focus?: string
   generated_at: string
-  served_at?: string
   completed_at?: string
   rejected_at?: string
   rejection_reason?: string

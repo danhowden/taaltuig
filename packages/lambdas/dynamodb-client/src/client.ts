@@ -1721,7 +1721,7 @@ export class TaaltuigDynamoDBClient {
           KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :status)',
           ExpressionAttributeValues: {
             ':pk': `USER#${userId}#WRITING_POOL`,
-            ':status': 'validated#',
+            ':status': 'failed#',
           },
         })
       ),
@@ -1856,7 +1856,7 @@ export class TaaltuigDynamoDBClient {
           PK: `USER#${userId}`,
           SK: `EXERCISE#${exerciseId}`,
         },
-        UpdateExpression: 'SET #status = :status, GSI2SK = :gsi2sk REMOVE served_at, completed_at, rejected_at, rejection_reason',
+        UpdateExpression: 'SET #status = :status, GSI2SK = :gsi2sk REMOVE completed_at, rejected_at, rejection_reason, retry_after, attempt_count',
         ExpressionAttributeNames: { '#status': 'status' },
         ExpressionAttributeValues: {
           ':status': 'pending',
@@ -1910,32 +1910,6 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
-   * Mark exercises as served (batch update).
-   */
-  async markExercisesServed(userId: string, exerciseIds: string[]): Promise<void> {
-    const timestamp = new Date().toISOString()
-
-    for (const exerciseId of exerciseIds) {
-      await this.client.send(
-        new UpdateCommand({
-          TableName: this.tableName,
-          Key: {
-            PK: `USER#${userId}`,
-            SK: `EXERCISE#${exerciseId}`,
-          },
-          UpdateExpression: 'SET #status = :status, served_at = :served_at, GSI2SK = :gsi2sk',
-          ExpressionAttributeNames: { '#status': 'status' },
-          ExpressionAttributeValues: {
-            ':status': 'served',
-            ':served_at': timestamp,
-            ':gsi2sk': `served#${timestamp}`,
-          },
-        })
-      )
-    }
-  }
-
-  /**
    * Mark an exercise as completed and update its card-exercise link.
    */
   async markExerciseCompleted(userId: string, exerciseId: string): Promise<void> {
@@ -1981,8 +1955,7 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
-   * Reschedule a failed exercise to re-appear after a 1-day delay.
-   * The exercise stays 'pending' but won't be served until retry_after passes.
+   * Mark an exercise as failed and reschedule it to re-appear after a 1-day delay.
    */
   async rescheduleFailedExercise(userId: string, exerciseId: string): Promise<void> {
     const exercise = await this.getExercise(userId, exerciseId)
@@ -2004,8 +1977,8 @@ export class TaaltuigDynamoDBClient {
         ExpressionAttributeValues: {
           ':retry_after': retryAt,
           ':attempt_count': newAttemptCount,
-          ':status': 'pending',
-          ':gsi2sk': `pending#${retryAt}`,
+          ':status': 'failed',
+          ':gsi2sk': `failed#${retryAt}`,
         },
       })
     )

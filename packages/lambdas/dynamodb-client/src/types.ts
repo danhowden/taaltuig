@@ -121,7 +121,7 @@ export interface ReviewHistory {
 
 // Writing exercise types
 export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
-export type ExerciseStatus = 'pending' | 'validated' | 'served' | 'completed' | 'expired' | 'rejected'
+export type ExerciseStatus = 'pending' | 'failed' | 'completed' | 'rejected'
 export type ExerciseSource = 'auto' | 'user_requested'
 export type ExercisePriority = 'normal' | 'high'
 export type AssessmentMatchType = 'exact' | 'alternative' | 'fuzzy' | 'wrong'
@@ -144,7 +144,6 @@ export interface WritingExercise {
   grammar_focus?: string // e.g., "past tense", "word order"
   cefr_level?: string
   generated_at: string
-  served_at?: string
   completed_at?: string
   rejected_at?: string
   rejection_reason?: string
