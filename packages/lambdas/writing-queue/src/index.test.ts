@@ -6,11 +6,13 @@ const {
   mockCountWritingAttemptsToday,
   mockGetExercisePoolCount,
   mockGetExercisePool,
+  mockLambdaSend,
 } = vi.hoisted(() => ({
   mockGetSettings: vi.fn(),
   mockCountWritingAttemptsToday: vi.fn(),
   mockGetExercisePoolCount: vi.fn(),
   mockGetExercisePool: vi.fn(),
+  mockLambdaSend: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -24,12 +26,19 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
   }
 })
 
+vi.mock('@aws-sdk/client-lambda', () => ({
+  LambdaClient: vi.fn().mockImplementation(() => ({ send: mockLambdaSend })),
+  InvokeCommand: vi.fn().mockImplementation((input) => input),
+}))
+
 const { handler } = await import('./index')
 
 describe('writing-queue handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.TABLE_NAME = 'test-table'
+    process.env.GENERATE_FUNCTION_NAME = 'writing-generate-fn'
+    mockLambdaSend.mockResolvedValue({})
   })
 
   const makeEvent = (userId?: string, queryParams?: Record<string, string>): APIGatewayProxyEventV2 =>
@@ -120,6 +129,42 @@ describe('writing-queue handler', () => {
     expect(body.stats.pool_size).toBe(15)
     expect(body.stats.exercises_remaining).toBe(7)
     expect(mockGetExercisePool).not.toHaveBeenCalled()
+  })
+
+  it('should trigger generation when pool is low', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(5) // below threshold
+    mockGetExercisePool.mockResolvedValue([])
+
+    await handler(makeEvent('user-123'))
+
+    // Allow fire-and-forget to settle
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockLambdaSend).toHaveBeenCalledWith(expect.objectContaining({ InvocationType: 'Event' }))
+  })
+
+  it('should not trigger generation when pool is healthy', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(25) // above threshold
+    mockGetExercisePool.mockResolvedValue([])
+
+    await handler(makeEvent('user-123'))
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockLambdaSend).not.toHaveBeenCalled()
+  })
+
+  it('should not trigger generation in count mode', async () => {
+    mockGetSettings.mockResolvedValue(defaultSettings)
+    mockCountWritingAttemptsToday.mockResolvedValue(0)
+    mockGetExercisePoolCount.mockResolvedValue(0)
+
+    await handler(makeEvent('user-123', { mode: 'count' }))
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockLambdaSend).not.toHaveBeenCalled()
   })
 
   it('should return 500 on error', async () => {

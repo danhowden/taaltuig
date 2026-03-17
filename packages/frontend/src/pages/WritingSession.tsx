@@ -429,13 +429,12 @@ function EmptyState({ reason }: { reason: 'limit_reached' | 'no_exercises' }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4 text-center">
       <PencilLine className="h-12 w-12 mx-auto text-muted-foreground" />
-      <h2 className="text-2xl font-bold">No Writing Exercises</h2>
+      <h2 className="text-2xl font-bold">Generating exercises…</h2>
       <p className="text-muted-foreground">
-        Complete your flashcard review first to unlock writing practice.
-        Writing exercises are generated from cards you review.
+        Your first batch of exercises is being generated. Check back in a moment.
       </p>
-      <Button asChild>
-        <Link to="/review">Go to Review</Link>
+      <Button asChild variant="outline">
+        <Link to="/">Back to Home</Link>
       </Button>
     </div>
   )

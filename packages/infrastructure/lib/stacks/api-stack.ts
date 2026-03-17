@@ -510,9 +510,11 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
-    // Wire writing-submit to trigger writing-generate when pool is low after completion
+    // Wire writing-submit and writing-queue to trigger writing-generate when pool is low
     writingSubmitLambda.addEnvironment('GENERATE_FUNCTION_NAME', writingGenerateLambda.functionName)
     writingGenerateLambda.grantInvoke(writingSubmitLambda)
+    writingQueueLambda.addEnvironment('GENERATE_FUNCTION_NAME', writingGenerateLambda.functionName)
+    writingGenerateLambda.grantInvoke(writingQueueLambda)
 
     // Grant Bedrock permissions for exercise generation
     writingGenerateLambda.addToRolePolicy(

@@ -1,4 +1,5 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
 import { TaaltuigDynamoDBClient } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
@@ -8,6 +9,19 @@ import {
 } from '@taaltuig/lambda-utils'
 
 const TABLE_NAME = process.env.TABLE_NAME!
+const POOL_LOW_THRESHOLD = 20
+
+const lambdaClient = new LambdaClient({})
+
+async function triggerGenerationIfNeeded(userId: string, poolCount: number): Promise<void> {
+  const generateFn = process.env.GENERATE_FUNCTION_NAME
+  if (!generateFn || poolCount >= POOL_LOW_THRESHOLD) return
+  await lambdaClient.send(new InvokeCommand({
+    FunctionName: generateFn,
+    InvocationType: 'Event',
+    Payload: Buffer.from(JSON.stringify({ userId })),
+  }))
+}
 
 const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
 
@@ -66,8 +80,16 @@ export async function handler(
       })
     }
 
+    // If pool is empty, kick off generation immediately (fire-and-forget)
+    if (poolCount === 0) {
+      triggerGenerationIfNeeded(userId, 0).catch(() => {})
+    }
+
     // Fetch exercises from pool (handles priority shuffling internally)
     const exercises = await dbClient.getExercisePool(userId, remaining)
+
+    // Fire-and-forget generation if pool is running low
+    triggerGenerationIfNeeded(userId, poolCount).catch(() => {})
 
     return jsonResponse({
       exercises: exercises.map((e) => ({
