@@ -23,6 +23,8 @@ const bedrockClient = new BedrockRuntimeClient({
 
 // Use Sonnet 4.5 for exercise generation (cross-region inference profile)
 const GENERATOR_MODEL = 'eu.anthropic.claude-sonnet-4-5-20250929-v1:0'
+// Use Haiku for fast/cheap validation
+const VALIDATOR_MODEL = 'eu.anthropic.claude-haiku-4-5-20251001-v1:0'
 
 const SYSTEM_PROMPT = `You are a Dutch language exercise generator. Create natural, pedagogically valuable Dutch sentences that incorporate specific vocabulary words.
 
@@ -266,6 +268,72 @@ Target CEFR A1-A2 level. Each exercise should test a different grammar point or 
   return exercises
 }
 
+const VALIDATION_PROMPT = `You are a Dutch language exercise quality reviewer. For each exercise, determine if it is VALID or INVALID.
+
+An exercise is INVALID if:
+- **fill_blank**: The blank is ambiguous — 3 or more unrelated words could fill it. Valid blanks test: articles (de/het), specific prepositions, auxiliary verbs, verb conjugations. Invalid blanks: nouns, adjectives, pronouns, numbers, months, any open category.
+- **word_reorder**: The scrambled words are not in their conjugated/declined forms (e.g., infinitive "worden" instead of conjugated "word"). Or the sentence is too short (< 4 words) to be interesting.
+- **translation**: The English sentence is ambiguous and could have many unrelated Dutch translations.
+- **Any type**: The Dutch is unnatural, has grammar errors, or is trivially easy.
+
+For each exercise, respond with a JSON object: { "index": <number>, "valid": true/false, "reason": "..." }
+
+Return a JSON array only, no markdown. Start directly with [`
+
+/**
+ * Validate generated exercises using a second AI pass.
+ * Returns only the exercises that pass validation.
+ */
+async function validateExercises(
+  exercises: GeneratedExercise[]
+): Promise<GeneratedExercise[]> {
+  const exerciseList = exercises
+    .map((e, i) => `${i}. [${e.type}] prompt: "${e.prompt}" → answer: "${e.reference_answer}" (alts: ${JSON.stringify(e.alternatives)})`)
+    .join('\n')
+
+  const response = await bedrockClient.send(
+    new InvokeModelCommand({
+      modelId: VALIDATOR_MODEL,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 2048,
+        system: VALIDATION_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `Review these ${exercises.length} exercises:\n\n${exerciseList}`,
+          },
+        ],
+      }),
+    })
+  )
+
+  const responseBody = JSON.parse(new TextDecoder().decode(response.body))
+  const content = responseBody.content?.[0]?.text || '[]'
+  const jsonText = content.replace(/^```json?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+
+  try {
+    const results: { index: number; valid: boolean; reason: string }[] = JSON.parse(jsonText)
+
+    const validIndices = new Set<number>()
+    for (const result of results) {
+      if (result.valid) {
+        validIndices.add(result.index)
+      } else {
+        console.log(`Rejected exercise ${result.index}: ${result.reason}`)
+      }
+    }
+
+    return exercises.filter((_, i) => validIndices.has(i))
+  } catch (error) {
+    // If validation parsing fails, pass all exercises through
+    console.error('Failed to parse validation response, passing all exercises:', error)
+    return exercises
+  }
+}
+
 /**
  * Build WritingExercise entities from AI-generated exercises.
  */
@@ -410,9 +478,23 @@ export async function handler(
       })
     }
 
+    // Validate exercises with a second AI pass
+    console.log('Validating exercises...')
+    const validated = await validateExercises(generated)
+    console.log(`Validation: ${validated.length}/${generated.length} exercises passed`)
+
+    if (validated.length === 0) {
+      console.log('All exercises rejected by validation')
+      return jsonResponse({
+        exercises_generated: 0,
+        exercises_rejected: generated.length,
+        message: 'All exercises rejected by validation',
+      })
+    }
+
     // Build and store exercise entities
     const timestamp = new Date().toISOString()
-    const exercises = buildExerciseEntities(userId, generated, vocabulary, source, timestamp)
+    const exercises = buildExerciseEntities(userId, validated, vocabulary, source, timestamp)
 
     console.log(`Storing ${exercises.length} exercises...`)
     await dbClient.storeExercises(userId, exercises)
@@ -420,6 +502,7 @@ export async function handler(
 
     return jsonResponse({
       exercises_generated: exercises.length,
+      exercises_rejected: generated.length - validated.length,
       source,
     })
   } catch (error) {

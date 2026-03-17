@@ -18,32 +18,50 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
   }
 })
 
+const generationResponse = {
+  body: new TextEncoder().encode(JSON.stringify({
+    content: [{
+      text: JSON.stringify([
+        {
+          type: 'translation',
+          prompt: 'I walk to the store',
+          reference_answer: 'Ik loop naar de winkel',
+          alternatives: ['Ik wandel naar de winkel'],
+          target_words: ['lopen', 'winkel'],
+          grammar_focus: 'present tense',
+        },
+        {
+          type: 'translation',
+          prompt: 'The house is big',
+          reference_answer: 'Het huis is groot',
+          alternatives: [],
+          target_words: ['huis', 'groot'],
+          grammar_focus: 'adjectives',
+        },
+      ]),
+    }],
+  })),
+}
+
+const validationResponse = {
+  body: new TextEncoder().encode(JSON.stringify({
+    content: [{
+      text: JSON.stringify([
+        { index: 0, valid: true, reason: 'Good exercise' },
+        { index: 1, valid: true, reason: 'Good exercise' },
+      ]),
+    }],
+  })),
+}
+
 vi.mock('@aws-sdk/client-bedrock-runtime', () => {
+  let callCount = 0
   return {
     BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
-      send: vi.fn().mockResolvedValue({
-        body: new TextEncoder().encode(JSON.stringify({
-          content: [{
-            text: JSON.stringify([
-              {
-                type: 'translation',
-                prompt: 'I walk to the store',
-                reference_answer: 'Ik loop naar de winkel',
-                alternatives: ['Ik wandel naar de winkel'],
-                target_words: ['lopen', 'winkel'],
-                grammar_focus: 'present tense',
-              },
-              {
-                type: 'translation',
-                prompt: 'The house is big',
-                reference_answer: 'Het huis is groot',
-                alternatives: [],
-                target_words: ['huis', 'groot'],
-                grammar_focus: 'adjectives',
-              },
-            ]),
-          }],
-        })),
+      send: vi.fn().mockImplementation(() => {
+        callCount++
+        // Odd calls = generation, even calls = validation
+        return callCount % 2 === 1 ? generationResponse : validationResponse
       }),
     })),
     InvokeModelCommand: vi.fn(),
