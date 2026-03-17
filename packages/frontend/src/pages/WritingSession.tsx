@@ -262,13 +262,17 @@ function FeedbackDisplay({
   exercise,
   userAnswer,
   onNext,
+  onFlagIncorrect,
 }: {
   result: SubmitWritingResponse
   exercise: WritingExercise
   userAnswer: string
   onNext: () => void
+  onFlagIncorrect?: () => Promise<void>
 }) {
   const feedbackRef = useRef<HTMLDivElement>(null)
+  const [flagged, setFlagged] = useState(false)
+  const [flagging, setFlagging] = useState(false)
 
   // Focus for keyboard navigation
   useEffect(() => {
@@ -284,6 +288,17 @@ function FeedbackDisplay({
     },
     [onNext]
   )
+
+  const handleFlag = useCallback(async () => {
+    if (!onFlagIncorrect || flagging || flagged) return
+    setFlagging(true)
+    try {
+      await onFlagIncorrect()
+      setFlagged(true)
+    } finally {
+      setFlagging(false)
+    }
+  }, [onFlagIncorrect, flagging, flagged])
 
   return (
     <div
@@ -331,6 +346,18 @@ function FeedbackDisplay({
           </div>
         )}
       </div>
+
+      {!result.correct && onFlagIncorrect && (
+        <div className="text-center">
+          <button
+            onClick={handleFlag}
+            disabled={flagging || flagged}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors disabled:opacity-50"
+          >
+            {flagged ? 'Flagged — thanks for the feedback' : flagging ? 'Flagging...' : 'My answer was actually correct'}
+          </button>
+        </div>
+      )}
 
       <Button onClick={onNext} className="w-full py-6 text-lg">
         Continue <ArrowRight className="ml-2 h-4 w-4" />
@@ -515,6 +542,9 @@ export function WritingSession() {
             exercise={session.exercises[session.currentIndex]}
             userAnswer={lastUserAnswer}
             onNext={session.nextExercise}
+            onFlagIncorrect={!lastResult.correct && token ? async () => {
+              await apiClient.rejectExercise(token, session.exercises[session.currentIndex].exercise_id, 'Flagged: my answer was correct')
+            } : undefined}
           />
         )}
       </div>

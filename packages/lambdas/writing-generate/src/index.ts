@@ -40,6 +40,9 @@ The ONLY valid blanking strategies are:
 2. **Prepositions**: where the verb or context requires a specific preposition. E.g., "Ik wacht ___ de bus" → "op"
 3. **Auxiliary verbs**: ben/bent/is/zijn/heb/heeft/hebben — in a sentence with a past participle or specific structure. E.g., "Ik ___ gisteren naar de winkel gelopen" → "ben"
 4. **Verb conjugation**: give the infinitive in parentheses and blank the conjugated form. E.g., "Hij ___ (lopen) elke dag naar school" → "loopt"
+   — IMPORTANT: For "wij" and "jullie" subjects, the conjugated form is usually identical to the infinitive (wij lopen = lopen, wij werken = werken). Do NOT generate conjugation blanks for wij/jullie subjects — the exercise would be trivial.
+
+Do NOT blank conjunctions (en, of, maar, want, dus) — the correct choice is almost always ambiguous from sentence context alone.
 
 NEVER blank: nouns, adjectives, numbers, adverbs, pronouns, months, time words, or any word where multiple categories of words could fit. If you can imagine 3+ unrelated words filling the blank, it's a bad exercise.
 
@@ -67,7 +70,7 @@ Show an English sentence. The user writes the Dutch translation.
 - Example: { "type": "translation", "prompt": "I walk to the store", "reference_answer": "Ik loop naar de winkel", "alternatives": ["Ik wandel naar de winkel"] }
 
 ## Rules
-- Sentences must be natural Dutch that a native speaker would actually say
+- Sentences must be natural, idiomatic Dutch — something a native speaker would genuinely say in everyday conversation. Avoid forced, academic, or contrived sentences. (e.g., "De soep is saai" is unnatural — use "De soep is flauw/smakeloos" for tasteless food; "saai" describes people or activities, not food)
 - Difficulty should match the specified CEFR level
 - Each exercise must use at least one target vocabulary word
 - Vary sentence structures and grammar patterns — do NOT repeat the same pattern
@@ -271,10 +274,10 @@ Target CEFR A1-A2 level. Each exercise should test a different grammar point or 
 const VALIDATION_PROMPT = `You are a Dutch language exercise quality reviewer. For each exercise, determine if it is VALID or INVALID.
 
 An exercise is INVALID if:
-- **fill_blank**: The blank is ambiguous — 3 or more unrelated words could fill it. Valid blanks test: articles (de/het where only one is correct), specific prepositions, auxiliary verbs, verb conjugations. Invalid blanks: nouns, adjectives, pronouns, numbers, months, any open category. Also invalid if both "de" and "het" are listed as answer/alternative — the article must be unambiguous.
+- **fill_blank**: The blank is ambiguous — 3 or more unrelated words could fill it. Valid blanks test: articles (de/het where only one is correct), specific prepositions, auxiliary verbs, verb conjugations. Invalid blanks: nouns, adjectives, pronouns, numbers, months, conjunctions (en/of/maar/want/dus), any open category. Also invalid if both "de" and "het" are listed as answer/alternative — the article must be unambiguous. Also invalid if it's a conjugation blank for a "wij" or "jullie" subject (the form equals the infinitive, making it trivial).
 - **word_reorder**: Check each word in the prompt against the reference_answer. If any word in the prompt does not appear in the answer (e.g., infinitive "krijgen" when answer has "krijg"), the exercise is INVALID. The words must exactly match.
 - **translation**: The English sentence is ambiguous and could have many unrelated Dutch translations.
-- **Any type**: The Dutch is unnatural, has grammar errors, or is trivially easy.
+- **Any type**: The Dutch is unnatural, stilted, or clearly not something a native speaker would say in everyday speech. Grammar errors. Trivially easy.
 
 For each exercise, respond with a JSON object: { "index": <number>, "valid": true/false, "reason": "..." }
 
