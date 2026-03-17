@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { APIGatewayProxyEventV2 } from 'aws-lambda'
 
-const { mockCreateWritingAttempt, mockGetExercise, mockMarkExerciseCompleted } = vi.hoisted(() => ({
+const { mockCreateWritingAttempt, mockGetExercise, mockMarkExerciseCompleted, mockGetExercisePoolCount, mockLambdaSend } = vi.hoisted(() => ({
   mockCreateWritingAttempt: vi.fn(),
   mockGetExercise: vi.fn(),
   mockMarkExerciseCompleted: vi.fn(),
+  mockGetExercisePoolCount: vi.fn(),
+  mockLambdaSend: vi.fn(),
 }))
 
 vi.mock('@taaltuig/dynamodb-client', async () => {
@@ -13,9 +15,17 @@ vi.mock('@taaltuig/dynamodb-client', async () => {
       createWritingAttempt: mockCreateWritingAttempt,
       getExercise: mockGetExercise,
       markExerciseCompleted: mockMarkExerciseCompleted,
+      getExercisePoolCount: mockGetExercisePoolCount,
     })),
   }
 })
+
+vi.mock('@aws-sdk/client-lambda', () => ({
+  LambdaClient: vi.fn().mockImplementation(() => ({
+    send: mockLambdaSend,
+  })),
+  InvokeCommand: vi.fn((params) => params),
+}))
 
 const { handler } = await import('./index')
 
@@ -23,6 +33,9 @@ describe('writing-submit handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.TABLE_NAME = 'test-table'
+    process.env.GENERATE_FUNCTION_NAME = 'taaltuig-writing-generate'
+    mockGetExercisePoolCount.mockResolvedValue(25) // above threshold by default
+    mockLambdaSend.mockResolvedValue({})
   })
 
   const makeEvent = (
@@ -83,6 +96,31 @@ describe('writing-submit handler', () => {
       5000
     )
     expect(mockMarkExerciseCompleted).toHaveBeenCalledWith('user-123', 'ex-1')
+  })
+
+  it('should trigger generation when pool is low after completion', async () => {
+    mockGetExercise.mockResolvedValue(mockExercise)
+    mockCreateWritingAttempt.mockResolvedValue({ score: 3, feedback: 'Correct!', match_type: 'exact' })
+    mockMarkExerciseCompleted.mockResolvedValue(undefined)
+    mockGetExercisePoolCount.mockResolvedValue(5) // below threshold
+
+    await handler(makeEvent('user-123', { exercise_id: 'ex-1', user_answer: 'Ik loop naar de winkel', duration_ms: 5000 }))
+
+    // Give the fire-and-forget promise a tick to resolve
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockLambdaSend).toHaveBeenCalledOnce()
+  })
+
+  it('should not trigger generation when pool is sufficient', async () => {
+    mockGetExercise.mockResolvedValue(mockExercise)
+    mockCreateWritingAttempt.mockResolvedValue({ score: 3, feedback: 'Correct!', match_type: 'exact' })
+    mockMarkExerciseCompleted.mockResolvedValue(undefined)
+    mockGetExercisePoolCount.mockResolvedValue(25) // above threshold
+
+    await handler(makeEvent('user-123', { exercise_id: 'ex-1', user_answer: 'Ik loop naar de winkel', duration_ms: 5000 }))
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(mockLambdaSend).not.toHaveBeenCalled()
   })
 
   it('should return incorrect answer result', async () => {

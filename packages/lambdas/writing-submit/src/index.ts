@@ -1,4 +1,5 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
 import { TaaltuigDynamoDBClient, type ExerciseType } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
@@ -13,7 +14,45 @@ import {
 } from '@taaltuig/lambda-utils'
 
 const TABLE_NAME = process.env.TABLE_NAME!
+const POOL_LOW_THRESHOLD = 20
+
 const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
+const lambdaClient = new LambdaClient({})
+
+/**
+ * Trigger exercise generation asynchronously when pool is low.
+ * Called after exercise completion so generation only happens when exercises are consumed.
+ */
+async function triggerGenerationIfNeeded(userId: string): Promise<void> {
+  const generateFunctionName = process.env.GENERATE_FUNCTION_NAME
+  if (!generateFunctionName) return
+
+  try {
+    const poolCount = await dbClient.getExercisePoolCount(userId)
+    if (poolCount >= POOL_LOW_THRESHOLD) return
+
+    await lambdaClient.send(
+      new InvokeCommand({
+        FunctionName: generateFunctionName,
+        InvocationType: 'Event', // async — fire and forget
+        Payload: new TextEncoder().encode(
+          JSON.stringify({
+            requestContext: {
+              authorizer: {
+                jwt: { claims: { sub: userId } },
+              },
+            },
+            body: '{}',
+          })
+        ),
+      })
+    )
+    console.log(`Triggered exercise generation for user ${userId} (pool below ${POOL_LOW_THRESHOLD})`)
+  } catch (error) {
+    // Non-blocking — don't fail the submission if generation trigger fails
+    console.error('Failed to trigger exercise generation:', error)
+  }
+}
 
 const VALID_EXERCISE_TYPES: ExerciseType[] = [
   'translation',
@@ -91,6 +130,9 @@ export async function handler(
 
     // Mark exercise as completed
     await dbClient.markExerciseCompleted(userId, exercise_id)
+
+    // Trigger generation if pool is running low (fire and forget)
+    triggerGenerationIfNeeded(userId).catch(() => {})
 
     return jsonResponse({
       correct: attempt.score > 0,

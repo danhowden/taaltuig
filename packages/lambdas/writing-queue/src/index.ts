@@ -1,5 +1,4 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
-import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda'
 import { TaaltuigDynamoDBClient } from '@taaltuig/dynamodb-client'
 import {
   getUserIdFromEvent,
@@ -9,41 +8,8 @@ import {
 } from '@taaltuig/lambda-utils'
 
 const TABLE_NAME = process.env.TABLE_NAME!
-const POOL_LOW_THRESHOLD = 20
 
 const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
-const lambdaClient = new LambdaClient({})
-
-/**
- * Trigger exercise generation asynchronously when pool is low.
- */
-async function triggerGenerationIfNeeded(userId: string, poolCount: number): Promise<void> {
-  const generateFunctionName = process.env.GENERATE_FUNCTION_NAME
-  if (!generateFunctionName || poolCount >= POOL_LOW_THRESHOLD) return
-
-  try {
-    await lambdaClient.send(
-      new InvokeCommand({
-        FunctionName: generateFunctionName,
-        InvocationType: 'Event', // async — fire and forget
-        Payload: new TextEncoder().encode(
-          JSON.stringify({
-            requestContext: {
-              authorizer: {
-                jwt: { claims: { sub: userId } },
-              },
-            },
-            body: '{}',
-          })
-        ),
-      })
-    )
-    console.log(`Triggered exercise generation for user ${userId} (pool: ${poolCount})`)
-  } catch (error) {
-    // Don't fail the queue request if generation trigger fails
-    console.error('Failed to trigger exercise generation:', error)
-  }
-}
 
 /**
  * GET /api/writing/queue
@@ -93,9 +59,6 @@ export async function handler(
       })
     }
 
-    // Full mode: serve exercises, trigger generation if needed
-    await triggerGenerationIfNeeded(userId, poolCount)
-
     if (remaining === 0) {
       return jsonResponse({
         exercises: [],
@@ -105,11 +68,6 @@ export async function handler(
 
     // Fetch exercises from pool (handles priority shuffling internally)
     const exercises = await dbClient.getExercisePool(userId, remaining)
-
-    // Mark them as served
-    if (exercises.length > 0) {
-      await dbClient.markExercisesServed(userId, exercises.map((e) => e.exercise_id))
-    }
 
     return jsonResponse({
       exercises: exercises.map((e) => ({
