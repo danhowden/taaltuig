@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Check, X, ArrowRight, PencilLine, RotateCw } from 'lucide-react'
+import { Check, X, ArrowRight, PencilLine, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { useAuth } from '@/contexts/AuthContext'
@@ -15,29 +15,26 @@ import type { WritingExercise, SubmitWritingResponse } from '@/types'
 function ProgressBar({
   current,
   total,
-  correct,
 }: {
   current: number
   total: number
   correct: number
 }) {
-  const progress = total > 0 ? ((current) / total) * 100 : 0
+  const progress = total > 0 ? (current / total) * 100 : 0
+  const remaining = Math.max(0, total - current)
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3">
-      <Link to="/" aria-label="Back to home">
-        <ArrowLeft className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-      </Link>
+    <div className="mx-auto max-w-2xl w-full flex items-center gap-4 px-4 py-3">
       <div className="flex-1">
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className="h-1.5 rounded-full bg-black/10 overflow-hidden">
           <div
             className="h-full rounded-full bg-primary transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
-      <span className="text-sm text-muted-foreground tabular-nums">
-        {correct}/{current} correct
+      <span className="text-xs text-black/40 tabular-nums shrink-0">
+        {remaining} to go
       </span>
     </div>
   )
@@ -46,6 +43,7 @@ function ProgressBar({
 interface ExerciseInputProps {
   exercise: WritingExercise
   onSubmit: (answer: string) => void
+  onPass: () => void
   isSubmitting: boolean
 }
 
@@ -55,6 +53,7 @@ function TextInput({
   placeholder,
   exerciseId,
   onSubmit,
+  onPass,
   isSubmitting,
 }: {
   label: string
@@ -62,6 +61,7 @@ function TextInput({
   placeholder: string
   exerciseId: string
   onSubmit: (answer: string) => void
+  onPass: () => void
   isSubmitting: boolean
 }) {
   const [answer, setAnswer] = useState('')
@@ -91,13 +91,13 @@ function TextInput({
   return (
     <div className="mx-auto max-w-2xl w-full space-y-8">
       <div className="text-center space-y-2">
-        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+        <p className="text-sm font-medium text-black/40 uppercase tracking-wide">
           {label}
         </p>
         <div className="text-2xl font-semibold">{prompt}</div>
       </div>
 
-      <div className="space-y-4">
+      <div className="flex items-center gap-2">
         <input
           ref={inputRef}
           type="text"
@@ -110,22 +110,29 @@ function TextInput({
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="w-full rounded-xl border-2 border-muted bg-white/80 px-4 py-3 text-lg text-center focus:border-primary focus:outline-none transition-colors"
+          className="flex-1 rounded-full border border-transparent bg-white/40 px-5 py-3 text-lg text-black placeholder:text-black/30 focus:border-white focus:outline-none transition-colors"
         />
         <Button
           onClick={handleSubmit}
           disabled={!answer.trim() || isSubmitting}
-          className="w-full py-6 text-lg"
+          className="rounded-full px-6 shrink-0"
         >
-          Check Answer
+          Check
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onPass}
+          disabled={isSubmitting}
+          className="rounded-full px-6 shrink-0"
+        >
+          Pass
         </Button>
       </div>
     </div>
   )
 }
 
-function FillBlankInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
-  // Split prompt around "___" to render the blank inline
+function FillBlankInput({ exercise, onSubmit, onPass, isSubmitting }: ExerciseInputProps) {
   const parts = exercise.prompt.split('___')
 
   return (
@@ -141,16 +148,16 @@ function FillBlankInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps
       placeholder="Type the missing word..."
       exerciseId={exercise.exercise_id}
       onSubmit={onSubmit}
+      onPass={onPass}
       isSubmitting={isSubmitting}
     />
   )
 }
 
-function WordReorderInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+function WordReorderInput({ exercise, onSubmit, onPass, isSubmitting }: ExerciseInputProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([])
   const [availableWords, setAvailableWords] = useState<string[]>([])
 
-  // Reset when exercise changes
   useEffect(() => {
     const words = exercise.prompt.split(' / ')
     setAvailableWords(words)
@@ -187,15 +194,14 @@ function WordReorderInput({ exercise, onSubmit, isSubmitting }: ExerciseInputPro
   return (
     <div className="mx-auto max-w-2xl w-full space-y-8" onKeyDown={handleKeyDown} tabIndex={-1}>
       <div className="text-center space-y-2">
-        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+        <p className="text-sm font-medium text-black/40 uppercase tracking-wide">
           Put the words in order
         </p>
       </div>
 
-      {/* Selected words (answer being built) */}
-      <div className="min-h-[60px] rounded-xl border-2 border-muted bg-white/80 p-3 flex flex-wrap gap-2 items-start">
+      <div className="min-h-[60px] rounded-2xl border border-black/10 bg-white/40 p-3 flex flex-wrap gap-2 items-start">
         {selectedWords.length === 0 && (
-          <span className="text-muted-foreground text-sm">Tap words below to build the sentence...</span>
+          <span className="text-black/30 text-sm">Tap words below to build the sentence...</span>
         )}
         {selectedWords.map((word, i) => (
           <button
@@ -208,32 +214,41 @@ function WordReorderInput({ exercise, onSubmit, isSubmitting }: ExerciseInputPro
         ))}
       </div>
 
-      {/* Available words to pick from */}
       <div className="flex flex-wrap gap-2 justify-center">
         {availableWords.map((word, i) => (
           <button
             key={`available-${i}`}
             onClick={() => addWord(word, i)}
             disabled={isSubmitting}
-            className="px-3 py-1.5 rounded-lg border-2 border-muted bg-white text-lg font-medium hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
+            className="px-3 py-1.5 rounded-lg border border-black/10 bg-white/60 text-lg font-medium hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
           >
             {word}
           </button>
         ))}
       </div>
 
-      <Button
-        onClick={handleSubmit}
-        disabled={selectedWords.length === 0 || availableWords.length > 0 || isSubmitting}
-        className="w-full py-6 text-lg"
-      >
-        Check Answer
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleSubmit}
+          disabled={selectedWords.length === 0 || availableWords.length > 0 || isSubmitting}
+          className="flex-1 rounded-full py-6 text-lg"
+        >
+          Check Answer
+        </Button>
+        <Button
+          variant="outline"
+          onClick={onPass}
+          disabled={isSubmitting}
+          className="rounded-full px-6"
+        >
+          Pass
+        </Button>
+      </div>
     </div>
   )
 }
 
-function TranslationInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+function TranslationInput({ exercise, onSubmit, onPass, isSubmitting }: ExerciseInputProps) {
   return (
     <TextInput
       label="Translate to Dutch"
@@ -241,19 +256,20 @@ function TranslationInput({ exercise, onSubmit, isSubmitting }: ExerciseInputPro
       placeholder="Type your answer in Dutch..."
       exerciseId={exercise.exercise_id}
       onSubmit={onSubmit}
+      onPass={onPass}
       isSubmitting={isSubmitting}
     />
   )
 }
 
-function ExerciseInput({ exercise, onSubmit, isSubmitting }: ExerciseInputProps) {
+function ExerciseInput({ exercise, onSubmit, onPass, isSubmitting }: ExerciseInputProps) {
   switch (exercise.type) {
     case 'fill_blank':
-      return <FillBlankInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+      return <FillBlankInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} isSubmitting={isSubmitting} />
     case 'word_reorder':
-      return <WordReorderInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+      return <WordReorderInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} isSubmitting={isSubmitting} />
     default:
-      return <TranslationInput exercise={exercise} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+      return <TranslationInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} isSubmitting={isSubmitting} />
   }
 }
 
@@ -274,7 +290,6 @@ function FeedbackDisplay({
   const [flagged, setFlagged] = useState(false)
   const [flagging, setFlagging] = useState(false)
 
-  // Focus for keyboard navigation
   useEffect(() => {
     feedbackRef.current?.focus()
   }, [])
@@ -300,6 +315,13 @@ function FeedbackDisplay({
     }
   }, [onFlagIncorrect, flagging, flagged])
 
+  const typeLabel =
+    exercise.type === 'fill_blank'
+      ? 'Fill in the blank'
+      : exercise.type === 'word_reorder'
+        ? 'Put the words in order'
+        : 'Translate to Dutch'
+
   return (
     <div
       ref={feedbackRef}
@@ -308,14 +330,12 @@ function FeedbackDisplay({
       className="mx-auto max-w-2xl w-full space-y-6 outline-none"
     >
       <div className="text-center space-y-2">
-        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-          {exercise.type === 'fill_blank' ? 'Fill in the blank' : exercise.type === 'word_reorder' ? 'Put the words in order' : 'Translate to Dutch'}
-        </p>
+        <p className="text-sm font-medium text-black/40 uppercase tracking-wide">{typeLabel}</p>
         <p className="text-2xl font-semibold">{exercise.prompt}</p>
       </div>
 
       <div
-        className={`rounded-xl border-2 p-6 space-y-3 ${
+        className={`rounded-2xl border p-6 space-y-3 ${
           result.correct
             ? 'border-green-300 bg-green-50/80'
             : 'border-red-300 bg-red-50/80'
@@ -323,43 +343,39 @@ function FeedbackDisplay({
       >
         <div className="flex items-center gap-2">
           {result.correct ? (
-            <Check className="h-5 w-5 text-green-600" />
+            <Check className="h-5 w-5 text-green-600 shrink-0" />
           ) : (
-            <X className="h-5 w-5 text-red-600" />
+            <X className="h-5 w-5 text-red-600 shrink-0" />
           )}
-          <span
-            className={`font-semibold ${
-              result.correct ? 'text-green-700' : 'text-red-700'
-            }`}
-          >
+          <span className={`font-semibold ${result.correct ? 'text-green-700' : 'text-red-700'}`}>
             {result.feedback}
           </span>
         </div>
         {!result.correct && (
           <div className="space-y-1">
             <p className="text-sm text-red-600">
-              Your answer: <span className="font-medium">{userAnswer}</span>
+              Your answer: <span className="font-medium">{userAnswer || '(passed)'}</span>
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-black/50">
               Correct answer: <span className="font-medium text-foreground">{result.reference_answer}</span>
             </p>
           </div>
         )}
       </div>
 
-      {!result.correct && onFlagIncorrect && (
+      {!result.correct && onFlagIncorrect && userAnswer && (
         <div className="text-center">
           <button
             onClick={handleFlag}
             disabled={flagging || flagged}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors disabled:opacity-50"
+            className="text-xs text-black/30 hover:text-black/50 underline underline-offset-2 transition-colors disabled:opacity-50"
           >
-            {flagged ? 'Flagged — thanks for the feedback' : flagging ? 'Flagging...' : 'My answer was actually correct'}
+            {flagged ? 'Flagged — thanks' : flagging ? 'Flagging...' : 'My answer was actually correct'}
           </button>
         </div>
       )}
 
-      <Button onClick={onNext} className="w-full py-6 text-lg">
+      <Button onClick={onNext} className="w-full rounded-full py-6 text-lg">
         Continue <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </div>
@@ -448,7 +464,6 @@ export function WritingSession() {
   const exerciseStartRef = useRef(Date.now())
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  // Reset timer when exercise changes
   useEffect(() => {
     if (session.phase === 'writing') {
       exerciseStartRef.current = Date.now()
@@ -458,9 +473,7 @@ export function WritingSession() {
   const handleSubmit = useCallback(
     (answer: string) => {
       if (!session.currentExercise) return
-
       const durationMs = Date.now() - exerciseStartRef.current
-
       submitWriting.mutate(
         {
           exercise_id: session.currentExercise.exercise_id,
@@ -477,6 +490,10 @@ export function WritingSession() {
     [session, submitWriting]
   )
 
+  const handlePass = useCallback(() => {
+    handleSubmit('')
+  }, [handleSubmit])
+
   const handleCompleteMore = useCallback(async () => {
     if (!token) return
     setIsLoadingMore(true)
@@ -490,7 +507,6 @@ export function WritingSession() {
     }
   }, [token, session])
 
-  // Loading state
   if (isLoading || !data) {
     return (
       <div className="relative flex h-full flex-col">
@@ -501,7 +517,6 @@ export function WritingSession() {
     )
   }
 
-  // Empty state
   if (session.phase === 'empty') {
     const emptyReason = data?.stats?.exercises_remaining === 0 ? 'limit_reached' : 'no_exercises'
     return (
@@ -513,7 +528,6 @@ export function WritingSession() {
     )
   }
 
-  // Complete state
   if (session.phase === 'complete') {
     return (
       <div className="relative flex h-full flex-col">
@@ -530,23 +544,18 @@ export function WritingSession() {
     )
   }
 
-  // Writing + Feedback states
   const lastResult = session.results[session.results.length - 1]
   const lastUserAnswer = session.userAnswers[session.userAnswers.length - 1]
 
   return (
     <div className="relative flex h-full flex-col">
-      <ProgressBar
-        current={session.currentIndex + (session.phase === 'feedback' ? 1 : 0)}
-        total={session.totalCount}
-        correct={session.correctCount}
-      />
-
+      {/* Centered exercise content */}
       <div className="flex flex-1 items-center justify-center px-4 py-8">
         {session.phase === 'writing' && session.currentExercise && (
           <ExerciseInput
             exercise={session.currentExercise}
             onSubmit={handleSubmit}
+            onPass={handlePass}
             isSubmitting={submitWriting.isPending}
           />
         )}
@@ -557,11 +566,20 @@ export function WritingSession() {
             exercise={session.exercises[session.currentIndex]}
             userAnswer={lastUserAnswer}
             onNext={session.nextExercise}
-            onFlagIncorrect={!lastResult.correct && token ? async () => {
+            onFlagIncorrect={!lastResult.correct && lastUserAnswer && token ? async () => {
               await apiClient.rejectExercise(token, session.exercises[session.currentIndex].exercise_id, 'Flagged: my answer was correct')
             } : undefined}
           />
         )}
+      </div>
+
+      {/* Progress pinned to bottom */}
+      <div className="pb-3">
+        <ProgressBar
+          current={session.currentIndex + (session.phase === 'feedback' ? 1 : 0)}
+          total={session.totalCount}
+          correct={session.correctCount}
+        />
       </div>
     </div>
   )

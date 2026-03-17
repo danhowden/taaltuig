@@ -4,6 +4,7 @@ import {
   normalizeAnswer,
   stripDiacritics,
   levenshteinDistance,
+  damerauLevenshteinDistance,
   isDiacriticDifference,
 } from './assessor'
 
@@ -23,6 +24,11 @@ describe('normalizeAnswer', () => {
   it('handles empty string', () => {
     expect(normalizeAnswer('')).toBe('')
     expect(normalizeAnswer('   ')).toBe('')
+  })
+
+  it('strips punctuation', () => {
+    expect(normalizeAnswer('Tot ziens!')).toBe('tot ziens')
+    expect(normalizeAnswer('Goed, dank je.')).toBe('goed dank je')
   })
 })
 
@@ -59,6 +65,18 @@ describe('levenshteinDistance', () => {
     expect(levenshteinDistance('', 'abc')).toBe(3)
     expect(levenshteinDistance('abc', '')).toBe(3)
     expect(levenshteinDistance('', '')).toBe(0)
+  })
+})
+
+describe('damerauLevenshteinDistance', () => {
+  it('treats adjacent transposition as distance 1', () => {
+    expect(damerauLevenshteinDistance('zeins', 'ziens')).toBe(1)
+    expect(damerauLevenshteinDistance('ie', 'ei')).toBe(1)
+  })
+
+  it('returns same as levenshtein for non-transposition differences', () => {
+    expect(damerauLevenshteinDistance('kat', 'kar')).toBe(1)
+    expect(damerauLevenshteinDistance('loppp', 'loop')).toBe(2)
   })
 })
 
@@ -152,7 +170,7 @@ describe('TranslationAssessor', () => {
       expect(result.correct).toBe(true)
       expect(result.grade).toBe(2)
       expect(result.match_type).toBe('fuzzy')
-      expect(result.feedback).toContain('spelling')
+      expect(result.feedback).toContain('minor typo')
     })
 
     it('accepts typo against alternative', () => {
@@ -166,7 +184,14 @@ describe('TranslationAssessor', () => {
       expect(result.match_type).toBe('fuzzy')
     })
 
-    it('rejects two-character differences', () => {
+    it('accepts letter transposition (zeins/ziens) in longer sentence', () => {
+      const result = assessor.assess('tot zeins volgende week', 'Tot ziens volgende week!')
+      expect(result.correct).toBe(true)
+      expect(result.grade).toBe(2)
+      expect(result.match_type).toBe('fuzzy')
+    })
+
+    it('rejects clearly wrong short answer', () => {
       const result = assessor.assess('Ik loppp naar de winkel', 'Ik loop naar de winkel')
       expect(result.correct).toBe(false)
       expect(result.grade).toBe(0)
