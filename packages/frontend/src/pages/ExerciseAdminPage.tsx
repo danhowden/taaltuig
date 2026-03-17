@@ -16,25 +16,29 @@ import {
 } from '@/components/ui/select'
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { Input } from '@/components/ui/input'
-import { PencilLine, Check, Circle, Ban, RotateCw, Trash2, Undo2 } from 'lucide-react'
+import { PencilLine, RotateCw, Trash2, Undo2 } from 'lucide-react'
 import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
 
-function StatusBadge({ status }: { status: ExerciseStatus }) {
-  const config: Record<ExerciseStatus, { className: string; icon: typeof Check }> = {
-    pending: { className: 'bg-yellow-100 text-yellow-800', icon: Circle },
-    failed: { className: 'bg-orange-100 text-orange-800', icon: RotateCw },
-    completed: { className: 'bg-green-100 text-green-800', icon: Check },
-    rejected: { className: 'bg-red-100 text-red-800', icon: Ban },
-  }
-
-  const { className, icon: Icon } = config[status] || config.pending
+function StatusBadge({ status }: { status: string }) {
+  // Coerce legacy 'served'/'validated'/'expired' to pending
+  const normalised: ExerciseStatus =
+    status === 'failed' || status === 'completed' || status === 'rejected'
+      ? status
+      : 'pending'
 
   return (
-    <Badge variant="secondary" className={`text-[11px] px-1.5 py-0 h-5 ${className}`}>
-      <Icon className="h-3 w-3 mr-1" />
-      {status}
-    </Badge>
+    <span className="text-[11px] uppercase tracking-wide text-black/50 font-medium">
+      {normalised}
+    </span>
   )
+}
+
+const TYPE_COLORS: Record<ExerciseType, string> = {
+  translation: 'bg-blue-100 text-blue-800 border-blue-200',
+  fill_blank: 'bg-purple-100 text-purple-800 border-purple-200',
+  word_reorder: 'bg-teal-100 text-teal-800 border-teal-200',
+  guided_write: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  paragraph_write: 'bg-slate-100 text-slate-800 border-slate-200',
 }
 
 function exerciseTypeLabel(type: ExerciseType): string {
@@ -81,7 +85,7 @@ function ExerciseCard({
     <div className={`rounded-[6px] bg-white/60 p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className={`text-xs ${TYPE_COLORS[exercise.type] ?? ''}`}>
             {exerciseTypeLabel(exercise.type)}
           </Badge>
           <StatusBadge status={exercise.status} />
@@ -220,24 +224,19 @@ export function ExerciseAdminPage() {
     staleTime: 10_000,
   })
 
-  // Client-side filtering
+  // Client-side filtering (normalise legacy 'served'/'validated'/'expired' → 'pending')
   const exercises = useMemo(() => {
     if (!allExercises) return []
     return allExercises.filter((ex) => {
-      if (statusFilter !== 'all' && ex.status !== statusFilter) return false
+      const effectiveStatus: ExerciseStatus =
+        ex.status === 'failed' || ex.status === 'completed' || ex.status === 'rejected'
+          ? ex.status
+          : 'pending'
+      if (statusFilter !== 'all' && effectiveStatus !== statusFilter) return false
       if (typeFilter !== 'all' && ex.type !== typeFilter) return false
       return true
     })
   }, [allExercises, statusFilter, typeFilter])
-
-  // Status counts from full dataset
-  const statusCounts = useMemo(() => {
-    if (!allExercises) return {} as Record<string, number>
-    return allExercises.reduce((acc, ex) => {
-      acc[ex.status] = (acc[ex.status] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-  }, [allExercises])
 
   if (isLoading) {
     return (
@@ -281,24 +280,8 @@ export function ExerciseAdminPage() {
       <PageLayout.Content>
         <div className="space-y-4">
 
-          {/* Status summary + filters */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(statusCounts).map(([status, count]) => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    statusFilter === status
-                      ? 'bg-foreground text-background border-foreground'
-                      : 'border-border hover:border-foreground/50'
-                  }`}
-                >
-                  {status} {count}
-                </button>
-              ))}
-            </div>
-
+          {/* Filters */}
+          <div className="flex justify-end gap-4 flex-wrap">
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[140px] h-8 text-xs">
