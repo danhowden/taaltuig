@@ -305,6 +305,37 @@ export function CurriculumPage() {
           )}
         </div>
 
+        {/* Exercise type legend */}
+        <div className="bg-white/60 rounded-xl p-4 mb-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-3">
+            Exercise Types
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {[
+              { id: 'fill_blank', label: 'Fill Blank', desc: 'Complete one missing word' },
+              { id: 'translation', label: 'Translation', desc: 'English→Dutch sentence' },
+              { id: 'word_reorder', label: 'Word Reorder', desc: 'Arrange scrambled words' },
+              { id: 'multiple_choice', label: 'Multiple Choice', desc: 'Pick from 3-4 options' },
+              { id: 'conjugation', label: 'Conjugation', desc: 'Infinitive + subject → correct form' },
+              { id: 'error_correction', label: 'Error Correction', desc: 'Find and fix the mistake' },
+              { id: 'sentence_completion', label: 'Sentence Completion', desc: 'Finish a started sentence' },
+              { id: 'cloze_passage', label: 'Cloze Passage', desc: 'Multiple blanks in a paragraph' },
+              { id: 'guided_write', label: 'Guided Write', desc: 'Sentence with grammar constraint' },
+              { id: 'paragraph_write', label: 'Paragraph Write', desc: 'Multi-sentence writing' },
+            ].map((et) => {
+              const colors = EXERCISE_TYPE_COLORS as Record<string, string>
+              return (
+                <div key={et.id}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors[et.id] || 'bg-gray-100 text-gray-600'}`}>
+                    {et.label}
+                  </span>
+                  <p className="text-[10px] text-black/50 mt-1">{et.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Topic tree */}
         <div className="bg-white/60 rounded-xl p-4">
           <div className="divide-y divide-black/5">
