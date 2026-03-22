@@ -414,7 +414,7 @@ function ExerciseTypeLegend() {
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {EXERCISE_TYPES.map((et) => (
-          <div key={et.id} className="bg-white rounded-lg border border-black/5 p-2">
+          <div key={et.id}>
             <span className={`text-[10px] px-1.5 py-0.5 rounded ${et.color}`}>
               {et.label}
             </span>
@@ -445,7 +445,7 @@ function SkillTrackingPanel() {
       </h3>
       <div className="grid grid-cols-3 gap-3">
         {SKILL_TYPES.map((skill) => (
-          <div key={skill.id} className="bg-white rounded-lg border border-black/5 p-3">
+          <div key={skill.id}>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">{skill.icon}</span>
               <span className="text-sm font-medium text-black/70">{skill.label}</span>
