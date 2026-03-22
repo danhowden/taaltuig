@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import { AppSidebar } from '@/components/AppSidebar'
+import { QuickAddCard } from '@/components/QuickAddCard'
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar'
 import { MeshGradientBackground } from '@/components/ui/mesh-gradient-background'
 import { GlobalLoadingIndicator } from '@/components/GlobalLoadingIndicator'
@@ -13,7 +14,7 @@ function MobileMenuButton() {
   const { toggleSidebar } = useSidebar()
 
   return (
-    <div className="fixed bottom-4 right-4 z-20 md:hidden">
+    <div className="fixed bottom-4 left-4 z-20 md:hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -97,6 +98,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <SidebarInset className="bg-transparent">
               <div className="relative flex flex-col h-full overflow-hidden">
                 <MobileMenuButton />
+                <QuickAddCard />
                 <div className="flex-1 overflow-auto flex flex-col">
                   <motion.div
                     key={location.pathname}
