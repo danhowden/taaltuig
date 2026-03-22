@@ -382,6 +382,19 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const sidebarCountsLambda = new lambda.Function(
+      this,
+      'SidebarCountsFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-sidebar-counts',
+        description: 'Lightweight sidebar badge counts (cards, review, insights, writing)',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/sidebar-counts/dist')
+        ),
+      }
+    )
+
     const getMetricsLambda = new lambda.Function(
       this,
       'GetMetricsFunction',
@@ -645,6 +658,7 @@ export class ApiStack extends cdk.Stack {
       writingGenerateLambda,
       writingExercisesLambda,
       writingChallengeLambda,
+      sidebarCountsLambda,
     ]
 
     // Import the DynamoDB table from the database stack
@@ -814,6 +828,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'ValidateInsightsIntegration',
         validateInsightsLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/counts',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'SidebarCountsIntegration',
+        sidebarCountsLambda
       ),
       authorizer: jwtAuthorizer,
     })

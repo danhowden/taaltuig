@@ -153,6 +153,13 @@ export interface SubmitReviewResponse {
 // API Request/Response Types
 // ============================================================================
 
+export interface SidebarCountsResponse {
+  cards: number
+  review: number
+  insights: number
+  writing: number
+}
+
 export interface GetCurrentUserResponse {
   user: User
 }

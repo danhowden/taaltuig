@@ -16,26 +16,20 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useCards } from '@/hooks/useCards'
-import { useReviewQueue } from '@/hooks/useReviewQueue'
-import { useInsightsQueue } from '@/hooks/useInsights'
-import { useWritingQueueCount } from '@/hooks/useWritingSession'
+import { useSidebarCounts } from '@/hooks/useSidebarCounts'
 
 export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout, isLoading: isUserLoading } = useAuth()
   const { state, toggleSidebar } = useSidebar()
-  const { cards, isLoading: isCardsLoading } = useCards()
-  const { data: reviewData, isLoading: isReviewLoading } = useReviewQueue()
-  const { data: insightsData, isLoading: isInsightsLoading } = useInsightsQueue()
-  const { data: writingData, isLoading: isWritingLoading } = useWritingQueueCount()
+  const { data: counts, isLoading: isCountsLoading } = useSidebarCounts()
 
   const isCollapsed = state === 'collapsed'
-  const totalCardCount = cards.length
-  const reviewCount = reviewData?.stats?.total_count || 0
-  const insightsCount = insightsData?.total || 0
-  const writingCount = writingData?.stats?.pool_size || 0
+  const totalCardCount = counts?.cards || 0
+  const reviewCount = counts?.review || 0
+  const insightsCount = counts?.insights || 0
+  const writingCount = counts?.writing || 0
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -81,28 +75,28 @@ export function AppSidebar() {
 
                 if (item.path === '/review') {
                   showBadge = true
-                  badgeContent = isReviewLoading ? (
+                  badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     reviewCount
                   )
                 } else if (item.path === '/cards') {
                   showBadge = true
-                  badgeContent = isCardsLoading ? (
+                  badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     totalCardCount
                   )
                 } else if (item.path === '/writing') {
                   showBadge = writingCount > 0
-                  badgeContent = isWritingLoading ? (
+                  badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     writingCount
                   )
                 } else if (item.path === '/insights') {
                   showBadge = insightsCount > 0
-                  badgeContent = isInsightsLoading ? (
+                  badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     insightsCount

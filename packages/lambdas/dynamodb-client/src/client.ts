@@ -358,6 +358,81 @@ export class TaaltuigDynamoDBClient {
   }
 
   // ============================================================================
+  // LIGHTWEIGHT COUNT QUERIES (for sidebar badges)
+  // ============================================================================
+
+  /**
+   * Count total cards for a user without fetching them.
+   */
+  async countCards(userId: string): Promise<number> {
+    const response = await this.client.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}`,
+          ':sk': 'CARD#',
+        },
+        Select: 'COUNT',
+      })
+    )
+    return response.Count || 0
+  }
+
+  /**
+   * Get review queue stats without building the full queue.
+   * Much cheaper than getReviewQueue — only counts, no item fetching.
+   */
+  async getReviewQueueStats(userId: string): Promise<{
+    due_count: number
+    new_count: number
+    learning_count: number
+    total_count: number
+    new_remaining_today: number
+  }> {
+    const now = new Date().toISOString()
+
+    const countByState = async (state: State, dueBeforeOrAt?: string): Promise<number> => {
+      const params: QueryCommandInput = {
+        TableName: this.tableName,
+        IndexName: 'GSI1',
+        KeyConditionExpression: 'GSI1PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#${state}`,
+        },
+        Select: 'COUNT',
+      }
+      if (dueBeforeOrAt && params.ExpressionAttributeValues) {
+        params.KeyConditionExpression += ' AND GSI1SK <= :due'
+        params.ExpressionAttributeValues[':due'] = dueBeforeOrAt
+      }
+      const response = await this.client.send(new QueryCommand(params))
+      return response.Count || 0
+    }
+
+    const [settings, reviewCount, learningCount, relearningCount, newCardsToday] =
+      await Promise.all([
+        this.getSettings(userId),
+        countByState('REVIEW', now),
+        countByState('LEARNING', now),
+        countByState('RELEARNING', now),
+        this.countNewCardsToday(userId),
+      ])
+
+    const newCardsPerDay = settings?.new_cards_per_day ?? 20
+    const remainingNew = Math.max(0, newCardsPerDay - newCardsToday)
+    const dueCount = reviewCount + learningCount + relearningCount
+
+    return {
+      due_count: reviewCount,
+      new_count: remainingNew,
+      learning_count: learningCount + relearningCount,
+      total_count: dueCount + remainingNew,
+      new_remaining_today: remainingNew,
+    }
+  }
+
+  // ============================================================================
   // CARD OPERATIONS
   // ============================================================================
 

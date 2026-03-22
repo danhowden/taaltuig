@@ -6,6 +6,7 @@
  */
 
 import type {
+  SidebarCountsResponse,
   GetCurrentUserResponse,
   QueueResponse,
   SubmitReviewRequest,
@@ -100,6 +101,18 @@ class ApiClient {
     } finally {
       clearTimeout(timeoutId)
     }
+  }
+
+  // ============================================================================
+  // Sidebar counts (lightweight, single call)
+  // ============================================================================
+
+  async getSidebarCounts(token: string): Promise<SidebarCountsResponse> {
+    return this.request<SidebarCountsResponse>('/api/counts', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
   }
 
   // ============================================================================
