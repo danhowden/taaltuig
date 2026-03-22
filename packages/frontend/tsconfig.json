@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@taaltuig/dynamodb-client": ["../lambdas/dynamodb-client/src"]
     }
   },
   "include": ["src"],

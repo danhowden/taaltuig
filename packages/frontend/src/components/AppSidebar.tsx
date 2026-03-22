@@ -1,4 +1,4 @@
-import { Home, CreditCard, Settings, LogOut, Brain, Loader2, Theater, Lightbulb, PencilLine, ClipboardList } from 'lucide-react'
+import { Home, CreditCard, Settings, LogOut, Brain, Loader2, Theater, Lightbulb, PencilLine, ClipboardList, BookOpen } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { TaaltuigLogo } from '@/components/TaaltuigLogo'
@@ -44,6 +44,7 @@ export function AppSidebar() {
     { icon: ClipboardList, label: 'Exercise Admin', path: '/writing/admin' },
     { icon: CreditCard, label: 'Cards', path: '/cards' },
     { icon: Lightbulb, label: 'Insights', path: '/insights' },
+    { icon: BookOpen, label: 'Curriculum', path: '/curriculum' },
     { icon: Settings, label: 'Settings', path: '/settings' },
     { icon: Theater, label: 'Behind the Scenes', path: '/debug' },
   ]

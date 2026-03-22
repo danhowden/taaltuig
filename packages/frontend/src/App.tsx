@@ -14,6 +14,7 @@ import { DebugPage } from '@/pages/DebugPage'
 import { InsightsReviewPage } from '@/pages/InsightsReviewPage'
 import { WritingSession } from '@/pages/WritingSession'
 import { ExerciseAdminPage } from '@/pages/ExerciseAdminPage'
+import { CurriculumPage } from '@/pages/CurriculumPage'
 import { Toaster } from '@/components/ui/toaster'
 import { AppLayout } from '@/components/AppLayout'
 
@@ -97,6 +98,14 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <ExerciseAdminPage />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/curriculum"
+                    element={
+                      <ErrorBoundary>
+                        <CurriculumPage />
                       </ErrorBoundary>
                     }
                   />

@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@taaltuig/dynamodb-client': path.resolve(__dirname, '../lambdas/dynamodb-client/src'),
     },
   },
 })
