@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb'
+import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
 import {
   getUserIdFromEvent,
   unauthorizedResponse,
@@ -45,13 +45,15 @@ export async function handler(
     const level = event.queryStringParameters?.level?.toUpperCase()
     const typeFilter = event.queryStringParameters?.type
 
-    if (!topic && !level) {
-      return badRequestResponse('Either topic or level query parameter is required')
-    }
-
     let items: Record<string, unknown>[]
 
-    if (topic) {
+    if (!topic && !level) {
+      // No filter — return all exercises (scan, fine for small catalog)
+      const response = await docClient.send(new ScanCommand({
+        TableName: EXERCISES_TABLE_NAME,
+      }))
+      items = (response.Items || []) as Record<string, unknown>[]
+    } else if (topic) {
       // Query by topic (PK lookup)
       const params: Record<string, unknown> = {
         TableName: EXERCISES_TABLE_NAME,

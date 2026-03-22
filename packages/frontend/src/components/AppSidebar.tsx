@@ -34,7 +34,7 @@ export function AppSidebar() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Brain, label: 'Review', path: '/review' },
-    { icon: PencilLine, label: 'Writing', path: '/writing' },
+    { icon: PencilLine, label: 'Practice', path: '/exercise-session' },
     { icon: ClipboardList, label: 'Exercises', path: '/exercises' },
     { icon: CreditCard, label: 'Cards', path: '/cards' },
     { icon: Lightbulb, label: 'Insights', path: '/insights' },

@@ -13,6 +13,7 @@ import { CardsPage } from '@/pages/CardsPage'
 import { DebugPage } from '@/pages/DebugPage'
 import { InsightsReviewPage } from '@/pages/InsightsReviewPage'
 import { WritingSession } from '@/pages/WritingSession'
+import { ExerciseSession } from '@/pages/ExerciseSession'
 import { ExerciseAdminPage } from '@/pages/ExerciseAdminPage'
 import { CurriculumPage } from '@/pages/CurriculumPage'
 import { Toaster } from '@/components/ui/toaster'
@@ -90,6 +91,14 @@ function App() {
                     element={
                       <ErrorBoundary>
                         <WritingSession />
+                      </ErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path="/exercise-session"
+                    element={
+                      <ErrorBoundary>
+                        <ExerciseSession />
                       </ErrorBoundary>
                     }
                   />

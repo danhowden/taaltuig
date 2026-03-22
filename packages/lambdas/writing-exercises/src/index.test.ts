@@ -12,6 +12,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     from: vi.fn().mockReturnValue({ send: mockSend }),
   },
   QueryCommand: vi.fn().mockImplementation((input) => input),
+  ScanCommand: vi.fn().mockImplementation((input) => input),
 }))
 
 const { handler } = await import('./index')
@@ -59,10 +60,13 @@ describe('exercise-catalog handler', () => {
     expect(result.statusCode).toBe(401)
   })
 
-  it('returns 400 when no topic or level provided', async () => {
+  it('returns all exercises when no topic or level provided', async () => {
+    mockSend.mockResolvedValue({ Items: [mockItem] })
     const event = makeEvent({ queryStringParameters: {} })
     const result = await handler(event)
-    expect(result.statusCode).toBe(400)
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.count).toBe(1)
   })
 
   it('queries by topic PK', async () => {
@@ -123,6 +127,13 @@ describe('exercise-catalog handler', () => {
     })
     const result = await handler(event)
     expect(result.statusCode).toBe(400)
+  })
+
+  it('returns 500 on DynamoDB error', async () => {
+    mockSend.mockRejectedValue(new Error('DynamoDB error'))
+    const event = makeEvent()
+    const result = await handler(event)
+    expect(result.statusCode).toBe(500)
   })
 
   it('returns empty array when no exercises found', async () => {

@@ -12,60 +12,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { LoadingCards } from '@/components/review/LoadingCards'
-import { ArrowLeft, BookOpen } from 'lucide-react'
+import { ArrowLeft, BookOpen, Play } from 'lucide-react'
 import type { CatalogExercise } from '@/types'
 import { EXERCISE_TYPE_COLORS, EXERCISE_TYPE_LABELS } from '@/constants/exercises'
 import { CURRICULUM, type CurriculumTopic } from '@taaltuig/dynamodb-client'
 
-function ExerciseCard({ exercise }: { exercise: CatalogExercise }) {
-  return (
-    <div className="rounded-[6px] bg-white/60 p-4 space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge
-            variant="outline"
-            className={`text-xs ${EXERCISE_TYPE_COLORS[exercise.type] ?? ''}`}
-          >
-            {EXERCISE_TYPE_LABELS[exercise.type]}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <p className="text-sm font-medium">{exercise.prompt}</p>
-        <p className="text-sm text-muted-foreground">
-          → {exercise.reference_answer}
-        </p>
-        {exercise.alternatives.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Alts: {exercise.alternatives.join(', ')}
-          </p>
-        )}
-      </div>
-
-      {exercise.grammar_focus && (
-        <p className="text-xs text-muted-foreground">
-          Grammar: {exercise.grammar_focus}
-        </p>
-      )}
-
-      {exercise.source_notes && (
-        <p className="text-xs text-black/30">{exercise.source_notes}</p>
-      )}
-    </div>
-  )
-}
+// Build a lookup map for topic names
+const topicNameMap = new Map<string, string>(
+  (CURRICULUM as CurriculumTopic[]).map((t) => [t.id, t.name])
+)
 
 export function ExerciseAdminPage() {
   const { token } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const topic = searchParams.get('topic') || undefined
-  const level = searchParams.get('level') || (topic ? undefined : 'A1')
+  const level = searchParams.get('level') || undefined
   const typeFilter = searchParams.get('type') || 'all'
 
-  // Find topic metadata from curriculum
   const topicMeta = topic
     ? (CURRICULUM as CurriculumTopic[]).find((t) => t.id === topic)
     : undefined
@@ -74,10 +40,7 @@ export function ExerciseAdminPage() {
     queryKey: ['exercise-catalog', topic, level],
     queryFn: async () => {
       if (!token) throw new Error('No token')
-      return apiClient.getExerciseCatalog(token, {
-        topic,
-        level: topic ? undefined : level,
-      })
+      return apiClient.getExerciseCatalog(token, { topic, level })
     },
     enabled: !!token,
     staleTime: 30_000,
@@ -89,18 +52,28 @@ export function ExerciseAdminPage() {
     return data.exercises.filter((ex) => ex.type === typeFilter)
   }, [data, typeFilter])
 
-  // Get unique types for the filter dropdown
   const availableTypes = useMemo(() => {
     if (!data?.exercises) return []
     return [...new Set(data.exercises.map((ex) => ex.type))]
   }, [data])
 
-  const setType = (value: string) => {
+  // Group by topic for the "start session" buttons
+  const topicGroups = useMemo(() => {
+    const groups = new Map<string, CatalogExercise[]>()
+    for (const ex of exercises) {
+      const list = groups.get(ex.topic_id) || []
+      list.push(ex)
+      groups.set(ex.topic_id, list)
+    }
+    return groups
+  }, [exercises])
+
+  const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams)
-    if (value === 'all') {
-      next.delete('type')
+    if (value === 'all' || !value) {
+      next.delete(key)
     } else {
-      next.set('type', value)
+      next.set(key, value)
     }
     setSearchParams(next)
   }
@@ -109,11 +82,11 @@ export function ExerciseAdminPage() {
     ? topicMeta.name
     : level
       ? `${level} Exercises`
-      : 'Exercises'
+      : 'All Exercises'
 
   const description = topicMeta
     ? `${topicMeta.level} — ${topicMeta.description}`
-    : 'Browse the exercise catalog'
+    : 'Exercise catalog'
 
   if (isLoading) {
     return (
@@ -132,13 +105,23 @@ export function ExerciseAdminPage() {
         title={title}
         description={description}
         actions={
-          <Link
-            to="/curriculum"
-            className="inline-flex items-center gap-1.5 text-xs text-black/50 hover:text-black/80 transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3" />
-            Curriculum
-          </Link>
+          <div className="flex items-center gap-3">
+            {topic && (
+              <Button asChild size="sm" className="gap-1.5">
+                <Link to={`/exercise-session?topic=${topic}`}>
+                  <Play className="h-3 w-3" />
+                  Practice
+                </Link>
+              </Button>
+            )}
+            <Link
+              to="/curriculum"
+              className="inline-flex items-center gap-1.5 text-xs text-black/50 hover:text-black/80 transition-colors"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Curriculum
+            </Link>
+          </div>
         }
       />
 
@@ -148,11 +131,12 @@ export function ExerciseAdminPage() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm font-medium text-muted-foreground">
               {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
+              {topicGroups.size > 1 && ` across ${topicGroups.size} topics`}
             </p>
             <div className="flex gap-2">
               {availableTypes.length > 1 && (
-                <Select value={typeFilter} onValueChange={setType}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                <Select value={typeFilter} onValueChange={(v) => setFilter('type', v)}>
+                  <SelectTrigger className="w-[160px] h-8 text-xs">
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
@@ -168,12 +152,53 @@ export function ExerciseAdminPage() {
             </div>
           </div>
 
-          {/* Exercise list */}
+          {/* Exercise table */}
           {exercises.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {exercises.map((exercise) => (
-                <ExerciseCard key={exercise.exercise_id} exercise={exercise} />
-              ))}
+            <div className="bg-white/60 rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-black/10">
+                    <th className="text-left py-2.5 px-4 text-xs font-semibold text-black/50 uppercase tracking-wide">Type</th>
+                    <th className="text-left py-2.5 px-4 text-xs font-semibold text-black/50 uppercase tracking-wide">Topic</th>
+                    <th className="text-left py-2.5 px-4 text-xs font-semibold text-black/50 uppercase tracking-wide">Prompt</th>
+                    <th className="text-left py-2.5 px-4 text-xs font-semibold text-black/50 uppercase tracking-wide">Answer</th>
+                    <th className="text-left py-2.5 px-4 text-xs font-semibold text-black/50 uppercase tracking-wide">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exercises.map((exercise) => (
+                    <tr key={exercise.exercise_id} className="border-b border-black/5 hover:bg-black/[0.02]">
+                      <td className="py-2.5 px-4">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${EXERCISE_TYPE_COLORS[exercise.type] ?? ''}`}
+                        >
+                          {EXERCISE_TYPE_LABELS[exercise.type] || exercise.type}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <Link
+                          to={`/exercises?topic=${exercise.topic_id}`}
+                          className="text-xs text-black/60 hover:text-black/90 transition-colors"
+                        >
+                          {topicNameMap.get(exercise.topic_id) || exercise.topic_id}
+                        </Link>
+                      </td>
+                      <td className="py-2.5 px-4 text-black/80">
+                        {exercise.prompt}
+                      </td>
+                      <td className="py-2.5 px-4 text-black/50 font-mono text-xs">
+                        {exercise.reference_answer}
+                      </td>
+                      <td className="py-2.5 px-4">
+                        <span className="text-[10px] text-black/30 uppercase tracking-wide">
+                          not attempted
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="text-center py-12">
@@ -181,7 +206,7 @@ export function ExerciseAdminPage() {
               <p className="text-muted-foreground text-sm">
                 {data && data.count > 0
                   ? 'No exercises match this filter'
-                  : 'No exercises seeded for this topic yet'}
+                  : 'No exercises seeded yet'}
               </p>
             </div>
           )}
