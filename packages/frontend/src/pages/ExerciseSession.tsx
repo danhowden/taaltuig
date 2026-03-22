@@ -445,7 +445,7 @@ function FeedbackDisplay({
           <span className="font-semibold text-white">{result.feedback}</span>
         </div>
         <div className="space-y-1">
-          {!result.correct && userAnswer && (
+          {userAnswer && (result.correct ? result.feedback.includes('spelling') : true) && (
             <p className="text-sm text-white/50">
               Your answer: <span className="font-medium text-white/70">{userAnswer}</span>
             </p>
