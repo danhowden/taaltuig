@@ -193,6 +193,7 @@ export function ReviewSession() {
             loadingExtraCards={session.loadingExtraCards}
             vocabExperienced={data?.stats?.vocab_experienced}
             vocabLearned={data?.stats?.vocab_learned}
+            totalReviews={data?.stats?.total_reviews}
           />
         </SessionLayout.Center>
       </SessionLayout>
@@ -209,6 +210,7 @@ export function ReviewSession() {
             writingExerciseCount={writingData?.stats?.pool_size}
             vocabExperienced={data?.stats?.vocab_experienced}
             vocabLearned={data?.stats?.vocab_learned}
+            totalReviews={data?.stats?.total_reviews}
           />
         </SessionLayout.Center>
       </SessionLayout>
@@ -315,6 +317,7 @@ export function ReviewSession() {
           againReviewed={session.againReviewed}
           vocabExperienced={session.vocabExperienced}
           vocabLearned={session.vocabLearned}
+          totalReviews={data?.stats?.total_reviews}
         />
       </div>
 

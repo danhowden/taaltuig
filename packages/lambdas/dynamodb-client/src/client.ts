@@ -213,13 +213,14 @@ export class TaaltuigDynamoDBClient {
       new_remaining_today: number
       vocab_experienced: number
       vocab_learned: number
+      total_reviews: number
     }
   }> {
     const now = new Date().toISOString()
     const extraNew = options?.extraNew || 0
 
     // Run all independent queries in parallel
-    const [settings, reviewItems, learningItems, relearningItems, newCardsToday, vocabExperienced, vocabLearned] =
+    const [settings, reviewItems, learningItems, relearningItems, newCardsToday, vocabExperienced, vocabLearned, totalReviews] =
       await Promise.all([
         this.getSettings(userId),
         this.queryReviewItemsByState(userId, 'REVIEW', now),
@@ -228,6 +229,7 @@ export class TaaltuigDynamoDBClient {
         this.countNewCardsToday(userId),
         this.countVocabularyExperienced(userId),
         this.countVocabularyLearned(userId),
+        this.countTotalReviews(userId),
       ])
 
     if (!settings) {
@@ -257,6 +259,7 @@ export class TaaltuigDynamoDBClient {
           new_remaining_today: 0,
           vocab_experienced: vocabExperienced,
           vocab_learned: vocabLearned,
+          total_reviews: totalReviews,
         },
       }
     }
@@ -292,6 +295,7 @@ export class TaaltuigDynamoDBClient {
         new_remaining_today: Math.max(0, remainingNew - shuffledNewItems.length),
         vocab_experienced: vocabExperienced,
         vocab_learned: vocabLearned,
+        total_reviews: totalReviews,
       },
     }
   }
@@ -447,6 +451,24 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Count total reviews completed (all-time).
+   */
+  async countTotalReviews(userId: string): Promise<number> {
+    const params: QueryCommandInput = {
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}`,
+        ':sk': 'HISTORY#',
+      },
+      Select: 'COUNT',
+    }
+
+    const response = await this.client.send(new QueryCommand(params))
+    return response.Count || 0
+  }
+
+  /**
    * Get review queue stats without building the full queue.
    * Much cheaper than getReviewQueue — only counts, no item fetching.
    */
@@ -458,6 +480,7 @@ export class TaaltuigDynamoDBClient {
     new_remaining_today: number
     vocab_experienced: number
     vocab_learned: number
+    total_reviews: number
   }> {
     const now = new Date().toISOString()
 
@@ -479,7 +502,7 @@ export class TaaltuigDynamoDBClient {
       return response.Count || 0
     }
 
-    const [settings, reviewCount, learningCount, relearningCount, newCardsToday, vocabExperienced, vocabLearned] =
+    const [settings, reviewCount, learningCount, relearningCount, newCardsToday, vocabExperienced, vocabLearned, totalReviews] =
       await Promise.all([
         this.getSettings(userId),
         countByState('REVIEW', now),
@@ -488,6 +511,7 @@ export class TaaltuigDynamoDBClient {
         this.countNewCardsToday(userId),
         this.countVocabularyExperienced(userId),
         this.countVocabularyLearned(userId),
+        this.countTotalReviews(userId),
       ])
 
     const newCardsPerDay = settings?.new_cards_per_day ?? 20
@@ -502,6 +526,7 @@ export class TaaltuigDynamoDBClient {
       new_remaining_today: remainingNew,
       vocab_experienced: vocabExperienced,
       vocab_learned: vocabLearned,
+      total_reviews: totalReviews,
     }
   }
 

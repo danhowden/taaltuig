@@ -11,6 +11,7 @@ interface ReviewCompleteProps {
   writingExerciseCount?: number
   vocabExperienced?: number
   vocabLearned?: number
+  totalReviews?: number
 }
 
 const dutchPhrases = [
@@ -24,7 +25,7 @@ const dutchPhrases = [
 // Dutch flag colors
 const dutchColors = ['#AE1C28', '#FFFFFF', '#21468B']
 
-export function ReviewComplete({ onContinue, loadingExtraCards, writingExerciseCount, vocabExperienced, vocabLearned }: ReviewCompleteProps) {
+export function ReviewComplete({ onContinue, loadingExtraCards, writingExerciseCount, vocabExperienced, vocabLearned, totalReviews }: ReviewCompleteProps) {
   const [phrase] = useState(() => dutchPhrases[Math.floor(Math.random() * dutchPhrases.length)])
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -93,19 +94,25 @@ export function ReviewComplete({ onContinue, loadingExtraCards, writingExerciseC
           <h2 className="text-4xl font-bold">{phrase}</h2>
         </div>
 
-        {(vocabExperienced !== undefined || vocabLearned !== undefined) && (
+        {(totalReviews !== undefined || vocabExperienced !== undefined || vocabLearned !== undefined) && (
           <div className="rounded-2xl bg-white/50 backdrop-blur-sm border border-white/60 p-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              {totalReviews !== undefined && (
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-black/80">{totalReviews.toLocaleString()}</div>
+                  <div className="text-sm text-black/60 mt-1">Total Reviews</div>
+                </div>
+              )}
               {vocabExperienced !== undefined && (
                 <div className="text-center">
                   <div className="text-3xl font-bold text-black/80">{vocabExperienced}</div>
-                  <div className="text-sm text-black/60 mt-1">Vocabulary Experienced</div>
+                  <div className="text-sm text-black/60 mt-1">Vocab Experienced</div>
                 </div>
               )}
               {vocabLearned !== undefined && (
                 <div className="text-center">
                   <div className="text-3xl font-bold text-primary">{vocabLearned}</div>
-                  <div className="text-sm text-black/60 mt-1">Vocabulary Learned</div>
+                  <div className="text-sm text-black/60 mt-1">Vocab Learned</div>
                 </div>
               )}
             </div>

@@ -7,6 +7,7 @@ interface ReviewHeaderProps {
   againReviewed: number
   vocabExperienced?: number
   vocabLearned?: number
+  totalReviews?: number
 }
 
 function AnimatedDigit({ digit, shouldReduceMotion }: { digit: string; shouldReduceMotion: boolean | null }) {
@@ -36,16 +37,16 @@ export function ReviewTitle() {
   )
 }
 
-export function ReviewProgress({ totalCards, reviewedCount, againCount, againReviewed, vocabExperienced, vocabLearned }: ReviewHeaderProps) {
+export function ReviewProgress({ totalCards, reviewedCount, againCount, againReviewed, vocabExperienced, vocabLearned, totalReviews }: ReviewHeaderProps) {
   const shouldReduceMotion = useReducedMotion()
 
   const uniqueCompleted = Math.min(reviewedCount - againReviewed, totalCards)
-  const totalReviews = totalCards + againCount
-  const uniqueWidth = totalReviews > 0 ? (totalCards / totalReviews) * 100 : 100
-  const againWidth = totalReviews > 0 ? (againCount / totalReviews) * 100 : 0
+  const totalSessionReviews = totalCards + againCount
+  const uniqueWidth = totalSessionReviews > 0 ? (totalCards / totalSessionReviews) * 100 : 100
+  const againWidth = totalSessionReviews > 0 ? (againCount / totalSessionReviews) * 100 : 0
   const uniqueProgress = totalCards > 0 ? (uniqueCompleted / totalCards) * 100 : 0
   const againProgress = againCount > 0 ? (againReviewed / againCount) * 100 : 0
-  const remaining = totalReviews - reviewedCount
+  const remaining = totalSessionReviews - reviewedCount
   const digits = String(remaining).split('')
 
   return (
@@ -83,8 +84,14 @@ export function ReviewProgress({ totalCards, reviewedCount, againCount, againRev
         </div>
       </div>
 
-      {(vocabExperienced !== undefined || vocabLearned !== undefined) && (
+      {(totalReviews !== undefined || vocabExperienced !== undefined || vocabLearned !== undefined) && (
         <div className="flex items-center justify-center gap-4 text-xs text-black/50">
+          {totalReviews !== undefined && (
+            <div className="flex items-baseline gap-1">
+              <span className="font-medium text-black/70">{totalReviews.toLocaleString()}</span>
+              <span>reviews</span>
+            </div>
+          )}
           {vocabExperienced !== undefined && (
             <div className="flex items-baseline gap-1">
               <span className="font-medium text-black/70">{vocabExperienced}</span>
