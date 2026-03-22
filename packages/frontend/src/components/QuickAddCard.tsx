@@ -92,25 +92,31 @@ export function QuickAddCard() {
               esc
             </button>
           </div>
-          <input
-            ref={frontRef}
-            type="text"
-            value={front}
-            onChange={(e) => setFront(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Dutch word or phrase"
-            autoComplete="off"
-            className="w-full rounded-lg border border-black/10 bg-white/60 px-3 py-2 text-sm placeholder:text-black/30 focus:border-black/20 focus:outline-none"
-          />
-          <input
-            type="text"
-            value={back}
-            onChange={(e) => setBack(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="English translation"
-            autoComplete="off"
-            className="w-full rounded-lg border border-black/10 bg-white/60 px-3 py-2 text-sm placeholder:text-black/30 focus:border-black/20 focus:outline-none"
-          />
+          <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-white/60 px-3 py-2">
+            <span className="text-base leading-none">🇳🇱</span>
+            <input
+              ref={frontRef}
+              type="text"
+              value={front}
+              onChange={(e) => setFront(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Dutch word or phrase"
+              autoComplete="off"
+              className="flex-1 bg-transparent text-sm placeholder:text-black/30 focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-black/10 bg-white/60 px-3 py-2">
+            <span className="text-base leading-none">🇬🇧</span>
+            <input
+              type="text"
+              value={back}
+              onChange={(e) => setBack(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="English translation"
+              autoComplete="off"
+              className="flex-1 bg-transparent text-sm placeholder:text-black/30 focus:outline-none"
+            />
+          </div>
           <Button
             onClick={handleSubmit}
             disabled={!front.trim() || !back.trim() || createCard.isPending}
