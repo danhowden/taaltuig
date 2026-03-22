@@ -7,6 +7,8 @@ export type InsightType = 'compound' | 'verb_forms' | 'root' | 'pronunciation' |
 
 // Proficiency level for insight complexity
 export type ProficiencyLevel = 'beginner' | 'intermediate' | 'advanced'
+// CEFR level for curriculum progression
+export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
 export type InsightStatus = 'pending' | 'approved' | 'rejected'
 export type InsightReviewer = 'ai' | 'human'
 
@@ -142,6 +144,7 @@ export interface WritingExercise {
   alternatives: string[] // Other valid answers
   target_vocabulary: string[] // card_ids used as generation input
   grammar_focus?: string // e.g., "past tense", "word order"
+  topic_id?: string // curriculum topic id, e.g., "a1.grammar.verbs.present_regular"
   cefr_level?: string
   generated_at: string
   completed_at?: string
@@ -188,6 +191,57 @@ export interface AssessmentResult {
   feedback: string
   match_type: AssessmentMatchType
   reference_answer: string
+}
+
+// CEFR topic progress tracking — one item per user per leaf topic
+export interface TopicProgress {
+  PK: string // USER#<user_id>
+  SK: string // TOPIC#<topic_id>  e.g., TOPIC#a1.grammar.verbs.present_regular
+  GSI2PK: string // USER#<user_id>#CEFR#<level>  e.g., USER#abc#CEFR#A1
+  GSI2SK: string // <mastery_score>#<topic_id>  — sort by mastery within level
+  user_id: string
+  topic_id: string // matches curriculum topic id
+  cefr_level: CEFRLevel
+  // Counters
+  exercises_completed: number // total exercises attempted for this topic
+  exercises_correct: number // total correct
+  // Mastery: 0-100 score. Simple threshold (80% over 10+ exercises = mastered)
+  mastery_score: number
+  // Recency tracking — supports future recap/review features
+  last_practiced: string // ISO timestamp of most recent exercise
+  last_correct: string // ISO timestamp of most recent correct answer
+  streak_current: number // consecutive correct answers (resets on wrong)
+  streak_best: number // highest streak achieved
+  // Timestamps
+  first_practiced: string
+  updated_at: string
+}
+
+// User's overall CEFR progression summary — one item per user
+export interface UserCEFRSummary {
+  PK: string // USER#<user_id>
+  SK: string // CEFR_SUMMARY
+  user_id: string
+  current_level: CEFRLevel // the level the user is actively working on
+  // Per-level aggregates (denormalized for fast dashboard rendering)
+  level_progress: {
+    [level in CEFRLevel]?: {
+      topics_practiced: number // how many leaf topics have been attempted
+      topics_mastered: number // how many meet mastery threshold
+      total_topics: number // total leaf topics at this level
+      avg_mastery: number // average mastery_score across practiced topics
+    }
+  }
+  // Vocabulary tracking
+  total_vocab_learned: number // cards in REVIEW state with ease >= 2.0
+  vocab_benchmarks: {
+    [level in CEFRLevel]?: {
+      min: number
+      max: number
+      current: number // user's current count relative to this level
+    }
+  }
+  updated_at: string
 }
 
 // Default settings
