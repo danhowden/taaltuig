@@ -32,7 +32,7 @@ export const EXERCISE_TYPE_SHORT_LABELS: Record<ExerciseType, string> = {
   word_reorder: 'Reorder',
   guided_write: 'Guided',
   paragraph_write: 'Para',
-  multiple_choice: 'MC',
+  multiple_choice: 'Multiple Choice',
   error_correction: 'ErrFix',
   conjugation: 'Conj',
   cloze_passage: 'Cloze',
