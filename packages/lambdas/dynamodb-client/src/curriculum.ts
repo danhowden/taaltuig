@@ -772,47 +772,112 @@ const B2_TOPICS: CurriculumTopic[] = [
 // ---------------------------------------------------------------------------
 
 const C1_TOPICS: CurriculumTopic[] = [
+  // -- Categories --
   category({ id: 'c1.grammar', name: 'Grammar', description: 'Advanced and nuanced grammar', level: 'C1', parent_id: null, sort_order: 1 }),
+  category({ id: 'c1.grammar.modality', name: 'Modality & Nuance', description: 'Subtle modal distinctions and hedging', level: 'C1', parent_id: 'c1.grammar', sort_order: 1 }),
+  category({ id: 'c1.grammar.style', name: 'Style & Register', description: 'Register-specific Dutch', level: 'C1', parent_id: 'c1.grammar', sort_order: 2 }),
+  category({ id: 'c1.grammar.complex', name: 'Complex Constructions', description: 'Advanced sentence-level grammar', level: 'C1', parent_id: 'c1.grammar', sort_order: 3 }),
+  category({ id: 'c1.grammar.text', name: 'Text & Discourse', description: 'Paragraph-level skills', level: 'C1', parent_id: 'c1.grammar', sort_order: 4 }),
   category({ id: 'c1.vocabulary', name: 'Vocabulary Themes', description: 'Professional and academic vocabulary', level: 'C1', parent_id: null, sort_order: 2 }),
 
+  // -- Modality & Nuance --
   topic({
-    id: 'c1.grammar.subjunctive', name: 'Subjunctive Mood', level: 'C1', parent_id: 'c1.grammar', sort_order: 1,
+    id: 'c1.grammar.modality.subjunctive', name: 'Subjunctive Mood', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 1,
     description: 'Formulaic subjunctive: leve de koning, het zij zo, moge het lukken',
     grammar_points: ['subjunctive mood', 'formulaic subjunctive', 'leve/moge/zij'],
     suitable_exercise_types: ['translation', 'fill_blank'],
   }),
   topic({
-    id: 'c1.grammar.advanced_passive', name: 'Advanced Passive & Nominalized Infinitives', level: 'C1', parent_id: 'c1.grammar', sort_order: 2,
-    description: 'Complex passive chains, het lezen van boeken',
-    grammar_points: ['complex passive', 'nominalized infinitives', 'het + infinitive + van'],
-    suitable_exercise_types: ['translation', 'guided_write'],
-  }),
-  topic({
-    id: 'c1.grammar.modality', name: 'Nuanced Modality', level: 'C1', parent_id: 'c1.grammar', sort_order: 3,
-    description: 'schijnen, blijken, lijken — epistemic vs deontic modality',
-    grammar_points: ['schijnen/blijken/lijken', 'epistemic modality', 'deontic modality'],
+    id: 'c1.grammar.modality.epistemic', name: 'Epistemic Modality', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 2,
+    description: 'schijnen, blijken, lijken — expressing probability and evidence',
+    grammar_points: ['schijnen/blijken/lijken', 'epistemic modality', 'probability markers'],
     suitable_exercise_types: ['translation', 'fill_blank'],
   }),
   topic({
-    id: 'c1.grammar.hedging', name: 'Hedging Language', level: 'C1', parent_id: 'c1.grammar', sort_order: 4,
-    description: 'wellicht, mogelijk, enigszins, in zekere zin — academic caution',
-    grammar_points: ['hedging', 'academic caution language', 'wellicht/mogelijk/enigszins'],
+    id: 'c1.grammar.modality.counterfactual', name: 'Advanced Counterfactuals', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 3,
+    description: 'Complex zou-constructions, als...zou...hebben, hypothetical chains',
+    grammar_points: ['advanced counterfactuals', 'conditional perfect chains', 'als + zou + hebben/zijn'],
     suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
   }),
   topic({
-    id: 'c1.grammar.text_structure', name: 'Paragraph Cohesion', level: 'C1', parent_id: 'c1.grammar', sort_order: 5,
-    description: 'Paragraph-level cohesion, academic argument structure',
-    grammar_points: ['paragraph cohesion', 'argument structure', 'thesis-evidence-conclusion'],
+    id: 'c1.grammar.modality.hedging', name: 'Hedging & Academic Caution', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 4,
+    description: 'wellicht, mogelijk, enigszins, in zekere zin — softening claims',
+    grammar_points: ['hedging', 'academic caution language', 'wellicht/mogelijk/enigszins'],
+    suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
+  }),
+
+  // -- Style & Register --
+  topic({
+    id: 'c1.grammar.style.academic', name: 'Academic Dutch', level: 'C1', parent_id: 'c1.grammar.style', sort_order: 1,
+    description: 'Formal academic writing conventions, passive-heavy style, abstract argumentation',
+    grammar_points: ['academic register', 'formal passive constructions', 'abstract argumentation'],
+    suitable_exercise_types: ['translation', 'guided_write', 'paragraph_write'],
+  }),
+  topic({
+    id: 'c1.grammar.style.bureaucratic', name: 'Bureaucratic Dutch (Ambtelijk)', level: 'C1', parent_id: 'c1.grammar.style', sort_order: 2,
+    description: 'Official/administrative language: gemeente brieven, belastingdienst, juridisch taalgebruik',
+    grammar_points: ['ambtelijk Nederlands', 'administrative language', 'official correspondence'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c1.grammar.style.journalistic', name: 'Journalistic Dutch', level: 'C1', parent_id: 'c1.grammar.style', sort_order: 3,
+    description: 'News writing style, headline conventions, reported speech in journalism',
+    grammar_points: ['journalistic style', 'headline Dutch', 'news reporting conventions'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c1.grammar.style.register_switching', name: 'Register Switching', level: 'C1', parent_id: 'c1.grammar.style', sort_order: 4,
+    description: 'Adapting the same message across formal, informal, and professional registers',
+    grammar_points: ['register switching', 'formal vs informal rewriting', 'audience adaptation'],
+    suitable_exercise_types: ['guided_write', 'paragraph_write'],
+  }),
+
+  // -- Complex Constructions --
+  topic({
+    id: 'c1.grammar.complex.advanced_passive', name: 'Advanced Passive Chains', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 1,
+    description: 'Multi-verb passive constructions, passive with modals and perfect tense',
+    grammar_points: ['complex passive chains', 'passive + modal', 'passive perfect'],
+    suitable_exercise_types: ['translation', 'fill_blank'],
+  }),
+  topic({
+    id: 'c1.grammar.complex.nominalized_infinitives', name: 'Nominalized Infinitives', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 2,
+    description: 'het lezen van boeken, het nemen van beslissingen — turning actions into noun phrases',
+    grammar_points: ['nominalized infinitives', 'het + infinitive + van', 'abstract noun phrases'],
+    suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
+  }),
+  topic({
+    id: 'c1.grammar.complex.reported_speech', name: 'Advanced Reported Speech', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 3,
+    description: 'Tense shifting in indirect speech, reported questions and commands',
+    grammar_points: ['advanced reported speech', 'tense shifting', 'reported questions/commands'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c1.grammar.complex.extended_adjective', name: 'Extended Adjective Constructions', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 4,
+    description: 'de in Amsterdam wonende man, de door de minister genomen beslissing — pre-nominal participial phrases',
+    grammar_points: ['extended adjective phrases', 'pre-nominal participial clauses', 'adjective reduction'],
+    suitable_exercise_types: ['translation', 'fill_blank'],
+  }),
+
+  // -- Text & Discourse --
+  topic({
+    id: 'c1.grammar.text.paragraph_cohesion', name: 'Paragraph Cohesion', level: 'C1', parent_id: 'c1.grammar.text', sort_order: 1,
+    description: 'Linking sentences within paragraphs, reference chains, substitution',
+    grammar_points: ['paragraph cohesion', 'reference chains', 'text substitution'],
     suitable_exercise_types: ['guided_write', 'paragraph_write'],
   }),
   topic({
-    id: 'c1.grammar.register_switching', name: 'Register & Style Variation', level: 'C1', parent_id: 'c1.grammar', sort_order: 6,
-    description: 'Formal/academic Dutch, bureaucratic Dutch (ambtelijk Nederlands), journalistic style',
-    grammar_points: ['register switching', 'ambtelijk Nederlands', 'journalistic style'],
-    suitable_exercise_types: ['translation', 'guided_write', 'paragraph_write'],
+    id: 'c1.grammar.text.argument_structure', name: 'Academic Argument Structure', level: 'C1', parent_id: 'c1.grammar.text', sort_order: 2,
+    description: 'Building arguments: thesis, evidence, counterargument, conclusion',
+    grammar_points: ['argument structure', 'thesis-evidence-conclusion', 'counterargument integration'],
+    suitable_exercise_types: ['guided_write', 'paragraph_write'],
+  }),
+  topic({
+    id: 'c1.grammar.text.advanced_connectors', name: 'Advanced Discourse Connectors', level: 'C1', parent_id: 'c1.grammar.text', sort_order: 3,
+    description: 'Nuanced linking: weliswaar...maar, enerzijds...anderzijds, niet alleen...maar ook',
+    grammar_points: ['paired connectors', 'weliswaar...maar', 'enerzijds...anderzijds', 'contrastive linking'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'guided_write'],
   }),
 
-  // -- Vocabulary --
   // -- Vocabulary (informational only) --
   vocabTheme({
     id: 'c1.vocabulary.academic', name: 'Academic Discourse', level: 'C1', parent_id: 'c1.vocabulary', sort_order: 1,
@@ -829,6 +894,11 @@ const C1_TOPICS: CurriculumTopic[] = [
     description: 'Metaphors, similes, irony, understatement',
     vocabulary_themes: ['figurative language', 'metaphors', 'irony'],
   }),
+  vocabTheme({
+    id: 'c1.vocabulary.nuance', name: 'Nuance & Precision', level: 'C1', parent_id: 'c1.vocabulary', sort_order: 4,
+    description: 'Precise word choice, near-synonyms, connotation differences',
+    vocabulary_themes: ['near-synonyms', 'connotation', 'precise vocabulary'],
+  }),
 ]
 
 // ---------------------------------------------------------------------------
@@ -836,26 +906,68 @@ const C1_TOPICS: CurriculumTopic[] = [
 // ---------------------------------------------------------------------------
 
 const C2_TOPICS: CurriculumTopic[] = [
+  // -- Categories --
   category({ id: 'c2.grammar', name: 'Grammar', description: 'Near-native mastery', level: 'C2', parent_id: null, sort_order: 1 }),
+  category({ id: 'c2.grammar.literary', name: 'Literary & Archaic', description: 'Historical and literary Dutch', level: 'C2', parent_id: 'c2.grammar', sort_order: 1 }),
+  category({ id: 'c2.grammar.mastery', name: 'Native-Level Mastery', description: 'Near-native accuracy and fluency', level: 'C2', parent_id: 'c2.grammar', sort_order: 2 }),
   category({ id: 'c2.vocabulary', name: 'Vocabulary Themes', description: 'Native-level vocabulary', level: 'C2', parent_id: null, sort_order: 2 }),
 
+  // -- Literary & Archaic --
   topic({
-    id: 'c2.grammar.literary_forms', name: 'Archaic & Literary Forms', level: 'C2', parent_id: 'c2.grammar', sort_order: 1,
-    description: 'Older subjunctive, literary inversion, recognition in classic texts',
-    grammar_points: ['archaic forms', 'literary Dutch', 'older subjunctive'],
+    id: 'c2.grammar.literary.archaic_subjunctive', name: 'Archaic Subjunctive Forms', level: 'C2', parent_id: 'c2.grammar.literary', sort_order: 1,
+    description: 'Older subjunctive in literature: ware het niet dat, het ware beter, indien hij kwame',
+    grammar_points: ['archaic subjunctive', 'literary verb forms', 'older Dutch grammar'],
+    suitable_exercise_types: ['translation', 'fill_blank'],
+  }),
+  topic({
+    id: 'c2.grammar.literary.literary_inversion', name: 'Literary Inversion & Word Order', level: 'C2', parent_id: 'c2.grammar.literary', sort_order: 2,
+    description: 'Stylistic inversion patterns in prose and poetry, non-standard V2 deviations',
+    grammar_points: ['literary inversion', 'poetic word order', 'stylistic V2 deviations'],
     suitable_exercise_types: ['translation', 'guided_write'],
   }),
   topic({
-    id: 'c2.grammar.full_register', name: 'Full Register Mastery', level: 'C2', parent_id: 'c2.grammar', sort_order: 2,
-    description: 'Fluid switching between all registers, humor and irony through grammar',
-    grammar_points: ['register mastery', 'stylistic variation', 'humor through grammar'],
+    id: 'c2.grammar.literary.classic_text_recognition', name: 'Classic Dutch Text Comprehension', level: 'C2', parent_id: 'c2.grammar.literary', sort_order: 3,
+    description: 'Reading and understanding 19th-20th century Dutch literature, recognizing dated constructions',
+    grammar_points: ['classic Dutch prose', 'dated constructions recognition', 'literary comprehension'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+
+  // -- Native-Level Mastery --
+  topic({
+    id: 'c2.grammar.mastery.humor_irony', name: 'Humor & Irony Through Grammar', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 1,
+    description: 'Using understatement, litotes, ironic inversion, and grammatical humor',
+    grammar_points: ['understatement', 'litotes', 'ironic register', 'grammatical humor'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c2.grammar.mastery.complex_nominalization', name: 'Complex Nominalization Patterns', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 2,
+    description: 'Advanced nominalization in legal, technical, and academic contexts',
+    grammar_points: ['complex nominalization', 'legal Dutch syntax', 'technical nominalization'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c2.grammar.mastery.legal_syntax', name: 'Legal & Contract Dutch', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 3,
+    description: 'Legal document syntax, contract clauses, official regulation language',
+    grammar_points: ['legal Dutch', 'contract language', 'regulation syntax'],
+    suitable_exercise_types: ['translation', 'guided_write'],
+  }),
+  topic({
+    id: 'c2.grammar.mastery.full_register_fluency', name: 'Full Register Fluency', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 4,
+    description: 'Switching fluidly between casual, formal, academic, literary registers in a single text',
+    grammar_points: ['register fluency', 'multi-register text', 'audience-aware style shifting'],
     suitable_exercise_types: ['guided_write', 'paragraph_write'],
   }),
   topic({
-    id: 'c2.grammar.complex_nominalization', name: 'Complex Nominalization', level: 'C2', parent_id: 'c2.grammar', sort_order: 3,
-    description: 'Advanced nominalization patterns, legal and technical syntax',
-    grammar_points: ['complex nominalization', 'legal Dutch syntax', 'technical Dutch'],
-    suitable_exercise_types: ['translation', 'guided_write'],
+    id: 'c2.grammar.mastery.flemish_differences', name: 'Flemish vs Netherlands Dutch', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 5,
+    description: 'Key grammatical differences: ge- prefix, diminutive variation, verb patterns, formal address',
+    grammar_points: ['Flemish grammar', 'Belgian Dutch', 'ge- prefix', 'regional verb patterns'],
+    suitable_exercise_types: ['translation', 'fill_blank'],
+  }),
+  topic({
+    id: 'c2.grammar.mastery.idiomatic_precision', name: 'Idiomatic Precision', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 6,
+    description: 'Using idioms, collocations, and fixed expressions with native-level accuracy',
+    grammar_points: ['idiomatic accuracy', 'collocations', 'fixed expressions', 'near-native fluency'],
+    suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
   }),
 
   // -- Vocabulary (informational only) --
@@ -873,6 +985,11 @@ const C2_TOPICS: CurriculumTopic[] = [
     id: 'c2.vocabulary.low_frequency', name: 'Low-Frequency Expressions', level: 'C2', parent_id: 'c2.vocabulary', sort_order: 3,
     description: 'Rare idioms, etymological awareness, literary vocabulary',
     vocabulary_themes: ['rare idioms', 'etymology', 'literary vocabulary'],
+  }),
+  vocabTheme({
+    id: 'c2.vocabulary.cultural_references', name: 'Cultural & Historical References', level: 'C2', parent_id: 'c2.vocabulary', sort_order: 4,
+    description: 'Golden Age references, political history, cultural touchstones Dutch natives know',
+    vocabulary_themes: ['cultural references', 'Dutch history', 'Golden Age', 'cultural touchstones'],
   }),
 ]
 
