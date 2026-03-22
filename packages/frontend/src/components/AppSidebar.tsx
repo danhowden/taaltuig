@@ -88,14 +88,14 @@ export function AppSidebar() {
                     totalCardCount
                   )
                 } else if (item.path === '/writing') {
-                  showBadge = writingCount > 0
+                  showBadge = isCountsLoading || writingCount > 0
                   badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     writingCount
                   )
                 } else if (item.path === '/insights') {
-                  showBadge = insightsCount > 0
+                  showBadge = isCountsLoading || insightsCount > 0
                   badgeContent = isCountsLoading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
