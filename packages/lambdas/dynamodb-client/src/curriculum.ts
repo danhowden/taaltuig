@@ -350,73 +350,67 @@ const A2_TOPICS: CurriculumTopic[] = [
 
   // -- Verbs --
   topic({
-    id: 'a2.grammar.verbs.perfectum_intro', name: 'Perfectum — Introduction', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 1,
-    description: 'Introduction to the present perfect (voltooid tegenwoordige tijd): concept of hebben/zijn + voltooid deelwoord',
-    grammar_points: ['perfectum concept', 'voltooid tegenwoordige tijd overview', 'hebben/zijn auxiliary selection intro'],
-    suitable_exercise_types: ['multiple_choice', 'fill_blank', 'translation'],
-  }),
-  topic({
-    id: 'a2.grammar.verbs.perfectum_hebben', name: 'Perfectum with hebben', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 2,
-    description: 'Present perfect using hebben + past participle',
-    grammar_points: ['perfectum', 'hebben + voltooid deelwoord', 'ge- prefix'],
+    id: 'a2.grammar.verbs.perfectum_hebben', name: 'Perfectum with hebben', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 1,
+    description: 'Present perfect (voltooid tegenwoordige tijd) using hebben + voltooid deelwoord',
+    grammar_points: ['perfectum concept', 'hebben + voltooid deelwoord', 'ge- prefix', 'voltooid tegenwoordige tijd'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'conjugation', 'error_correction'],
   }),
   topic({
-    id: 'a2.grammar.verbs.perfectum_zijn', name: 'Perfectum with zijn', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 3,
+    id: 'a2.grammar.verbs.perfectum_zijn', name: 'Perfectum with zijn', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 2,
     description: 'Present perfect using zijn for movement/state-change verbs',
     grammar_points: ['perfectum with zijn', 'movement verbs', 'state change verbs'],
     suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice', 'error_correction'],
   }),
   topic({
-    id: 'a2.grammar.verbs.past_participle_regular', name: 'Past Participle — Regular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 4,
+    id: 'a2.grammar.verbs.past_participle_regular', name: 'Past Participle — Regular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 3,
     description: 'Regular past participle formation: ge- + stam + -t/-d',
     grammar_points: ['regular past participle', 'ge- + stam + -t/-d', "'t kofschip rule"],
     suitable_exercise_types: ['fill_blank', 'translation', 'conjugation', 'multiple_choice'],
   }),
   topic({
-    id: 'a2.grammar.verbs.past_participle_irregular', name: 'Past Participle — Irregular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 5,
+    id: 'a2.grammar.verbs.past_participle_irregular', name: 'Past Participle — Irregular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 4,
     description: 'Irregular past participles: ge- + stam + -en with vowel changes',
     grammar_points: ['irregular past participle', 'vowel changes', 'strong verbs'],
     suitable_exercise_types: ['fill_blank', 'translation', 'conjugation'],
   }),
   topic({
-    id: 'a2.grammar.verbs.imperfectum_regular', name: 'Imperfectum — Regular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 6,
+    id: 'a2.grammar.verbs.imperfectum_regular', name: 'Imperfectum — Regular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 5,
     description: 'Simple past regular: stam + -te/-de (singular), + -n (plural)',
     grammar_points: ['imperfectum regular', 'stam + -te/-de', "'t kofschip for -te vs -de"],
     suitable_exercise_types: ['fill_blank', 'translation', 'conjugation', 'multiple_choice'],
   }),
   topic({
-    id: 'a2.grammar.verbs.imperfectum_irregular', name: 'Imperfectum — Irregular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 7,
+    id: 'a2.grammar.verbs.imperfectum_irregular', name: 'Imperfectum — Irregular', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 6,
     description: 'Simple past of common irregular verbs: was, had, ging, kwam, etc.',
     grammar_points: ['imperfectum irregular', 'was/had/ging/kwam/deed/zag'],
     suitable_exercise_types: ['fill_blank', 'translation', 'conjugation'],
   }),
   topic({
-    id: 'a2.grammar.verbs.separable', name: 'Separable Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 8,
+    id: 'a2.grammar.verbs.separable', name: 'Separable Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 7,
     description: 'opbellen, meenemen, aankomen — prefix splits in main clause, ge- inserts in participle',
     grammar_points: ['separable verbs', 'prefix at end of clause', 'ge- between prefix and stem'],
     suitable_exercise_types: ['word_reorder', 'fill_blank', 'translation', 'error_correction'],
   }),
   topic({
-    id: 'a2.grammar.verbs.inseparable', name: 'Inseparable Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 9,
+    id: 'a2.grammar.verbs.inseparable', name: 'Inseparable Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 8,
     description: 'beginnen, vertellen, ontmoeten — no ge- in past participle',
     grammar_points: ['inseparable verbs', 'no ge- prefix (be-/ver-/ont-/her-/ge-/er-)'],
     suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice'],
   }),
   topic({
-    id: 'a2.grammar.verbs.reflexive', name: 'Reflexive Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 10,
+    id: 'a2.grammar.verbs.reflexive', name: 'Reflexive Verbs', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 9,
     description: 'zich wassen, zich voelen — reflexive pronouns (me, je, zich, ons)',
     grammar_points: ['reflexive verbs', 'reflexive pronouns me/je/zich/ons'],
     suitable_exercise_types: ['fill_blank', 'translation', 'error_correction'],
   }),
   topic({
-    id: 'a2.grammar.verbs.future', name: 'Future Tense', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 11,
+    id: 'a2.grammar.verbs.future', name: 'Future Tense', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 10,
     description: 'Future with gaan + infinitive and zullen + infinitive',
     grammar_points: ['gaan + infinitive', 'zullen + infinitive', 'future tense'],
     suitable_exercise_types: ['translation', 'fill_blank', 'word_reorder', 'sentence_completion', 'conjugation'],
   }),
   topic({
-    id: 'a2.grammar.verbs.progressive', name: 'Progressive (aan het)', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 12,
+    id: 'a2.grammar.verbs.progressive', name: 'Progressive (aan het)', level: 'A2', parent_id: 'a2.grammar.verbs', sort_order: 11,
     description: 'Ongoing actions with zijn + aan het + infinitive: Ik ben aan het eten',
     grammar_points: ['aan het + infinitive', 'zijn + aan het + infinitive', 'progressive aspect'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'sentence_completion'],
@@ -486,6 +480,14 @@ const A2_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice'],
   }),
 
+  // -- Ordinal Numbers --
+  topic({
+    id: 'a2.grammar.ordinal_numbers', name: 'Ordinal Numbers (rangtelwoorden)', level: 'A2', parent_id: 'a2.grammar', sort_order: 8,
+    description: 'eerste, tweede, derde... Formation with -de (1-19) and -ste (20+)',
+    grammar_points: ['ordinal number formation', 'rangtelwoorden', '-de suffix (1-19)', '-ste suffix (20+)', 'irregular: eerste/derde/achtste'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice'],
+  }),
+
   // -- Vocabulary Themes (informational only) --
   vocabTheme({
     id: 'a2.vocabulary.daily_routines', name: 'Daily Routines & Habits', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 1,
@@ -539,49 +541,55 @@ const B1_TOPICS: CurriculumTopic[] = [
 
   // -- Verbs --
   topic({
-    id: 'b1.grammar.verbs.past_perfect', name: 'Past Perfect', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 1,
+    id: 'b1.grammar.verbs.tense_choice', name: 'Perfectum vs Imperfectum Choice', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 1,
+    description: 'When to use perfectum (single actions, results, relevance to present) vs imperfectum (descriptions, storytelling, ongoing past states)',
+    grammar_points: ['perfectum vs imperfectum keuze', 'result focus vs description', 'conversational vs narrative past', 'tijdkeuze in verhalen'],
+    suitable_exercise_types: ['multiple_choice', 'fill_blank', 'error_correction', 'cloze_passage'],
+  }),
+  topic({
+    id: 'b1.grammar.verbs.past_perfect', name: 'Past Perfect (plusquamperfectum)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 2,
     description: 'had/was + voltooid deelwoord (voltooid verleden tijd)',
-    grammar_points: ['past perfect', 'had + past participle', 'was + past participle'],
+    grammar_points: ['plusquamperfectum', 'had + voltooid deelwoord', 'was + voltooid deelwoord', 'voltooid verleden tijd'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'conjugation', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.conditional', name: 'Conditional', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 2,
+    id: 'b1.grammar.verbs.conditional', name: 'Conditional', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 3,
     description: 'zou/zouden + infinitive for hypothetical situations',
     grammar_points: ['conditional', 'zou/zouden + infinitive', 'als...zou/zouden conditional structure'],
     suitable_exercise_types: ['translation', 'fill_blank', 'sentence_completion', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.passive_worden', name: 'Passive Voice (worden)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 3,
+    id: 'b1.grammar.verbs.passive_worden', name: 'Passive Voice (worden)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 4,
     description: 'Passive with worden + past participle',
     grammar_points: ['passive voice', 'worden + voltooid deelwoord', 'agent with door'],
     suitable_exercise_types: ['translation', 'word_reorder', 'fill_blank', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.passive_zijn', name: 'Passive Voice (zijn)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 4,
+    id: 'b1.grammar.verbs.passive_zijn', name: 'Passive Voice (zijn)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 5,
     description: 'Result-state passive with zijn + past participle',
     grammar_points: ['zijn-passive', 'result state', 'worden vs zijn passive'],
     suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.te_infinitive', name: 'Te + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 5,
+    id: 'b1.grammar.verbs.te_infinitive', name: 'Te + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 6,
     description: 'proberen te, vergeten te, beginnen te + infinitive',
     grammar_points: ['te + infinitive', 'verbs requiring te + infinitive'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'sentence_completion', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.om_te', name: 'Om...te + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 6,
+    id: 'b1.grammar.verbs.om_te', name: 'Om...te + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 7,
     description: 'Purpose clauses with om...te: Ik ga naar de winkel om brood te kopen',
     grammar_points: ['om...te + infinitive', 'purpose clauses', 'om...te vs te distinction'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'sentence_completion', 'error_correction'],
   }),
   topic({
-    id: 'b1.grammar.verbs.laten_infinitive', name: 'Laten + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 7,
+    id: 'b1.grammar.verbs.laten_infinitive', name: 'Laten + Infinitive', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 8,
     description: 'Causative and permissive: Ik laat mijn haar knippen, Laat me even nadenken',
     grammar_points: ['laten + infinitive', 'causative laten', 'permissive laten', 'laten in perfectum'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'sentence_completion'],
   }),
   topic({
-    id: 'b1.grammar.verbs.continuous', name: 'Continuous Aspect', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 8,
+    id: 'b1.grammar.verbs.continuous', name: 'Continuous Aspect', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 9,
     description: 'liggen/zitten/staan/lopen + te + infinitive for ongoing actions',
     grammar_points: ['continuous with postural verbs', 'zitten te lezen', 'staan te wachten'],
     suitable_exercise_types: ['translation', 'fill_blank', 'sentence_completion'],
@@ -645,6 +653,12 @@ const B1_TOPICS: CurriculumTopic[] = [
     description: 'Ik heb er drie — er referring to a quantity',
     grammar_points: ['partitive er', 'er + number'],
     suitable_exercise_types: ['fill_blank', 'translation', 'error_correction'],
+  }),
+  topic({
+    id: 'b1.grammar.er.locative', name: 'Er as Locative (er = daar)', level: 'B1', parent_id: 'b1.grammar.er', sort_order: 4,
+    description: 'Er as unstressed form of daar/hier: Ik ben er geweest, hij woont er al jaren',
+    grammar_points: ['er locatief', 'er as unstressed daar/hier', 'locative er vs prepositional er'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice', 'error_correction'],
   }),
 
   // -- Vocabulary Themes (informational only) --
@@ -714,13 +728,37 @@ const B2_TOPICS: CurriculumTopic[] = [
     grammar_points: ['passive in all tenses', 'werd/is geworden/was geworden'],
     suitable_exercise_types: ['translation', 'fill_blank', 'word_reorder', 'error_correction'],
   }),
+  topic({
+    id: 'b2.grammar.verbs.krijgen_passive', name: 'Krijgen-Passive', level: 'B2', parent_id: 'b2.grammar.verbs', sort_order: 4,
+    description: 'Pseudo-passive with krijgen: Hij kreeg het boek aangeboden, Zij krijgt les van een native speaker',
+    grammar_points: ['krijgen-passive', 'krijgen + voltooid deelwoord', 'indirect object as subject', 'agent with van (not door)'],
+    suitable_exercise_types: ['translation', 'fill_blank', 'multiple_choice', 'error_correction'],
+  }),
 
   // -- Word Order --
   topic({
     id: 'b2.grammar.complex_sentences', name: 'Complex Multi-Clause Sentences', level: 'B2', parent_id: 'b2.grammar', sort_order: 3,
     description: 'Sentences with multiple subordinate clauses, emphasis through topicalization',
-    grammar_points: ['nested subordinate clauses', 'topicalization for emphasis', 'green/red verb positions'],
+    grammar_points: ['nested subordinate clauses', 'topicalization for emphasis'],
     suitable_exercise_types: ['word_reorder', 'translation', 'guided_write'],
+  }),
+  topic({
+    id: 'b2.grammar.verb_cluster_order', name: 'Verb Cluster Ordering', level: 'B2', parent_id: 'b2.grammar', sort_order: 6,
+    description: 'Red vs green verb order in clusters: dat hij heeft kunnen komen vs dat hij kunnen komen heeft',
+    grammar_points: ['rode/groene volgorde', 'verb cluster ordering', 'regional variation in verb order', 'tangconstructie'],
+    suitable_exercise_types: ['word_reorder', 'multiple_choice', 'error_correction'],
+  }),
+  topic({
+    id: 'b2.grammar.advanced_relative', name: 'Advanced Relative Clauses', level: 'B2', parent_id: 'b2.grammar', sort_order: 7,
+    description: 'wie/wat in free relatives, hetgeen, waar + preposition in complex contexts: de reden waarom, het moment waarop',
+    grammar_points: ['free relative clauses with wie/wat', 'hetgeen', 'waar + preposition', 'complex relative constructions'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'error_correction'],
+  }),
+  topic({
+    id: 'b2.grammar.advanced_er', name: 'Advanced Er Usage', level: 'B2', parent_id: 'b2.grammar', sort_order: 8,
+    description: 'Multiple er functions in one sentence, split pronominal adverbs, er + separable verbs: ik denk erover na',
+    grammar_points: ['combined er functions', 'split pronominal adverbs', 'er with separable verbs', 'er position in complex sentences'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'error_correction', 'word_reorder'],
   }),
 
   // -- Style & Register --
@@ -737,9 +775,9 @@ const B2_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['translation', 'fill_blank'],
   }),
   topic({
-    id: 'b2.grammar.style.reported_speech', name: 'Reported Speech', level: 'B2', parent_id: 'b2.grammar.style', sort_order: 3,
-    description: 'hij zei dat..., indirect speech with tense shifting',
-    grammar_points: ['reported speech', 'indirect speech', 'tense shifting in reported speech'],
+    id: 'b2.grammar.style.reported_speech', name: 'Reported Speech (indirecte rede)', level: 'B2', parent_id: 'b2.grammar.style', sort_order: 3,
+    description: 'hij zei dat..., indirecte rede with tense shifting, of for doubts/questions',
+    grammar_points: ['indirecte rede', 'directe vs indirecte rede', 'tense shifting in reported speech', 'of/dat in indirect speech'],
     suitable_exercise_types: ['translation', 'word_reorder', 'fill_blank', 'error_correction'],
   }),
   topic({
@@ -812,9 +850,9 @@ const C1_TOPICS: CurriculumTopic[] = [
 
   // -- Modality & Nuance --
   topic({
-    id: 'c1.grammar.modality.subjunctive', name: 'Subjunctive Mood', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 1,
+    id: 'c1.grammar.modality.subjunctive', name: 'Subjunctive (aanvoegende wijs)', level: 'C1', parent_id: 'c1.grammar.modality', sort_order: 1,
     description: 'Formulaic subjunctive: leve de koning, het zij zo, moge het lukken',
-    grammar_points: ['subjunctive mood', 'formulaic subjunctive', 'leve/moge/zij'],
+    grammar_points: ['aanvoegende wijs', 'formulaic subjunctive', 'leve/moge/zij', 'fixed expressions with conjunctief'],
     suitable_exercise_types: ['translation', 'fill_blank'],
   }),
   topic({

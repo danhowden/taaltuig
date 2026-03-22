@@ -122,7 +122,20 @@ export interface ReviewHistory {
 }
 
 // Writing exercise types
-export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
+export type ExerciseType =
+  | 'translation'        // English→Dutch sentence translation
+  | 'fill_blank'         // Complete one missing word in a Dutch sentence
+  | 'word_reorder'       // Arrange scrambled words into correct order
+  | 'guided_write'       // Write sentence with specific grammar constraint
+  | 'paragraph_write'    // Longer situational writing (multiple sentences)
+  | 'multiple_choice'    // Pick correct answer from 3-4 options
+  | 'error_correction'   // Find and fix the mistake in a Dutch sentence
+  | 'conjugation'        // Given infinitive + subject, produce correct verb form
+  | 'cloze_passage'      // Multiple blanks in a short connected paragraph
+  | 'sentence_completion' // Finish a started sentence with a specific structure
+
+// Skill types tracked separately from exercises (self-reported or future features)
+export type SkillType = 'oral_practice' | 'listening' | 'reading'
 export type ExerciseStatus = 'pending' | 'failed' | 'completed' | 'rejected'
 export type ExerciseSource = 'auto' | 'user_requested'
 export type ExercisePriority = 'normal' | 'high'
@@ -242,6 +255,28 @@ export interface UserCEFRSummary {
     }
   }
   updated_at: string
+}
+
+// Separate skill tracking (oral practice, listening, reading) — not tied to exercise mastery
+// One item per user per skill per topic
+export interface SkillProgress {
+  PK: string // USER#<user_id>
+  SK: string // SKILL#<skill_type>#<topic_id>  e.g., SKILL#oral_practice#a1.grammar.verbs.present_regular
+  GSI2PK: string // USER#<user_id>#SKILL#<skill_type>
+  GSI2SK: string // <cefr_level>#<topic_id>
+  user_id: string
+  skill_type: SkillType
+  topic_id: string
+  cefr_level: CEFRLevel
+  // Self-reported sessions
+  sessions_completed: number // how many times the user marked this as practiced
+  total_minutes: number // estimated total practice time
+  // Recency
+  last_practiced: string // ISO timestamp
+  first_practiced: string
+  updated_at: string
+  // Optional notes from the user
+  notes?: string
 }
 
 // Default settings

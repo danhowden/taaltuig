@@ -4,6 +4,8 @@ Research conducted March 2026 to validate and improve the CEFR-aligned Dutch cur
 
 ## Sources Consulted
 
+### First pass (general sources)
+
 - [Dutch Academy - Levels Explained](https://www.dutchacademy.ca/levels) -- vocabulary benchmarks per CEFR level
 - [InCompany Dutch - Dutch Language Levels CEFR](https://incompany-dutch.nl/en/dutch-language-levels/) -- level descriptors and grammar expectations
 - [Milton (2009) - Vocabulary breadth across CEFR levels](https://eurosla.org/monographs/EM01/211-232Milton.pdf) -- academic research on vocabulary size
@@ -17,6 +19,31 @@ Research conducted March 2026 to validate and improve the CEFR-aligned Dutch cur
 - [Wikipedia - Dutch Grammar](https://en.wikipedia.org/wiki/Dutch_grammar) -- progressive aspect constructions
 - [Inburgering.org - Dutch Language Levels](https://inburgering.org/exam-info/dutch-language-levels-cefr) -- inburgering exam requirements
 - [Taalportaal - Dutch Causative Constructions](https://taalportaal.org/taalportaal/topic/pid/topic-14406721600173122) -- laten + infinitive
+
+### Second pass (deeper sources)
+
+- [Staatsexamens NT2 - Official Site](https://www.staatsexamensnt2.nl) -- NT2 Programme I (B1) and Programme II (B2) exam structure
+- [LearnDutch.org - What is Staatsexamen NT2-I](https://www.learndutch.org/beginners/what-is-het-staatsexamen-nt2-i/) -- NT2 Programme I (B1) grammar expectations
+- [LearnDutch.org - What is Staatsexamen NT2-II](https://www.learndutch.org/beginners/what-is-het-staatsexamen-nt2-ii/) -- NT2 Programme II (B2) grammar expectations
+- [IAmExpat - Advanced Dutch B2 C1 C2 Explained](https://www.iamexpat.nl/education/education-news/advanced-dutch-levels-b2-c1-and-c2-explained) -- detailed B2/C1/C2 grammar expectations including er usage, indirect speech
+- [IAmExpat - Dutch Level A1 A2 B1](https://www.iamexpat.nl/education/education-news/dutch-level-a1-a2-and-b1-what-does-it-all-mean) -- A1-B1 grammar progression
+- [Dutch Courses Amsterdam - Level Description](https://dutchcoursesamsterdam.nl/level-description/) -- grammar topics per level
+- [UCL Dutch Linguistics - Syntax of Er](https://www.ucl.ac.uk/dutchstudies/an/SP_LINKS_UCL_POPUP/SPs_english/linguistics/syntax_er.html) -- four functions of er (Odijk 1993): expletive, locative, quantitative, prepositional
+- [UCL Dutch Linguistics - Er page 2](https://www.ucl.ac.uk/dutchstudies/an/SP_LINKS_UCL_POPUP/SPs_english/linguistics/syntax_er02.html) -- er position and combination rules
+- [Lingly - B1 Dutch Pronominal Adverbs](https://www.lingly.ai/dutch/grammar/b1/dutch-pronominal-adverbs) -- pronominal adverbs at B1
+- [Lingly - B2 Constructing Relative Clauses](https://www.lingly.ai/dutch/grammar/b2/constructing-relative-clauses) -- advanced relative clauses at B2
+- [Lingly - B2 Indirect Speech](https://www.lingly.ai/dutch/grammar/b2/indirect-speech-and-reported-speech) -- indirecte rede at B2
+- [LearnDutchFree - Chapter 7: Advanced Use of Er](https://www.learndutchfree.com/b2-7-full) -- advanced er at B2 level
+- [The Dutch Online Academy - Er + Preposition](https://thedutchonlineacademy.com/en/grammar/untitled-entry-2019-07-23-at-07-29-14) -- pronominal adverbs
+- [The Dutch Online Academy - Double Infinitive](https://thedutchonlineacademy.com/en/grammar/double-infinitive) -- double infinitive at B2
+- [The Dutch Online Academy - Perfectum vs Imperfectum](https://thedutchonlineacademy.com/en/grammar/the-difference-between-perfectum-and-imperfectum) -- tense choice at B1
+- [LearnDutchWithKim - When to use Perfectum and Imperfectum (A2/B1)](https://courses.learndutchwithkim.com/courses/1998608/lectures/45166180) -- tense choice teaching level
+- [coLanguage - Relative Pronouns](https://dutch.colanguage.com/grammar-list/betrekkelijke-voornaamwoorden) -- die/dat/wie/wat placement
+- [coLanguage - Dutch Subjunctive (aanvoegende wijs)](https://www.colanguage.com/dutch-subjunctive-aanvoegende-wijs) -- subjunctive mood in Dutch
+- [Lingly - A2 Ordinal and Cardinal Numbers](https://www.lingly.ai/dutch/grammar/a2/ordinal-and-cardinal-numbers) -- ordinal numbers at A2
+- [ResearchGate - Krijgen-passive constructionalization](https://www.researchgate.net/publication/333660653_Constructionalization_and_post-constructionalization_the_constructional_semantics_of_the_Dutch_krijgen-passive_in_a_diachronic_perspective) -- krijgen-passive as distinct construction
+- [Jordens (1988) - Acquisition of word order in Dutch as L1 and L2](https://journals.sagepub.com/doi/10.1177/026765838800400103) -- L2 Dutch acquisition research
+- [DutchGrammar.com - Er, hier, and daar](https://www.dutchgrammar.com/en/?n=WordOrder.09) -- er/hier/daar positioning rules
 
 ## Key Findings
 
@@ -35,7 +62,7 @@ Research from Dutch Academy, NT2 vocabulary testing, and Milton (2009) suggests:
 
 The B1-C2 benchmarks were significantly underestimated. NT2 exam I (B1) expects approximately 5000 word families. At B2 (NT2 exam II), research places receptive vocabulary at 8000+. C1 and C2 levels require substantially larger vocabularies, especially receptive knowledge, with estimates ranging from 10,000 to 25,000+ word families at the highest levels.
 
-### Missing Grammar Topics
+### Missing Grammar Topics (first pass)
 
 | Topic | Expected Level | Evidence |
 |-------|---------------|----------|
@@ -45,7 +72,33 @@ The B1-C2 benchmarks were significantly underestimated. NT2 exam I (B1) expects 
 | Laten + infinitive | B1 | Causative/permissive construction taught at B1 in standard curricula. "Ik laat mijn haar knippen" is a key B1 structure. |
 | Perfectum introduction | A2 | While we have hebben/zijn perfectum topics, an introductory concept topic helps learners understand the overall framework before the split. |
 
-### Exercise Type Issues
+### Missing Grammar Topics (second pass)
+
+| Topic | Expected Level | Evidence |
+|-------|---------------|----------|
+| Perfectum vs Imperfectum choice | B1 | All NT2 curricula teach tense choice as a distinct skill at B1 (The Dutch Online Academy, LearnDutchWithKim). Formation is A2; knowing *when to use which* is B1. The distinction (result/conversation = perfectum, description/storytelling = imperfectum) is heavily tested. |
+| Er locatief (er = daar/hier) | B1 | One of four canonical er functions (Odijk 1993: expletive, locative, quantitative, prepositional). Our B1 er section had placeholder, pronominal, and partitive but was missing the locative use. |
+| Advanced Er usage | B2 | At B2, learners must handle combined er functions, split pronominal adverbs (ik denk erover na), and er in complex passive/modal contexts (IAmExpat B2 article, LearnDutchFree Ch.7). |
+| Ordinal numbers (rangtelwoorden) | A2 | Standard A2 grammar topic (Lingly A2, coLanguage). Formation rules with -de (1-19) and -ste (20+) with irregulars (eerste, derde, achtste). |
+| Krijgen-passive | B2 | A distinct passive construction using krijgen instead of worden, with the indirect object promoted to subject (ResearchGate). Agent marked with van (not door). Standard B2 grammar. |
+| Advanced relative clauses | B2 | Basic die/dat is B1; but free relatives with wie/wat, hetgeen, and complex waar + preposition (de reden waarom, het moment waarop) are B2 (Lingly B2). |
+| Verb cluster ordering | B2 | The "rode/groene volgorde" (red/green ordering) of verb clusters in subordinate clauses shows regional variation and is a B2 refinement topic. At B1 learners just place verbs at the end; at B2 they learn the ordering nuances. |
+
+### Perfectum Introduction Topic -- Removed
+
+The first pass added a `perfectum_intro` topic at A2. On deeper analysis, this is not standard in curricula. Textbooks like De Delftse methode and Nederlands in Actie teach perfectum directly through the hebben and zijn splits, not as a separate conceptual introduction. The intro topic's grammar points (concept overview, auxiliary selection) are naturally covered when teaching perfectum_hebben as the first perfectum topic. The topic was removed and its key content merged into `perfectum_hebben`.
+
+### Grammar Terminology Improvements
+
+| Old Term | Correct Dutch Term | Applied To |
+|----------|-------------------|------------|
+| Past Perfect | plusquamperfectum / voltooid verleden tijd | b1.grammar.verbs.past_perfect |
+| Subjunctive Mood | aanvoegende wijs | c1.grammar.modality.subjunctive |
+| Reported Speech | indirecte rede | b2.grammar.style.reported_speech |
+| past perfect | had + voltooid deelwoord | b1 grammar points |
+| green/red verb positions | rode/groene volgorde | moved to dedicated B2 topic |
+
+### Exercise Type Issues (first pass)
 
 | Topic | Issue | Fix |
 |-------|-------|-----|
@@ -58,9 +111,45 @@ The B1-C2 benchmarks were significantly underestimated. NT2 exam I (B1) expects 
 
 The B1 conditional topic (`b1.grammar.verbs.conditional`) only lists `conditional` and `zou/zouden + infinitive` as grammar points. It should also cover the `als...zou/zouden` conditional sentence structure, which is the primary pattern learners need to produce at B1.
 
+### Er Functions -- Complete Mapping
+
+Per Odijk (1993) and UCL Dutch Linguistics, "er" has four main functions:
+
+| Function | Dutch Term | Our Topic | Level |
+|----------|-----------|-----------|-------|
+| Expletive/Placeholder | er als voorlopig onderwerp | b1.grammar.er.placeholder | B1 |
+| Locative | er locatief (= daar/hier) | b1.grammar.er.locative | B1 |
+| Quantitative/Partitive | er partitief | b1.grammar.er.partitive | B1 |
+| Prepositional | er pronominaal (pronominal adverb) | b1.grammar.er.pronominal | B1 |
+| Combined/Advanced | multiple functions, split forms | b2.grammar.advanced_er | B2 |
+
+The A2 introduction (er + zijn) serves as first exposure; B1 teaches all four functions separately; B2 handles advanced combinations and edge cases.
+
+### Relative Pronoun Progression
+
+| Level | Content |
+|-------|---------|
+| B1 | die (de-words/plural), dat (het-words), basic waar + preposition |
+| B2 | Free relatives with wie/wat, hetgeen, complex waar + prep constructions |
+
+Basic die/dat relative clauses are correctly placed at B1. Advanced constructions are now covered by a dedicated B2 topic.
+
 ## Changes Applied
 
+### First pass
 1. **Vocabulary benchmarks updated** for B1 (3500-5000), B2 (5000-8000), C1 (8000-15000), C2 (15000-25000)
 2. **5 new topics added**: imperative (A1), perfectum intro (A2), aan het progressive (A2), om...te construction (B1), laten + infinitive (B1)
 3. **Exercise types fixed** on B2 topics (passive_all_tenses, reported_speech, advanced_modals)
 4. **Grammar point added** to B1 conditional: `als...zou/zouden` structure
+
+### Second pass
+5. **Removed perfectum_intro** -- merged into perfectum_hebben. Not a standard separate topic in Dutch curricula.
+6. **Added B1 tense_choice** -- Perfectum vs Imperfectum choice, a critical B1 skill tested in NT2 Programme I.
+7. **Added B1 er.locative** -- Er as unstressed daar/hier, completing the four canonical er functions at B1.
+8. **Added A2 ordinal_numbers** -- Rangtelwoorden formation, standard A2 grammar.
+9. **Added B2 krijgen_passive** -- Krijgen-passive (pseudo-passive) as a distinct B2 construction.
+10. **Added B2 advanced_relative** -- Advanced relative clauses with wie/wat/hetgeen/waar+prep.
+11. **Added B2 verb_cluster_order** -- Rode/groene volgorde in verb clusters.
+12. **Added B2 advanced_er** -- Combined er functions, split pronominal adverbs.
+13. **Updated terminology** -- plusquamperfectum, aanvoegende wijs, indirecte rede, rode/groene volgorde.
+14. **Fixed sort_orders** -- Sequential ordering after removals and additions.
