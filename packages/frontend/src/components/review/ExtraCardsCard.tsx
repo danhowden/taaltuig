@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { glassCard } from '@/lib/styles'
 
-const EXTRA_CARD_OPTIONS = [3, 10, 25, 50] as const
+const EXTRA_CARD_OPTIONS = [10, 25, 50] as const
 
 interface ExtraCardsCardProps {
   onContinue: (extraCards: number) => void
@@ -22,7 +22,7 @@ export function ExtraCardsCard({ onContinue, loadingExtraCards }: ExtraCardsCard
         <p className="text-sm text-muted-foreground">
           Don't want to wait? Study extra new cards now
         </p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {EXTRA_CARD_OPTIONS.map((count) => (
             <Button
               key={count}

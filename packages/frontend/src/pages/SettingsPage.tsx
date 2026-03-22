@@ -416,13 +416,13 @@ export function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t">
-                  <h4 className="font-medium text-sm mb-4">Writing Practice</h4>
+                  <h4 className="font-medium text-sm mb-4">Exercises</h4>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <Label htmlFor="writing-session-enabled">Enable writing exercises</Label>
+                        <Label htmlFor="writing-session-enabled">Enable exercises</Label>
                         <p className="text-xs text-muted-foreground">
-                          Practice writing Dutch after completing flashcard reviews
+                          Practice grammar and vocabulary exercises
                         </p>
                       </div>
                       <Switch
@@ -434,7 +434,7 @@ export function SettingsPage() {
 
                     {form.writingSessionEnabled && (
                       <div className="space-y-2">
-                        <Label htmlFor="writing-exercises-per-day">Writing exercises per day</Label>
+                        <Label htmlFor="writing-exercises-per-day">Exercises per day</Label>
                         <div className="flex items-center gap-4">
                           <Input
                             id="writing-exercises-per-day"
@@ -448,7 +448,7 @@ export function SettingsPage() {
                           <span className="text-sm text-muted-foreground">exercises</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Maximum writing exercises generated from reviewed cards (1-50)
+                          Maximum exercises per day (1-50)
                         </p>
                       </div>
                     )}

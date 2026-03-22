@@ -7,6 +7,7 @@ import { LoadingCards } from '@/components/review/LoadingCards'
 import { SessionLayout } from '@/components/SessionLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApiQuery } from '@/hooks/useApiQuery'
+import { useSettings } from '@/hooks/useSettings'
 import { apiClient } from '@/lib/api'
 import type { CatalogExercise } from '@/types'
 import { EXERCISE_TYPE_COLORS, EXERCISE_TYPE_LABELS } from '@/constants/exercises'
@@ -507,6 +508,7 @@ function SessionComplete({ correctCount, totalCount }: { correctCount: number; t
 
 export function ExerciseSession() {
   const { token } = useAuth()
+  const { data: settings } = useSettings()
   const [searchParams] = useSearchParams()
 
   const topic = searchParams.get('topic') || undefined
@@ -534,8 +536,9 @@ export function ExerciseSession() {
   useEffect(() => {
     if (!isLoading && data && !initializedRef.current) {
       initializedRef.current = true
-      // Shuffle exercises
-      const shuffled = [...data.exercises].sort(() => Math.random() - 0.5)
+      // Shuffle and cap to daily limit
+      const limit = settings?.writing_exercises_per_day ?? 10
+      const shuffled = [...data.exercises].sort(() => Math.random() - 0.5).slice(0, limit)
       dispatch({ type: 'INIT', exercises: shuffled })
     }
   }, [isLoading, data])
