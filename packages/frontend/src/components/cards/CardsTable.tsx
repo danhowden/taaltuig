@@ -9,27 +9,21 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { CardRow } from './CardRow'
 import { CardDeleteDialog } from './CardDeleteDialog'
 import type { Card } from '@/types'
+import type { SelectionProps } from '@/types/selection'
+import { useSelectionState } from '@/types/selection'
 import { useState, memo } from 'react'
 
-interface CardsTableProps {
+interface CardsTableProps extends SelectionProps {
   cards: Card[]
   onUpdateCard: (cardId: string, updates: Partial<Card>) => Promise<void>
   onDeleteCard: (cardId: string) => Promise<void>
-  // Selection props
-  selectedIds?: Set<string>
-  onToggleSelect?: (cardId: string) => void
-  onSelectAll?: (cardIds: string[]) => void
-  onDeselectAll?: () => void
 }
 
 export const CardsTable = memo(function CardsTable({
   cards,
   onUpdateCard,
   onDeleteCard,
-  selectedIds,
-  onToggleSelect,
-  onSelectAll,
-  onDeselectAll,
+  ...selectionProps
 }: CardsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [cardToDelete, setCardToDelete] = useState<Card | null>(null)
@@ -52,19 +46,8 @@ export const CardsTable = memo(function CardsTable({
     setCardToDelete(null)
   }
 
-  // Selection state
-  const hasSelection = selectedIds !== undefined && onToggleSelect !== undefined
-  const allSelected = hasSelection && cards.length > 0 && cards.every((c) => selectedIds!.has(c.card_id))
-  const someSelected = hasSelection && cards.some((c) => selectedIds!.has(c.card_id))
-  const isIndeterminate = someSelected && !allSelected
-
-  const handleSelectAllChange = (checked: boolean) => {
-    if (checked) {
-      onSelectAll?.(cards.map((c) => c.card_id))
-    } else {
-      onDeselectAll?.()
-    }
-  }
+  const { hasSelection, allSelected, isIndeterminate, handleSelectAllChange } =
+    useSelectionState(cards, selectionProps)
 
   return (
     <>
@@ -97,8 +80,8 @@ export const CardsTable = memo(function CardsTable({
               card={card}
               onUpdate={onUpdateCard}
               onDelete={openDeleteDialog}
-              isSelected={hasSelection ? selectedIds!.has(card.card_id) : undefined}
-              onToggleSelect={hasSelection ? () => onToggleSelect!(card.card_id) : undefined}
+              isSelected={hasSelection ? selectionProps.selectedIds!.has(card.card_id) : undefined}
+              onToggleSelect={hasSelection ? () => selectionProps.onToggleSelect!(card.card_id) : undefined}
             />
           ))}
         </TableBody>

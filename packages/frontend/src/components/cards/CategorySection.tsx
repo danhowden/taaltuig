@@ -9,9 +9,10 @@ import { ChevronDown, ChevronRight, Pencil, Sparkles, Loader2 } from 'lucide-rea
 import { CardsTable } from './CardsTable'
 import { CategoryRenameDialog } from './CategoryRenameDialog'
 import type { Card } from '@/types'
+import type { SelectionProps } from '@/types/selection'
 import { useState, useMemo, memo } from 'react'
 
-interface CategorySectionProps {
+interface CategorySectionProps extends SelectionProps {
   category: string
   cards: Card[]
   isCollapsed: boolean
@@ -23,11 +24,6 @@ interface CategorySectionProps {
   onDeleteCard: (cardId: string) => Promise<void>
   onGenerateInsights?: (cardIds: string[]) => Promise<void>
   isGeneratingInsights?: boolean
-  // Selection props
-  selectedIds?: Set<string>
-  onToggleSelect?: (cardId: string) => void
-  onSelectAll?: (cardIds: string[]) => void
-  onDeselectAll?: () => void
 }
 
 export const CategorySection = memo(function CategorySection({

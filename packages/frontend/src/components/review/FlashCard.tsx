@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Volume2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { glassCardSubtle } from '@/lib/styles'
+import { INSIGHT_TYPE_LABELS } from '@/components/insights/constants'
 import type { QueueItem, CardInsight } from '@/types'
 
 interface FlashCardProps {
@@ -67,10 +69,7 @@ export function FlashCard({
     }
   }, [autoRead, showAnswer, dutchText, item.direction])
 
-  const glassStyles = {
-    background: 'rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 8px 32px rgb(var(--primary) / 0.15), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.4)',
-  }
+  const glassStyles = glassCardSubtle
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -168,15 +167,6 @@ export function FlashCard({
       </div>
     </div>
   )
-}
-
-const INSIGHT_TYPE_LABELS: Record<string, string> = {
-  compound: 'Compound',
-  verb_forms: 'Verb',
-  root: 'Root',
-  pronunciation: 'Sound',
-  confusable: 'Warning',
-  example: 'Example',
 }
 
 function InsightsDisplay({

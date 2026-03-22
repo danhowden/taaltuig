@@ -1,17 +1,17 @@
-import { useState, useMemo, memo } from 'react'
+import { useState, memo } from 'react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
+import { InsightBadges, InsightHoverContent } from '@/components/cards/InsightBadges'
 import { CardExercisesPopover } from '@/components/cards/CardExercisesPopover'
-import type { Card, InsightStatus } from '@/types'
+import type { Card } from '@/types'
 
 interface CardRowProps {
   card: Card
@@ -53,25 +53,7 @@ export const CardRow = memo(function CardRow({
     setEditValues({})
   }
 
-  // Calculate insight status counts
-  const insightCounts = useMemo(() => {
-    if (!card.insights || card.insights.length === 0) {
-      return null
-    }
-
-    const counts: Record<InsightStatus, number> = {
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-    }
-
-    for (const insight of card.insights) {
-      counts[insight.status]++
-    }
-
-    return counts
-  }, [card.insights])
-
+  const hasInsights = card.insights && card.insights.length > 0
   const hasSelection = isSelected !== undefined && onToggleSelect !== undefined
 
   return (
@@ -140,54 +122,15 @@ export const CardRow = memo(function CardRow({
         )}
       </TableCell>
       <TableCell className="py-1">
-        {insightCounts && card.insights && card.insights.length > 0 ? (
+        {hasInsights ? (
           <HoverCard openDelay={200} closeDelay={100}>
             <HoverCardTrigger asChild>
               <div className="flex flex-wrap gap-1 cursor-pointer">
-                {insightCounts.approved > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] px-1.5 py-0 h-4 bg-green-100 text-green-800 hover:bg-green-200"
-                  >
-                    {insightCounts.approved} approved
-                  </Badge>
-                )}
-                {insightCounts.pending > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] px-1.5 py-0 h-4 bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                  >
-                    {insightCounts.pending} pending
-                  </Badge>
-                )}
+                <InsightBadges insights={card.insights!} />
               </div>
             </HoverCardTrigger>
             <HoverCardContent className="w-80" align="start">
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold">Insights</h4>
-                <div className="space-y-2">
-                  {card.insights.filter(i => i.status !== 'rejected').map((insight, idx) => (
-                    <div key={idx} className="text-xs">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1 py-0 h-4 ${
-                            insight.status === 'approved'
-                              ? 'border-green-500 text-green-700'
-                              : 'border-yellow-500 text-yellow-700'
-                          }`}
-                        >
-                          {insight.type}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground">
-                          {insight.status}
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground pl-1">{insight.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <InsightHoverContent insights={card.insights!} />
             </HoverCardContent>
           </HoverCard>
         ) : (

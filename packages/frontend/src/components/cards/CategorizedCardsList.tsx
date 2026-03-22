@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { CategorySection } from './CategorySection'
 import type { Card } from '@/types'
+import type { SelectionProps } from '@/types/selection'
 import { categorizeCards, filterCardsBySearch } from '@/utils/cardFilters'
 
-interface CategorizedCardsListProps {
+interface CategorizedCardsListProps extends SelectionProps {
   cards: Card[]
   searchQuery: string
   disabledCategories: string[] | null
@@ -15,11 +16,6 @@ interface CategorizedCardsListProps {
   onDeleteCard: (cardId: string) => Promise<void>
   onGenerateInsights?: (cardIds: string[]) => Promise<void>
   generatingInsightsCategory?: string | null
-  // Selection props
-  selectedIds?: Set<string>
-  onToggleSelect?: (cardId: string) => void
-  onSelectAll?: (cardIds: string[]) => void
-  onDeselectAll?: () => void
 }
 
 export function CategorizedCardsList({

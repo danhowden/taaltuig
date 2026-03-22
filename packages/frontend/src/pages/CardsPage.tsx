@@ -727,7 +727,6 @@ export function CardsPage() {
         ) : (
           <VirtualizedCardsTable
             cards={cards}
-            onUpdateCard={handleUpdateCard}
             onDeleteCard={handleDeleteCard}
             selectedIds={selectedIds}
             onToggleSelect={toggleCard}

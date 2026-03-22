@@ -28,10 +28,6 @@ export function useCardSelection() {
     setSelectedIds(new Set(cardIds))
   }, [])
 
-  const deselectAll = useCallback(() => {
-    setSelectedIds(new Set())
-  }, [])
-
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set())
   }, [])
@@ -52,7 +48,7 @@ export function useCardSelection() {
     isSelected,
     toggleCard,
     selectAll,
-    deselectAll,
+    deselectAll: clearSelection,
     clearSelection,
   }
 }
