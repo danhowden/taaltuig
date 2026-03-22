@@ -17,6 +17,31 @@ const topicNameMap = new Map<string, string>(
 )
 
 // ============================================================================
+// Levenshtein distance (for typo tolerance)
+// ============================================================================
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length
+  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  )
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+    }
+  }
+  return dp[m][n]
+}
+
+function isCloseEnough(answer: string, reference: string): boolean {
+  if (answer === reference) return true
+  const maxDist = reference.length <= 4 ? 0 : reference.length <= 8 ? 1 : 2
+  return levenshtein(answer, reference) <= maxDist
+}
+
+// ============================================================================
 // Assessment (client-side)
 // ============================================================================
 
@@ -38,18 +63,19 @@ function assess(exercise: CatalogExercise, userAnswer: string): AssessmentResult
     }
   }
 
-  // Check exact match
-  if (answer === reference) {
+  // Check exact match or close typo
+  if (isCloseEnough(answer, reference)) {
+    const typo = answer !== reference
     return {
       correct: true,
-      feedback: 'Correct!',
+      feedback: typo ? `Close enough! (watch the spelling)` : 'Correct!',
       reference_answer: exercise.reference_answer,
     }
   }
 
   // Check alternatives
   for (const alt of exercise.alternatives) {
-    if (answer === alt.trim().toLowerCase()) {
+    if (isCloseEnough(answer, alt.trim().toLowerCase())) {
       return {
         correct: true,
         feedback: 'Correct!',
