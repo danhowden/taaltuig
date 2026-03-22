@@ -78,7 +78,9 @@ if (!level && !all) {
 // Find exercise files
 // ---------------------------------------------------------------------------
 
-const DATA_DIR = resolve('data', 'exercises')
+// Resolve relative to the script's location, not cwd
+const SCRIPT_DIR = new URL('.', import.meta.url).pathname
+const DATA_DIR = resolve(SCRIPT_DIR, '..', 'data', 'exercises')
 
 function findJsonFiles(dir: string, typeFilter?: string): string[] {
   if (!existsSync(dir)) return []
