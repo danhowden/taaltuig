@@ -112,8 +112,8 @@ describe('getTrackableTopics', () => {
       expect(topic.trackable).toBe(true)
       expect(topic.is_category).toBe(false)
     }
-    // A1 has 18 grammar leaf topics
-    expect(trackable.length).toBe(18)
+    // A1 has 19 grammar leaf topics (including imperative)
+    expect(trackable.length).toBe(19)
   })
 })
 
@@ -123,8 +123,8 @@ describe('getLeafTopics', () => {
     for (const leaf of leaves) {
       expect(leaf.is_category).toBe(false)
     }
-    // A1: 18 grammar + 8 vocabulary themes = 26
-    expect(leaves.length).toBe(26)
+    // A1: 19 grammar + 8 vocabulary themes = 27
+    expect(leaves.length).toBe(27)
   })
 })
 
