@@ -31,6 +31,11 @@ interface ReviewSessionState {
   againReviewed: number     // AGAIN cards that were re-reviewed
   againCardIds: Set<string> // Track cards that were marked Again
 
+  // Vocabulary tracking
+  vocabExperienced: number  // Total unique cards experienced (dynamic)
+  vocabLearned: number      // Unique cards learned (static from API)
+  newCardsExperienced: Set<string> // Track NEW card_ids reviewed this session
+
   // UI state
   showAnswer: boolean
   startTime: number         // When current card was shown
@@ -49,7 +54,7 @@ interface ScheduledCard {
 // =============================================================================
 
 type ReviewSessionAction =
-  | { type: 'INIT_QUEUE'; cards: QueueItem[] }
+  | { type: 'INIT_QUEUE'; cards: QueueItem[]; vocabExperienced: number; vocabLearned: number }
   | { type: 'REVEAL_ANSWER' }
   | { type: 'MOVE_TO_NEXT'; grade: Grade }  // Optimistic - move immediately
   | { type: 'SCHEDULE_CARD'; card: QueueItem; dueDate: string; isAgain: boolean }  // After API response
@@ -71,6 +76,9 @@ const initialState: ReviewSessionState = {
   againCount: 0,
   againReviewed: 0,
   againCardIds: new Set(),
+  vocabExperienced: 0,
+  vocabLearned: 0,
+  newCardsExperienced: new Set(),
   showAnswer: false,
   startTime: Date.now(),
   loadingExtraCards: null,
@@ -132,6 +140,9 @@ export function reviewSessionReducer(
         againCount: 0,
         againReviewed: 0,
         againCardIds: new Set(),
+        vocabExperienced: action.vocabExperienced,
+        vocabLearned: action.vocabLearned,
+        newCardsExperienced: new Set(),
         showAnswer: false,
         startTime: Date.now(),
       }
@@ -147,6 +158,19 @@ export function reviewSessionReducer(
       const { grade } = action
       const isAgain = grade === 0
       const wasAgainCard = state.againCardIds.has(state.currentCard.review_item_id)
+
+      // Track NEW cards being reviewed for the first time
+      const isNewCard = state.currentCard.state === 'NEW'
+      const isFirstTimeReviewing = !state.newCardsExperienced.has(state.currentCard.card_id)
+      const shouldIncrementVocab = isNewCard && isFirstTimeReviewing
+
+      const newCardsExperienced = shouldIncrementVocab
+        ? new Set([...state.newCardsExperienced, state.currentCard.card_id])
+        : state.newCardsExperienced
+
+      const vocabExperienced = shouldIncrementVocab
+        ? state.vocabExperienced + 1
+        : state.vocabExperienced
 
       // Move to next card immediately (optimistic)
       const { next, remaining } = getNextCard(state.availableCards)
@@ -166,6 +190,8 @@ export function reviewSessionReducer(
         reviewedCount: state.reviewedCount + 1,
         againCount: isAgain ? state.againCount + 1 : state.againCount,
         againReviewed: wasAgainCard ? state.againReviewed + 1 : state.againReviewed,
+        vocabExperienced,
+        newCardsExperienced,
         showAnswer: false,
         startTime: Date.now(),
       }
@@ -275,7 +301,12 @@ export function reviewSessionReducer(
 // Hook
 // =============================================================================
 
-export function useReviewSession(initialCards: QueueItem[], isDataLoaded: boolean) {
+export function useReviewSession(
+  initialCards: QueueItem[],
+  isDataLoaded: boolean,
+  vocabExperienced: number = 0,
+  vocabLearned: number = 0
+) {
   const [state, dispatch] = useReducer(reviewSessionReducer, initialState)
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const initializedRef = useRef(false)
@@ -284,9 +315,9 @@ export function useReviewSession(initialCards: QueueItem[], isDataLoaded: boolea
   useEffect(() => {
     if (isDataLoaded && !initializedRef.current) {
       initializedRef.current = true
-      dispatch({ type: 'INIT_QUEUE', cards: initialCards })
+      dispatch({ type: 'INIT_QUEUE', cards: initialCards, vocabExperienced, vocabLearned })
     }
-  }, [initialCards, isDataLoaded])
+  }, [initialCards, isDataLoaded, vocabExperienced, vocabLearned])
 
   // Set up timers for waiting cards
   useEffect(() => {
@@ -358,6 +389,10 @@ export function useReviewSession(initialCards: QueueItem[], isDataLoaded: boolea
     againCount: state.againCount,
     againReviewed: state.againReviewed,
     cardsRemaining,
+
+    // Vocabulary tracking
+    vocabExperienced: state.vocabExperienced,
+    vocabLearned: state.vocabLearned,
 
     // Waiting state
     nextWaitingTime,

@@ -35,7 +35,12 @@ export function ReviewSession() {
 
   const initialQueue = data?.queue || []
   const isDataLoaded = !isLoadingQueue && !!data
-  const session = useReviewSession(initialQueue, isDataLoaded)
+  const session = useReviewSession(
+    initialQueue,
+    isDataLoaded,
+    data?.stats?.vocab_experienced ?? 0,
+    data?.stats?.vocab_learned ?? 0
+  )
 
   const [autoRead, setAutoRead] = useState(false)
 
@@ -308,6 +313,8 @@ export function ReviewSession() {
           reviewedCount={session.reviewedCount}
           againCount={session.againCount}
           againReviewed={session.againReviewed}
+          vocabExperienced={session.vocabExperienced}
+          vocabLearned={session.vocabLearned}
         />
       </div>
 

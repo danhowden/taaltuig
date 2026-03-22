@@ -5,6 +5,8 @@ interface ReviewHeaderProps {
   reviewedCount: number
   againCount: number
   againReviewed: number
+  vocabExperienced?: number
+  vocabLearned?: number
 }
 
 function AnimatedDigit({ digit, shouldReduceMotion }: { digit: string; shouldReduceMotion: boolean | null }) {
@@ -34,7 +36,7 @@ export function ReviewTitle() {
   )
 }
 
-export function ReviewProgress({ totalCards, reviewedCount, againCount, againReviewed }: ReviewHeaderProps) {
+export function ReviewProgress({ totalCards, reviewedCount, againCount, againReviewed, vocabExperienced, vocabLearned }: ReviewHeaderProps) {
   const shouldReduceMotion = useReducedMotion()
 
   const uniqueCompleted = Math.min(reviewedCount - againReviewed, totalCards)
@@ -47,7 +49,7 @@ export function ReviewProgress({ totalCards, reviewedCount, againCount, againRev
   const digits = String(remaining).split('')
 
   return (
-    <div className="text-center">
+    <div className="text-center space-y-2">
       <p className="text-xs text-black/50 flex items-baseline justify-center mb-2">
         <span className="font-medium inline-flex">
           {digits.map((digit, index) => (
@@ -80,6 +82,23 @@ export function ReviewProgress({ totalCards, reviewedCount, againCount, againRev
           )}
         </div>
       </div>
+
+      {(vocabExperienced !== undefined || vocabLearned !== undefined) && (
+        <div className="flex items-center justify-center gap-4 text-xs text-black/50">
+          {vocabExperienced !== undefined && (
+            <div className="flex items-baseline gap-1">
+              <span className="font-medium text-black/70">{vocabExperienced}</span>
+              <span>experienced</span>
+            </div>
+          )}
+          {vocabLearned !== undefined && (
+            <div className="flex items-baseline gap-1">
+              <span className="font-medium text-primary">{vocabLearned}</span>
+              <span>learned</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
