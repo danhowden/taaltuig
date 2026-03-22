@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb'
+import { DynamoDBDocumentClient, QueryCommand, ScanCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb'
 import {
   getUserIdFromEvent,
   unauthorizedResponse,
@@ -52,6 +52,7 @@ export async function handler(
     const topic = event.queryStringParameters?.topic
     const level = event.queryStringParameters?.level?.toUpperCase()
     const typeFilter = event.queryStringParameters?.type
+    const dueOnly = event.queryStringParameters?.due_only === 'true'
 
     let items: Record<string, unknown>[]
 
@@ -94,6 +95,35 @@ export async function handler(
 
       const response = await docClient.send(new QueryCommand(params))
       items = (response.Items || []) as Record<string, unknown>[]
+    }
+
+    // If due_only, filter to exercises not yet passed (no progress) or due today
+    const exerciseProgressTableName = process.env.EXERCISE_PROGRESS_TABLE_NAME!
+    if (dueOnly && items.length > 0) {
+      const today = new Date().toISOString().slice(0, 10)
+      const keys = items.map((item) => ({
+        PK: `USER#${userId}`,
+        SK: `EXERCISE#${item.exercise_id as string}`,
+      }))
+
+      // BatchGet in chunks of 100
+      const passed = new Set<string>()
+      for (let i = 0; i < keys.length; i += 100) {
+        const chunk = keys.slice(i, i + 100)
+        const response = await docClient.send(new BatchGetCommand({
+          RequestItems: {
+            [exerciseProgressTableName]: { Keys: chunk },
+          },
+        }))
+        for (const record of response.Responses?.[exerciseProgressTableName] || []) {
+          // Exclude if passed (due_date in far future) and not due today or earlier
+          if ((record.due_date as string) > today) {
+            passed.add(record.exercise_id as string)
+          }
+        }
+      }
+
+      items = items.filter((item) => !passed.has(item.exercise_id as string))
     }
 
     // Strip DynamoDB key attributes from response

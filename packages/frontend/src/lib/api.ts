@@ -540,16 +540,31 @@ class ApiClient {
   }
   async getExerciseCatalog(
     token: string,
-    params: { topic?: string; level?: string; type?: string }
+    params: { topic?: string; level?: string; type?: string; due_only?: boolean }
   ): Promise<ExerciseCatalogResponse> {
     const searchParams = new URLSearchParams()
     if (params.topic) searchParams.set('topic', params.topic)
     if (params.level) searchParams.set('level', params.level)
     if (params.type) searchParams.set('type', params.type)
+    if (params.due_only) searchParams.set('due_only', 'true')
     return this.request<ExerciseCatalogResponse>(
       `/api/exercises/catalog?${searchParams.toString()}`,
       {
         headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+  }
+
+  async recordExerciseAttempt(
+    token: string,
+    attempt: { exercise_id: string; topic_id: string; result: 'correct' | 'incorrect' | 'skipped' }
+  ): Promise<void> {
+    await this.request<{ ok: boolean }>(
+      '/api/exercises/attempt',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(attempt),
       }
     )
   }

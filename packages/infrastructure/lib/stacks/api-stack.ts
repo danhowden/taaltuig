@@ -540,6 +540,19 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const exerciseAttemptLambda = new lambda.Function(
+      this,
+      'ExerciseAttemptFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-exercise-attempt',
+        description: 'Record exercise attempt result and schedule repeats',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/exercise-attempt/dist')
+        ),
+      }
+    )
+
     const writingChallengeLambda = new lambda.Function(
       this,
       'WritingChallengeFunction',
@@ -675,6 +688,7 @@ export class ApiStack extends cdk.Stack {
       writingGenerateLambda,
       writingExercisesLambda,
       writingChallengeLambda,
+      exerciseAttemptLambda,
       sidebarCountsLambda,
       exerciseSummaryLambda,
     ]
@@ -975,6 +989,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'ExerciseCatalogIntegration',
         writingExercisesLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/exercises/attempt',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration(
+        'ExerciseAttemptIntegration',
+        exerciseAttemptLambda
       ),
       authorizer: jwtAuthorizer,
     })

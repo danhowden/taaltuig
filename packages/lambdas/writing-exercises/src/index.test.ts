@@ -13,6 +13,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
   },
   QueryCommand: vi.fn().mockImplementation((input) => input),
   ScanCommand: vi.fn().mockImplementation((input) => input),
+  BatchGetCommand: vi.fn().mockImplementation((input) => input),
 }))
 
 const { handler } = await import('./index')
@@ -50,6 +51,7 @@ describe('exercise-catalog handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.EXERCISES_TABLE_NAME = 'test-exercises'
+    process.env.EXERCISE_PROGRESS_TABLE_NAME = 'test-progress'
   })
 
   it('returns 401 when unauthorized', async () => {
@@ -134,6 +136,60 @@ describe('exercise-catalog handler', () => {
     const event = makeEvent()
     const result = await handler(event)
     expect(result.statusCode).toBe(500)
+  })
+
+  it('with due_only=true returns exercises without progress records', async () => {
+    mockSend
+      .mockResolvedValueOnce({ Items: [mockItem] }) // catalog query
+      .mockResolvedValueOnce({ Responses: { 'test-progress': [] } }) // batch get — no progress
+    const event = makeEvent({
+      queryStringParameters: { topic: 'a1.grammar.negation', due_only: 'true' },
+    })
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.count).toBe(1)
+  })
+
+  it('with due_only=true excludes exercises already passed', async () => {
+    mockSend
+      .mockResolvedValueOnce({ Items: [mockItem] })
+      .mockResolvedValueOnce({
+        Responses: {
+          'test-progress': [{
+            exercise_id: 'a1.grammar.negation-0',
+            due_date: '9999-12-31',
+          }],
+        },
+      })
+    const event = makeEvent({
+      queryStringParameters: { topic: 'a1.grammar.negation', due_only: 'true' },
+    })
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.count).toBe(0)
+  })
+
+  it('with due_only=true includes exercises due today (failed yesterday)', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    mockSend
+      .mockResolvedValueOnce({ Items: [mockItem] })
+      .mockResolvedValueOnce({
+        Responses: {
+          'test-progress': [{
+            exercise_id: 'a1.grammar.negation-0',
+            due_date: today,
+          }],
+        },
+      })
+    const event = makeEvent({
+      queryStringParameters: { topic: 'a1.grammar.negation', due_only: 'true' },
+    })
+    const result = await handler(event)
+    expect(result.statusCode).toBe(200)
+    const body = JSON.parse(result.body as string)
+    expect(body.count).toBe(1)
   })
 
   it('returns empty array when no exercises found', async () => {

@@ -516,7 +516,7 @@ export function ExerciseSession() {
     queryKey: ['exercise-session', topic, level],
     queryFn: async () => {
       if (!token) throw new Error('No token')
-      return apiClient.getExerciseCatalog(token, { topic, level })
+      return apiClient.getExerciseCatalog(token, { topic, level, due_only: true })
     },
     enabled: !!token,
   })
@@ -549,15 +549,29 @@ export function ExerciseSession() {
       if (!currentExercise) return
       const result = assess(currentExercise, answer)
       dispatch({ type: 'SUBMIT', result, userAnswer: answer })
+      if (token) {
+        apiClient.recordExerciseAttempt(token, {
+          exercise_id: currentExercise.exercise_id,
+          topic_id: currentExercise.topic_id,
+          result: result.correct ? 'correct' : 'incorrect',
+        }).catch(console.error)
+      }
     },
-    [currentExercise]
+    [currentExercise, token]
   )
 
   const handlePass = useCallback(() => {
     if (!currentExercise) return
     const result = assess(currentExercise, '')
     dispatch({ type: 'SUBMIT', result, userAnswer: '' })
-  }, [currentExercise])
+    if (token) {
+      apiClient.recordExerciseAttempt(token, {
+        exercise_id: currentExercise.exercise_id,
+        topic_id: currentExercise.topic_id,
+        result: 'skipped',
+      }).catch(console.error)
+    }
+  }, [currentExercise, token])
 
   const handleNext = useCallback(() => {
     dispatch({ type: 'NEXT' })
