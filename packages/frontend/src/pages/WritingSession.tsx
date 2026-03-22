@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Check, X, ArrowRight, PencilLine, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoadingCards } from '@/components/review/LoadingCards'
+import { SessionLayout } from '@/components/SessionLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/lib/api'
 import {
@@ -507,29 +508,29 @@ export function WritingSession() {
 
   if (isLoading || !data) {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <LoadingCards />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   if (session.phase === 'empty') {
     const emptyReason = data?.stats?.exercises_remaining === 0 ? 'limit_reached' : 'no_exercises'
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <EmptyState reason={emptyReason} />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   if (session.phase === 'complete') {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <WritingComplete
             correctCount={session.correctCount}
             totalCount={session.totalCount}
@@ -537,8 +538,8 @@ export function WritingSession() {
             onCompleteMore={handleCompleteMore}
             isLoadingMore={isLoadingMore}
           />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
@@ -546,7 +547,7 @@ export function WritingSession() {
   const lastUserAnswer = session.userAnswers[session.userAnswers.length - 1]
 
   return (
-    <div className="relative flex h-full flex-col">
+    <SessionLayout>
       {/* Centered exercise content */}
       <div className="flex flex-1 items-center justify-center px-4 py-8">
         {session.phase === 'writing' && session.currentExercise && (
@@ -582,6 +583,6 @@ export function WritingSession() {
           correct={session.correctCount}
         />
       </div>
-    </div>
+    </SessionLayout>
   )
 }

@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/review/EmptyState'
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { ExtraCardsCard } from '@/components/review/ExtraCardsCard'
 import { WaitingCardIllustration } from '@/components/review/WaitingCardIllustration'
+import { SessionLayout } from '@/components/SessionLayout'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/lib/api'
@@ -170,45 +171,45 @@ export function ReviewSession() {
 
   if (isLoadingQueue || !data) {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <LoadingCards />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   if (session.phase === 'empty') {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <EmptyState
             onContinue={hasExtraCardsAvailable ? handleContinue : undefined}
             loadingExtraCards={session.loadingExtraCards}
           />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   if (session.phase === 'complete') {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <ReviewComplete
             onContinue={hasExtraCardsAvailable ? handleContinue : undefined}
             loadingExtraCards={session.loadingExtraCards}
             writingExerciseCount={writingData?.stats?.pool_size}
           />
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   if (session.phase === 'waiting') {
     return (
-      <div className="relative flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center py-8">
+      <SessionLayout>
+        <SessionLayout.Center>
           <div className="mx-auto max-w-2xl space-y-4 md:space-y-6 px-4">
             <div className="text-center pb-1 md:pb-2">
               <WaitingCardIllustration size={100} className="md:w-[160px] md:h-[160px]" />
@@ -227,14 +228,14 @@ export function ReviewSession() {
               />
             )}
           </div>
-        </div>
-      </div>
+        </SessionLayout.Center>
+      </SessionLayout>
     )
   }
 
   // Phase: reviewing
   return (
-    <div className="relative flex h-full flex-col">
+    <SessionLayout>
       {/* Mobile logo */}
       <div className="flex justify-center pt-4 md:hidden">
         <TaaltuigLogo size={72} animate={false} variant="white" />
@@ -329,6 +330,6 @@ export function ReviewSession() {
           </Button>
         </div>
       )}
-    </div>
+    </SessionLayout>
   )
 }

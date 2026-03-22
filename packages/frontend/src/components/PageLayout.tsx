@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import { contentPanel } from '@/lib/styles'
 
 interface PageLayoutProps {
   children: ReactNode
@@ -45,10 +46,7 @@ PageLayout.Content = function Content({ children, className = '' }: ContentProps
   return (
     <div
       className={`flex-1 overflow-auto rounded-2xl p-6 ${className}`}
-      style={{
-        background: 'rgba(255, 255, 255, 0.5)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-      }}
+      style={contentPanel}
     >
       {children}
     </div>
