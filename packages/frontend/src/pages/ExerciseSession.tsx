@@ -10,6 +10,11 @@ import { useApiQuery } from '@/hooks/useApiQuery'
 import { apiClient } from '@/lib/api'
 import type { CatalogExercise } from '@/types'
 import { EXERCISE_TYPE_COLORS, EXERCISE_TYPE_LABELS } from '@/constants/exercises'
+import { CURRICULUM, type CurriculumTopic } from '@taaltuig/dynamodb-client'
+
+const topicNameMap = new Map<string, string>(
+  (CURRICULUM as CurriculumTopic[]).map((t) => [t.id, t.name])
+)
 
 // ============================================================================
 // Assessment (client-side)
@@ -151,6 +156,7 @@ interface ExerciseInputProps {
 function TextInput({
   label,
   prompt,
+  hint,
   placeholder,
   exerciseId,
   onSubmit,
@@ -158,6 +164,7 @@ function TextInput({
 }: {
   label: string
   prompt: React.ReactNode
+  hint?: string
   placeholder: string
   exerciseId: string
   onSubmit: (answer: string) => void
@@ -182,6 +189,9 @@ function TextInput({
           {label}
         </p>
         <div className="text-2xl font-semibold">{prompt}</div>
+        {hint && (
+          <p className="text-sm text-black/35 italic">{hint}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -222,6 +232,7 @@ function FillBlankInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
           {parts[1]}
         </p>
       }
+      hint={topicNameMap.get(exercise.topic_id)}
       placeholder="Type the missing word..."
       exerciseId={exercise.exercise_id}
       onSubmit={onSubmit}
@@ -306,6 +317,7 @@ function TranslationInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
     <TextInput
       label="Translate to Dutch"
       prompt={<p>{exercise.prompt}</p>}
+      hint={topicNameMap.get(exercise.topic_id)}
       placeholder="Type your answer in Dutch..."
       exerciseId={exercise.exercise_id}
       onSubmit={onSubmit}
