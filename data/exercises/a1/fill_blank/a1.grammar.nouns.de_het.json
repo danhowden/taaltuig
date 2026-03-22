@@ -1,0 +1,123 @@
+[
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ huis is groot.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: huis",
+    "blanking_strategy": "article",
+    "source_notes": "het huis — neuter noun, always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ man leest een boek.",
+    "reference_answer": "de",
+    "alternatives": [],
+    "grammar_focus": "de-woord: man",
+    "blanking_strategy": "article",
+    "source_notes": "de man — common gender noun, always de"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ boek ligt op tafel.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: boek",
+    "blanking_strategy": "article",
+    "source_notes": "het boek — neuter noun, always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ kind speelt in het park.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: kind",
+    "blanking_strategy": "article",
+    "source_notes": "het kind — neuter noun, always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ hond is heel lief.",
+    "reference_answer": "de",
+    "alternatives": [],
+    "grammar_focus": "de-woord: hond",
+    "blanking_strategy": "article",
+    "source_notes": "de hond — common gender noun, always de"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ meisje drinkt melk.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: meisje",
+    "blanking_strategy": "article",
+    "source_notes": "het meisje — diminutive noun (-je), always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ kat slaapt op de stoel.",
+    "reference_answer": "de",
+    "alternatives": [],
+    "grammar_focus": "de-woord: kat",
+    "blanking_strategy": "article",
+    "source_notes": "de kat — common gender noun, always de"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ water is koud.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: water",
+    "blanking_strategy": "article",
+    "source_notes": "het water — neuter noun, always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ tafel staat bij het raam.",
+    "reference_answer": "de",
+    "alternatives": [],
+    "grammar_focus": "de-woord: tafel",
+    "blanking_strategy": "article",
+    "source_notes": "de tafel — common gender noun, always de"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ station is niet ver.",
+    "reference_answer": "het",
+    "alternatives": [],
+    "grammar_focus": "het-woord: station",
+    "blanking_strategy": "article",
+    "source_notes": "het station — neuter noun, always het"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.nouns.de_het",
+    "cefr_level": "A1",
+    "prompt": "___ fiets staat buiten.",
+    "reference_answer": "de",
+    "alternatives": [],
+    "grammar_focus": "de-woord: fiets",
+    "blanking_strategy": "article",
+    "source_notes": "de fiets — common gender noun, always de"
+  }
+]

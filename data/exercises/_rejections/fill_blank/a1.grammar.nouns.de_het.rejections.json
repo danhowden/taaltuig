@@ -1,0 +1,13 @@
+[
+  {
+    "index": 3,
+    "prompt": "___ vrouw werkt in een school.",
+    "verdict": "REJECT",
+    "reasons": [
+      "Unnatural preposition: Dutch uses 'op een school' (not 'in een school') for working at a school. A native speaker would say 'De vrouw werkt op een school.'"
+    ],
+    "category": "naturalness",
+    "fixable": true,
+    "fix_hint": "Change 'in een school' to 'op een school'."
+  }
+]

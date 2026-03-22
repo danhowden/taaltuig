@@ -10,6 +10,8 @@ import { Construct } from 'constructs'
  */
 export class DatabaseStack extends cdk.Stack {
   public readonly table: dynamodb.Table
+  public readonly exercisesTable: dynamodb.Table
+  public readonly exerciseProgressTable: dynamodb.Table
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
@@ -64,6 +66,74 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     })
 
+    // Exercises content table (shared, read-only catalog)
+    // PK: TOPIC#<topic_id>  SK: <type>#<exercise_id>
+    // GSI1: LEVEL#<level> / <type>#<topic_id>#<exercise_id>
+    this.exercisesTable = new dynamodb.Table(this, 'TaaltuigExercisesTable', {
+      tableName: 'taaltuig-exercises',
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: true,
+      },
+    })
+
+    this.exercisesTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1',
+      partitionKey: {
+        name: 'GSI1PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'GSI1SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    })
+
+    // Exercise progress table (per-user state)
+    // PK: USER#<user_id>  SK: TOPIC#<topic_id> (TopicProgress)
+    // PK: USER#<user_id>  SK: ATTEMPT#<exercise_id>#<timestamp> (attempts)
+    // PK: USER#<user_id>  SK: CEFR_SUMMARY (UserCEFRSummary)
+    // GSI1: USER#<user_id>#CEFR#<level> / <mastery_score>#<topic_id>
+    this.exerciseProgressTable = new dynamodb.Table(this, 'TaaltuigExerciseProgressTable', {
+      tableName: 'taaltuig-exercise-progress',
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: true,
+      },
+    })
+
+    this.exerciseProgressTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1',
+      partitionKey: {
+        name: 'GSI1PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'GSI1SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    })
+
     // CloudFormation Outputs
     new cdk.CfnOutput(this, 'TableName', {
       value: this.table.tableName,
@@ -76,9 +146,14 @@ export class DatabaseStack extends cdk.Stack {
       description: 'DynamoDB table ARN',
     })
 
-    new cdk.CfnOutput(this, 'BillingMode', {
-      value: 'PAY_PER_REQUEST',
-      description: 'On-demand pricing - only pay for what you use',
+    new cdk.CfnOutput(this, 'ExercisesTableName', {
+      value: this.exercisesTable.tableName,
+      description: 'Exercises content table name',
+    })
+
+    new cdk.CfnOutput(this, 'ExerciseProgressTableName', {
+      value: this.exerciseProgressTable.tableName,
+      description: 'Exercise progress table name',
     })
   }
 }

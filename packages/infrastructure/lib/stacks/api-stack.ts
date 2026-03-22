@@ -15,6 +15,8 @@ import { WebSocketLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integra
 interface ApiStackProps extends cdk.StackProps {
   googleClientId: string
   tableName: string
+  exercisesTableName: string
+  exerciseProgressTableName: string
   frontendDomain?: string // Optional: custom domain for CORS
 }
 
@@ -148,6 +150,8 @@ export class ApiStack extends cdk.Stack {
     const commonEnvironment = {
       NODE_OPTIONS: '--enable-source-maps',
       TABLE_NAME: props.tableName,
+      EXERCISES_TABLE_NAME: props.exercisesTableName,
+      EXERCISE_PROGRESS_TABLE_NAME: props.exerciseProgressTableName,
       ANKI_IMPORT_BUCKET: ankiImportBucket.bucketName,
     }
 
@@ -661,18 +665,18 @@ export class ApiStack extends cdk.Stack {
       sidebarCountsLambda,
     ]
 
-    // Import the DynamoDB table from the database stack
-    const table = dynamodb.Table.fromTableName(
-      this,
-      'ImportedTable',
-      props.tableName
-    )
+    // Import DynamoDB tables
+    const table = dynamodb.Table.fromTableName(this, 'ImportedTable', props.tableName)
+    const exercisesTable = dynamodb.Table.fromTableName(this, 'ImportedExercisesTable', props.exercisesTableName)
+    const exerciseProgressTable = dynamodb.Table.fromTableName(this, 'ImportedExerciseProgressTable', props.exerciseProgressTableName)
 
     // Grant read/write permissions to all Lambdas including GSI access
     allLambdas.forEach((fn) => {
       table.grantReadWriteData(fn)
+      exercisesTable.grantReadWriteData(fn)
+      exerciseProgressTable.grantReadWriteData(fn)
 
-      // Explicitly grant permissions for Global Secondary Indexes
+      // Explicitly grant permissions for Global Secondary Indexes on all tables
       fn.addToRolePolicy(
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
@@ -682,6 +686,8 @@ export class ApiStack extends cdk.Stack {
           ],
           resources: [
             `arn:aws:dynamodb:${this.region}:${this.account}:table/${props.tableName}/index/*`,
+            `arn:aws:dynamodb:${this.region}:${this.account}:table/${props.exercisesTableName}/index/*`,
+            `arn:aws:dynamodb:${this.region}:${this.account}:table/${props.exerciseProgressTableName}/index/*`,
           ],
         })
       )

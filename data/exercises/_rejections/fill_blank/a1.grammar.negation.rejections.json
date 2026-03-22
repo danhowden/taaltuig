@@ -1,0 +1,32 @@
+[
+  {
+    "index": 8,
+    "round": 1,
+    "prompt": "Dat is ___ goed.",
+    "verdict": "REJECT",
+    "reasons": ["Duplicates the pattern of exercise 'Hij is ___ ziek' — both test niet before a predicate adjective after zijn"],
+    "category": "duplicate",
+    "fixable": true,
+    "fix_hint": "Generate an exercise testing niet before an adverb (e.g., 'Hij loopt ___ snel')"
+  },
+  {
+    "index": 9,
+    "round": 1,
+    "prompt": "Ik heb ___ tijd.",
+    "verdict": "REJECT",
+    "reasons": ["Duplicates the pattern of exercise 'Er is ___ melk meer' — both test geen + uncountable noun without article"],
+    "category": "duplicate",
+    "fixable": true,
+    "fix_hint": "Generate an exercise testing geen + een-noun (singular countable)"
+  },
+  {
+    "index": 11,
+    "round": 1,
+    "prompt": "Wij drinken ___ koffie.",
+    "verdict": "REJECT",
+    "reasons": ["Duplicates the pattern of exercises testing geen + mass/uncountable noun"],
+    "category": "duplicate",
+    "fixable": true,
+    "fix_hint": "Generate an exercise testing niet in a modal + infinitive construction"
+  }
+]

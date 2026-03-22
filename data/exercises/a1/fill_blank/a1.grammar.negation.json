@@ -1,0 +1,134 @@
+[
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Ik heb ___ auto.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen replaces een + noun in negation",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + noun: negating 'een auto' becomes 'geen auto'"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Hij is ___ ziek.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet negates adjectives after zijn",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement before a predicate adjective"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Wij hebben ___ kinderen.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen replaces een/bare plural noun in negation",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + plural noun (no article): 'kinderen' becomes 'geen kinderen'"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Zij woont ___ in Amsterdam.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet negates a prepositional phrase",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement before a prepositional phrase (in Amsterdam)"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Er is ___ melk meer.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen negates uncountable nouns without article",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + uncountable noun: melk has no article, so geen is used"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Ik spreek ___ Nederlands.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen negates a bare noun (language names without article)",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + bare noun: 'Nederlands' (no article) becomes 'geen Nederlands'"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "De kat slaapt ___.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet at end of clause for general verb negation",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement at the end when negating the verb directly"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Hij heeft ___ broers of zussen.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen negates plural nouns linked by of",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + noun in a compound noun phrase"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Zij komt vandaag ___.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet at end of clause after time adverb",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement at clause end with time expression"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Hij loopt ___ snel.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet negates an adverb",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement before an adverb — distinct from predicate adjective pattern"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Zij heeft ___ hond.",
+    "reference_answer": "geen",
+    "alternatives": [],
+    "grammar_focus": "geen replaces een + singular countable noun",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests geen + een-noun: 'een hond' becomes 'geen hond' in negation"
+  },
+  {
+    "type": "fill_blank",
+    "topic_id": "a1.grammar.negation",
+    "cefr_level": "A1",
+    "prompt": "Ik kan ___ zwemmen.",
+    "reference_answer": "niet",
+    "alternatives": [],
+    "grammar_focus": "niet negates an infinitive after a modal verb",
+    "blanking_strategy": "negation",
+    "source_notes": "Tests niet placement before the infinitive in a modal + infinitive construction"
+  }
+]

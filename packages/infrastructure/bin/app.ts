@@ -31,6 +31,8 @@ const apiStack = new ApiStack(app, 'TaaltuigApiStack', {
   env,
   googleClientId,
   tableName: databaseStack.table.tableName,
+  exercisesTableName: databaseStack.exercisesTable.tableName,
+  exerciseProgressTableName: databaseStack.exerciseProgressTable.tableName,
   frontendDomain,
 })
 apiStack.addDependency(databaseStack)
