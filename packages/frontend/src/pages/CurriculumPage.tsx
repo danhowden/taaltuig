@@ -412,7 +412,7 @@ export function CurriculumPage() {
         <EntityPreview />
 
         {/* Level selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           {CEFR_LEVELS.map((meta) => (
             <LevelCard
               key={meta.level}
