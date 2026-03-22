@@ -445,8 +445,8 @@ const A2_TOPICS: CurriculumTopic[] = [
   // -- Conjunctions --
   topic({
     id: 'a2.grammar.conjunctions_coordinating', name: 'Coordinating Conjunctions', level: 'A2', parent_id: 'a2.grammar', sort_order: 3,
-    description: 'en, maar, of, want, dus — no word order change',
-    grammar_points: ['coordinating conjunctions', 'en/maar/of/want/dus', 'no inversion after coordinating'],
+    description: 'en, maar, of (review from A1), want, dus — no word order change',
+    grammar_points: ['coordinating conjunctions', 'en/maar/of (basic, introduced at A1)', 'want/dus (A2)', 'no inversion after coordinating'],
     suitable_exercise_types: ['fill_blank', 'word_reorder', 'multiple_choice'],
   }),
   topic({
@@ -484,7 +484,7 @@ const A2_TOPICS: CurriculumTopic[] = [
   topic({
     id: 'a2.grammar.ordinal_numbers', name: 'Ordinal Numbers (rangtelwoorden)', level: 'A2', parent_id: 'a2.grammar', sort_order: 8,
     description: 'eerste, tweede, derde... Formation with -de (1-19) and -ste (20+)',
-    grammar_points: ['ordinal number formation', 'rangtelwoorden', '-de suffix (1-19)', '-ste suffix (20+)', 'irregular: eerste/derde/achtste'],
+    grammar_points: ['ordinal number formation', 'rangtelwoorden', '-de suffix (2-19)', '-ste suffix (20+)', 'irregular: eerste/derde/achtste'],
     suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice'],
   }),
 
@@ -594,6 +594,12 @@ const B1_TOPICS: CurriculumTopic[] = [
     grammar_points: ['continuous with postural verbs', 'zitten te lezen', 'staan te wachten'],
     suitable_exercise_types: ['translation', 'fill_blank', 'sentence_completion'],
   }),
+  topic({
+    id: 'b1.grammar.verbs.present_participle', name: 'Present Participle (tegenwoordig deelwoord)', level: 'B1', parent_id: 'b1.grammar.verbs', sort_order: 10,
+    description: 'infinitief + -d as adjective/adverb: een huilend kind, al lopend, de volgende dag',
+    grammar_points: ['tegenwoordig deelwoord formation', 'infinitief + -d(e)', 'present participle as adjective', 'present participle as adverb'],
+    suitable_exercise_types: ['fill_blank', 'translation', 'multiple_choice'],
+  }),
 
   // -- Word Order --
   topic({
@@ -619,7 +625,7 @@ const B1_TOPICS: CurriculumTopic[] = [
   topic({
     id: 'b1.grammar.connectors.subordinating', name: 'Subordinating Conjunctions', level: 'B1', parent_id: 'b1.grammar.connectors', sort_order: 1,
     description: 'hoewel, terwijl, voordat, nadat, zodat, tenzij, sinds',
-    grammar_points: ['subordinating conjunctions', 'verb-final', 'hoewel/terwijl/voordat/nadat/zodat/tenzij/sinds'],
+    grammar_points: ['subordinating conjunctions', 'verb-final', 'hoewel/terwijl/voordat/nadat/zodat/tenzij/sinds', 'als vs wanneer distinction'],
     suitable_exercise_types: ['fill_blank', 'word_reorder', 'translation', 'cloze_passage', 'sentence_completion'],
   }),
   topic({
@@ -750,8 +756,8 @@ const B2_TOPICS: CurriculumTopic[] = [
   }),
   topic({
     id: 'b2.grammar.advanced_relative', name: 'Advanced Relative Clauses', level: 'B2', parent_id: 'b2.grammar', sort_order: 7,
-    description: 'wie/wat in free relatives, hetgeen, waar + preposition in complex contexts: de reden waarom, het moment waarop',
-    grammar_points: ['free relative clauses with wie/wat', 'hetgeen', 'waar + preposition', 'complex relative constructions'],
+    description: 'wie/wat in free relatives, waar + preposition in complex contexts: de reden waarom, het moment waarop',
+    grammar_points: ['free relative clauses with wie/wat', 'waar + preposition', 'complex relative constructions'],
     suitable_exercise_types: ['fill_blank', 'translation', 'word_reorder', 'error_correction'],
   }),
   topic({
@@ -914,10 +920,10 @@ const C1_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
   }),
   topic({
-    id: 'c1.grammar.complex.reported_speech', name: 'Advanced Reported Speech', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 3,
-    description: 'Tense shifting in indirect speech, reported questions and commands',
-    grammar_points: ['advanced reported speech', 'tense shifting', 'reported questions/commands'],
-    suitable_exercise_types: ['translation', 'guided_write'],
+    id: 'c1.grammar.complex.reported_speech', name: 'Multi-Layer Reported Speech', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 3,
+    description: 'Nested indirect speech (hij zei dat zij beweerde dat...), reported commands (hij vroeg haar om...), free indirect speech in narrative',
+    grammar_points: ['nested indirect speech', 'reported commands with om...te', 'free indirect speech (vrije indirecte rede)', 'tense backshift across multiple layers'],
+    suitable_exercise_types: ['translation', 'guided_write', 'paragraph_write'],
   }),
   topic({
     id: 'c1.grammar.complex.extended_adjective', name: 'Extended Adjective Constructions', level: 'C1', parent_id: 'c1.grammar.complex', sort_order: 4,
@@ -1002,10 +1008,10 @@ const C2_TOPICS: CurriculumTopic[] = [
 
   // -- Native-Level Mastery --
   topic({
-    id: 'c2.grammar.mastery.humor_irony', name: 'Humor & Irony Through Grammar', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 1,
-    description: 'Using understatement, litotes, ironic inversion, and grammatical humor',
-    grammar_points: ['understatement', 'litotes', 'ironic register', 'grammatical humor'],
-    suitable_exercise_types: ['translation', 'guided_write'],
+    id: 'c2.grammar.mastery.humor_irony', name: 'Understatement & Litotes', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 1,
+    description: 'Dutch understatement patterns (niet onaardig, best wel), litotes, ironic inversion in written and spoken register',
+    grammar_points: ['litotes (niet on- constructions)', 'understatement patterns', 'ironic inversion', 'best wel / nogal / niet bepaald'],
+    suitable_exercise_types: ['translation', 'fill_blank', 'guided_write'],
   }),
   topic({
     id: 'c2.grammar.mastery.complex_nominalization', name: 'Complex Nominalization Patterns', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 2,
@@ -1020,9 +1026,9 @@ const C2_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['translation', 'guided_write'],
   }),
   topic({
-    id: 'c2.grammar.mastery.full_register_fluency', name: 'Full Register Fluency', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 4,
-    description: 'Switching fluidly between casual, formal, academic, literary registers in a single text',
-    grammar_points: ['register fluency', 'multi-register text', 'audience-aware style shifting'],
+    id: 'c2.grammar.mastery.full_register_fluency', name: 'Multi-Register Text Production', level: 'C2', parent_id: 'c2.grammar.mastery', sort_order: 4,
+    description: 'Producing texts that shift between registers: embedding colloquial dialogue in formal prose, mixing academic and journalistic styles',
+    grammar_points: ['multi-register text production', 'embedded register shifts', 'stylistic code-switching in writing'],
     suitable_exercise_types: ['guided_write', 'paragraph_write'],
   }),
   topic({
