@@ -27,14 +27,14 @@ export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
 }
 
 export const EXERCISE_TYPE_SHORT_LABELS: Record<ExerciseType, string> = {
-  translation: 'Trans',
-  fill_blank: 'Fill',
+  translation: 'Translation',
+  fill_blank: 'Fill-blank',
   word_reorder: 'Reorder',
-  guided_write: 'Guided',
-  paragraph_write: 'Para',
+  guided_write: 'Guided Write',
+  paragraph_write: 'Paragraph',
   multiple_choice: 'Multiple Choice',
-  error_correction: 'ErrFix',
-  conjugation: 'Conj',
-  cloze_passage: 'Cloze',
-  sentence_completion: 'Complete',
+  error_correction: 'Error Correction',
+  conjugation: 'Conjugation',
+  cloze_passage: 'Cloze Passage',
+  sentence_completion: 'Sentence Completion',
 }
