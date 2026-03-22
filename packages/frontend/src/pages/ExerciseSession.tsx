@@ -51,9 +51,13 @@ interface AssessmentResult {
   reference_answer: string
 }
 
+function normalise(s: string): string {
+  return s.trim().toLowerCase().replace(/[.,!?;:'"()\-]/g, '').replace(/\s+/g, ' ')
+}
+
 function assess(exercise: CatalogExercise, userAnswer: string): AssessmentResult {
-  const answer = userAnswer.trim().toLowerCase()
-  const reference = exercise.reference_answer.trim().toLowerCase()
+  const answer = normalise(userAnswer)
+  const reference = normalise(exercise.reference_answer)
 
   if (!answer) {
     return {
@@ -75,7 +79,7 @@ function assess(exercise: CatalogExercise, userAnswer: string): AssessmentResult
 
   // Check alternatives
   for (const alt of exercise.alternatives) {
-    if (isCloseEnough(answer, alt.trim().toLowerCase())) {
+    if (isCloseEnough(answer, normalise(alt))) {
       return {
         correct: true,
         feedback: 'Correct!',
