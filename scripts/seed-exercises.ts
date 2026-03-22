@@ -23,19 +23,31 @@ interface SeededExercise {
   type: string
   topic_id: string
   cefr_level: string
-  prompt: string
-  reference_answer: string
-  alternatives: string[]
+  // fill_blank / word_reorder
+  prompt?: string
+  reference_answer?: string
+  alternatives?: string[]
   grammar_focus?: string
   blanking_strategy?: string
   source_notes?: string
+  // translation
+  source?: string
+  reference_translation?: string
+  direction?: string
+  translation_notes?: string
+  key_words?: string[]
+  // multiple_choice
+  options?: string[]
+  correct_index?: number
+  explanation?: string
+  distractor_rationale?: string
 }
 
 interface ExerciseItem {
-  PK: string       // TOPIC#<topic_id>
-  SK: string       // <type>#<exercise_id>
-  GSI1PK: string   // LEVEL#<cefr_level>
-  GSI1SK: string   // <type>#<topic_id>#<exercise_id>
+  PK: string
+  SK: string
+  GSI1PK: string
+  GSI1SK: string
   exercise_id: string
   type: string
   topic_id: string
@@ -46,6 +58,14 @@ interface ExerciseItem {
   grammar_focus?: string
   blanking_strategy?: string
   source_notes?: string
+  // translation extras
+  direction?: string
+  translation_notes?: string
+  key_words?: string[]
+  // multiple_choice extras
+  options?: string[]
+  correct_index?: number
+  explanation?: string
   seeded_at: string
 }
 
@@ -127,7 +147,21 @@ function buildItems(exercises: SeededExercise[], filePath: string): ExerciseItem
   return exercises.map((exercise, index) => {
     const exerciseId = `${fileSlug}-${index}`
 
-    return {
+    // Normalise prompt + reference_answer across exercise types
+    let prompt: string
+    let reference_answer: string
+    if (exercise.type === 'translation') {
+      prompt = exercise.source!
+      reference_answer = exercise.reference_translation!
+    } else if (exercise.type === 'multiple_choice') {
+      prompt = exercise.prompt!
+      reference_answer = exercise.options![exercise.correct_index!]
+    } else {
+      prompt = exercise.prompt!
+      reference_answer = exercise.reference_answer!
+    }
+
+    const item: ExerciseItem = {
       PK: `TOPIC#${exercise.topic_id}`,
       SK: `${exercise.type}#${exerciseId}`,
       GSI1PK: `LEVEL#${exercise.cefr_level}`,
@@ -136,14 +170,28 @@ function buildItems(exercises: SeededExercise[], filePath: string): ExerciseItem
       type: exercise.type,
       topic_id: exercise.topic_id,
       cefr_level: exercise.cefr_level,
-      prompt: exercise.prompt,
-      reference_answer: exercise.reference_answer,
+      prompt,
+      reference_answer,
       alternatives: exercise.alternatives || [],
       grammar_focus: exercise.grammar_focus,
       blanking_strategy: exercise.blanking_strategy,
       source_notes: exercise.source_notes,
       seeded_at: timestamp,
     }
+
+    if (exercise.type === 'translation') {
+      item.direction = exercise.direction
+      item.translation_notes = exercise.translation_notes
+      item.key_words = exercise.key_words
+    }
+
+    if (exercise.type === 'multiple_choice') {
+      item.options = exercise.options
+      item.correct_index = exercise.correct_index
+      item.explanation = exercise.explanation
+    }
+
+    return item
   })
 }
 

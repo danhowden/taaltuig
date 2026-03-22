@@ -241,6 +241,41 @@ function FillBlankInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
   )
 }
 
+function MultipleChoiceInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
+  const options = exercise.options ?? []
+  const topicName = topicNameMap.get(exercise.topic_id)
+
+  return (
+    <div className="mx-auto max-w-2xl w-full space-y-8">
+      <div className="text-center space-y-2">
+        <p className="text-sm font-medium text-black/40 uppercase tracking-wide">
+          Choose the correct answer
+        </p>
+        <div className="text-2xl font-semibold">{exercise.prompt}</div>
+        {topicName && <p className="text-sm text-black/35 italic">{topicName}</p>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {options.map((option, i) => (
+          <button
+            key={i}
+            onClick={() => onSubmit(option)}
+            className="px-4 py-3 rounded-xl border border-black/10 bg-white/60 text-lg font-medium hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer text-center"
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={onPass} className="rounded-full px-6">
+          Pass
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function WordReorderInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([])
   const [availableWords, setAvailableWords] = useState<string[]>([])
@@ -330,6 +365,8 @@ function ExerciseInput({ exercise, onSubmit, onPass }: ExerciseInputProps) {
   switch (exercise.type) {
     case 'fill_blank':
       return <FillBlankInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} />
+    case 'multiple_choice':
+      return <MultipleChoiceInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} />
     case 'word_reorder':
       return <WordReorderInput exercise={exercise} onSubmit={onSubmit} onPass={onPass} />
     default:
@@ -391,9 +428,9 @@ function FeedbackDisplay({
             Correct answer: <span className="font-medium text-white">{result.reference_answer}</span>
           </p>
         </div>
-        {exercise.grammar_focus && (
-          <p className="text-xs text-white/30 pt-1">
-            {exercise.grammar_focus}
+        {(exercise.explanation || exercise.translation_notes || exercise.grammar_focus) && (
+          <p className="text-xs text-white/50 pt-1">
+            {exercise.explanation ?? exercise.translation_notes ?? exercise.grammar_focus}
           </p>
         )}
       </div>

@@ -25,6 +25,14 @@ export interface CatalogExercise {
   grammar_focus?: string
   blanking_strategy?: string
   source_notes?: string
+  // translation
+  direction?: string
+  translation_notes?: string
+  key_words?: string[]
+  // multiple_choice
+  options?: string[]
+  correct_index?: number
+  explanation?: string
   seeded_at: string
 }
 
@@ -100,6 +108,12 @@ export async function handler(
       grammar_focus: item.grammar_focus as string | undefined,
       blanking_strategy: item.blanking_strategy as string | undefined,
       source_notes: item.source_notes as string | undefined,
+      direction: item.direction as string | undefined,
+      translation_notes: item.translation_notes as string | undefined,
+      key_words: item.key_words as string[] | undefined,
+      options: item.options as string[] | undefined,
+      correct_index: item.correct_index as number | undefined,
+      explanation: item.explanation as string | undefined,
       seeded_at: item.seeded_at as string,
     }))
 

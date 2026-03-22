@@ -463,6 +463,14 @@ export interface CatalogExercise {
   grammar_focus?: string
   blanking_strategy?: string
   source_notes?: string
+  // translation
+  direction?: string
+  translation_notes?: string
+  key_words?: string[]
+  // multiple_choice
+  options?: string[]
+  correct_index?: number
+  explanation?: string
   seeded_at: string
 }
 
