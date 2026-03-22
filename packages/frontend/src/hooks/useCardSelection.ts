@@ -48,7 +48,6 @@ export function useCardSelection() {
     isSelected,
     toggleCard,
     selectAll,
-    deselectAll: clearSelection,
     clearSelection,
   }
 }

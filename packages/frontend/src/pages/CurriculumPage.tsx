@@ -21,6 +21,7 @@ import {
   Languages,
   Info,
 } from 'lucide-react'
+import { EXERCISE_TYPE_COLORS, EXERCISE_TYPE_SHORT_LABELS } from '@/constants/exercises'
 
 // ============================================================================
 // Level Card
@@ -87,21 +88,8 @@ function TopicNode({
   const children = getChildren(topic.id)
   const hasChildren = children.length > 0
 
-  const typeColors: Record<string, string> = {
-    translation: 'bg-blue-100 text-blue-700',
-    fill_blank: 'bg-amber-100 text-amber-700',
-    word_reorder: 'bg-green-100 text-green-700',
-    guided_write: 'bg-purple-100 text-purple-700',
-    paragraph_write: 'bg-rose-100 text-rose-700',
-  }
-
-  const typeLabels: Record<string, string> = {
-    translation: 'Trans',
-    fill_blank: 'Fill',
-    word_reorder: 'Reorder',
-    guided_write: 'Guided',
-    paragraph_write: 'Para',
-  }
+  const typeColors = EXERCISE_TYPE_COLORS as Record<string, string>
+  const typeLabels = EXERCISE_TYPE_SHORT_LABELS as Record<string, string>
 
   return (
     <div>
@@ -344,7 +332,7 @@ function EntityPreview() {
       <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-3">
         DynamoDB Entities
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg border border-black/10 p-3">
           <div className="text-xs font-semibold text-black/60 mb-2">
             TopicProgress (per user per topic)
@@ -361,6 +349,22 @@ mastery_score: 83  (= mastered)
 last_practiced: 2026-03-22T10:00:00Z
 streak_current: 5
 streak_best: 8`}
+          </pre>
+        </div>
+        <div className="bg-white rounded-lg border border-black/10 p-3">
+          <div className="text-xs font-semibold text-black/60 mb-2">
+            SkillProgress (separate tracking)
+          </div>
+          <pre className="text-[10px] text-black/50 font-mono leading-relaxed">
+{`PK: USER#<user_id>
+SK: SKILL#oral_practice#a1.grammar.verbs...
+GSI2PK: USER#<id>#SKILL#oral_practice
+GSI2SK: A1#<topic_id>
+
+skill_type: oral_practice
+sessions_completed: 3
+total_minutes: 45
+last_practiced: 2026-03-20T18:00:00Z`}
           </pre>
         </div>
         <div className="bg-white rounded-lg border border-black/10 p-3">
@@ -386,6 +390,76 @@ vocab_benchmarks:
 }
 
 // ============================================================================
+// Exercise Type Legend
+// ============================================================================
+
+const EXERCISE_TYPES = [
+  { id: 'translation', label: 'Translation', desc: 'English→Dutch sentence', color: 'bg-blue-100 text-blue-700', assessment: 'Deterministic + AI fallback' },
+  { id: 'fill_blank', label: 'Fill Blank', desc: 'Complete one missing word', color: 'bg-amber-100 text-amber-700', assessment: 'Deterministic' },
+  { id: 'word_reorder', label: 'Word Reorder', desc: 'Arrange scrambled words', color: 'bg-green-100 text-green-700', assessment: 'Deterministic' },
+  { id: 'multiple_choice', label: 'Multiple Choice', desc: 'Pick from 3-4 options', color: 'bg-cyan-100 text-cyan-700', assessment: 'Deterministic' },
+  { id: 'conjugation', label: 'Conjugation', desc: 'Infinitive + subject → correct form', color: 'bg-orange-100 text-orange-700', assessment: 'Deterministic' },
+  { id: 'error_correction', label: 'Error Correction', desc: 'Find and fix the mistake', color: 'bg-red-100 text-red-700', assessment: 'Deterministic + AI' },
+  { id: 'sentence_completion', label: 'Sentence Completion', desc: 'Finish a started sentence', color: 'bg-violet-100 text-violet-700', assessment: 'AI-assessed' },
+  { id: 'cloze_passage', label: 'Cloze Passage', desc: 'Multiple blanks in a paragraph', color: 'bg-teal-100 text-teal-700', assessment: 'Deterministic' },
+  { id: 'guided_write', label: 'Guided Write', desc: 'Sentence with grammar constraint', color: 'bg-purple-100 text-purple-700', assessment: 'AI-assessed' },
+  { id: 'paragraph_write', label: 'Paragraph Write', desc: 'Multi-sentence situational writing', color: 'bg-rose-100 text-rose-700', assessment: 'AI-assessed' },
+]
+
+function ExerciseTypeLegend() {
+  return (
+    <div className="bg-white/60 rounded-xl p-4 mb-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-3">
+        Exercise Types (10)
+      </h3>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        {EXERCISE_TYPES.map((et) => (
+          <div key={et.id} className="bg-white rounded-lg border border-black/5 p-2">
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${et.color}`}>
+              {et.label}
+            </span>
+            <p className="text-[10px] text-black/50 mt-1">{et.desc}</p>
+            <p className="text-[10px] text-black/30 mt-0.5">{et.assessment}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Skill Tracking Panel
+// ============================================================================
+
+const SKILL_TYPES = [
+  { id: 'oral_practice', label: 'Oral Practice', desc: 'Speaking & pronunciation — self-reported sessions', icon: '🗣️' },
+  { id: 'listening', label: 'Listening', desc: 'Comprehension — tracked separately from exercises', icon: '👂' },
+  { id: 'reading', label: 'Reading', desc: 'Reading comprehension — tracked separately from exercises', icon: '📖' },
+]
+
+function SkillTrackingPanel() {
+  return (
+    <div className="bg-white/60 rounded-xl p-4 mb-6">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-3">
+        Skill Tracking (separate from exercises)
+      </h3>
+      <div className="grid grid-cols-3 gap-3">
+        {SKILL_TYPES.map((skill) => (
+          <div key={skill.id} className="bg-white rounded-lg border border-black/5 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">{skill.icon}</span>
+              <span className="text-sm font-medium text-black/70">{skill.label}</span>
+            </div>
+            <p className="text-[10px] text-black/40">{skill.desc}</p>
+            <p className="text-[10px] text-black/30 mt-1 font-mono">SkillProgress entity — per topic, per user</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // Main Page
 // ============================================================================
 
@@ -405,6 +479,10 @@ export function CurriculumPage() {
       <PageLayout.Content>
         {/* Stats */}
         <StatsSummary />
+
+        {/* Exercise Types + Skill Tracking */}
+        <ExerciseTypeLegend />
+        <SkillTrackingPanel />
 
         {/* Flow + Config */}
         <DataFlowDiagram />

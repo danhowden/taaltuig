@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,23 +21,44 @@ import {
 } from '@/components/ui/select'
 
 // Default settings values (matching backend)
-const DEFAULT_SETTINGS = {
-  new_cards_per_day: 20,
-  max_reviews_per_day: null as number | null,
-  learning_steps: [1, 10],
-  relearning_steps: [10],
-  graduating_interval: 1,
-  easy_interval: 4,
-  starting_ease: 2.5,
-  easy_bonus: 1.3,
-  interval_modifier: 1.0,
-  maximum_interval: 36500,
-  lapse_new_interval: 0,
-  writing_exercises_per_day: 10,
-  writing_session_enabled: true,
+const DEFAULT_FORM: SettingsForm = {
+  newCardsPerDay: 20,
+  maxReviewsPerDay: null,
+  maxReviewsEnabled: false,
+  learningStepsInput: '1, 10',
+  relearningStepsInput: '10',
+  graduatingInterval: 1,
+  easyInterval: 4,
+  startingEase: 2.5,
+  easyBonus: 1.3,
+  intervalModifier: 1.0,
+  maximumInterval: 36500,
+  lapseNewInterval: 0,
+  showUnreviewedInsights: true,
+  proficiencyLevel: 'beginner',
+  writingExercisesPerDay: 10,
+  writingSessionEnabled: true,
 }
 
-// Helper to parse comma-separated numbers
+interface SettingsForm {
+  newCardsPerDay: number
+  maxReviewsPerDay: number | null
+  maxReviewsEnabled: boolean
+  learningStepsInput: string
+  relearningStepsInput: string
+  graduatingInterval: number
+  easyInterval: number
+  startingEase: number
+  easyBonus: number
+  intervalModifier: number
+  maximumInterval: number
+  lapseNewInterval: number
+  showUnreviewedInsights: boolean
+  proficiencyLevel: ProficiencyLevel
+  writingExercisesPerDay: number
+  writingSessionEnabled: boolean
+}
+
 function parseSteps(input: string): number[] {
   return input
     .split(',')
@@ -45,9 +66,29 @@ function parseSteps(input: string): number[] {
     .filter((n) => !isNaN(n) && n > 0)
 }
 
-// Helper to format steps array as string
 function formatSteps(steps: number[]): string {
   return steps.join(', ')
+}
+
+function settingsToForm(s: UserSettings): SettingsForm {
+  return {
+    newCardsPerDay: s.new_cards_per_day,
+    maxReviewsPerDay: s.max_reviews_per_day,
+    maxReviewsEnabled: s.max_reviews_per_day !== null,
+    learningStepsInput: formatSteps(s.learning_steps),
+    relearningStepsInput: formatSteps(s.relearning_steps),
+    graduatingInterval: s.graduating_interval,
+    easyInterval: s.easy_interval,
+    startingEase: s.starting_ease,
+    easyBonus: s.easy_bonus,
+    intervalModifier: s.interval_modifier,
+    maximumInterval: s.maximum_interval ?? 36500,
+    lapseNewInterval: s.lapse_new_interval ?? 0,
+    showUnreviewedInsights: s.show_unreviewed_insights ?? true,
+    proficiencyLevel: s.proficiency_level ?? 'beginner',
+    writingExercisesPerDay: s.writing_exercises_per_day ?? 10,
+    writingSessionEnabled: s.writing_session_enabled ?? true,
+  }
 }
 
 export function SettingsPage() {
@@ -61,28 +102,14 @@ export function SettingsPage() {
   const [clearingInsights, setClearingInsights] = useState(false)
   const [clearingExercises, setClearingExercises] = useState(false)
 
-  // SRS Settings state
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [loadingSettings, setLoadingSettings] = useState(true)
   const [savingSettings, setSavingSettings] = useState(false)
+  const [form, setForm] = useState<SettingsForm>(DEFAULT_FORM)
 
-  // Form state for all settings
-  const [newCardsPerDay, setNewCardsPerDay] = useState(DEFAULT_SETTINGS.new_cards_per_day)
-  const [maxReviewsPerDay, setMaxReviewsPerDay] = useState<number | null>(DEFAULT_SETTINGS.max_reviews_per_day)
-  const [maxReviewsEnabled, setMaxReviewsEnabled] = useState(false)
-  const [learningStepsInput, setLearningStepsInput] = useState(formatSteps(DEFAULT_SETTINGS.learning_steps))
-  const [relearningStepsInput, setRelearningStepsInput] = useState(formatSteps(DEFAULT_SETTINGS.relearning_steps))
-  const [graduatingInterval, setGraduatingInterval] = useState(DEFAULT_SETTINGS.graduating_interval)
-  const [easyInterval, setEasyInterval] = useState(DEFAULT_SETTINGS.easy_interval)
-  const [startingEase, setStartingEase] = useState(DEFAULT_SETTINGS.starting_ease)
-  const [easyBonus, setEasyBonus] = useState(DEFAULT_SETTINGS.easy_bonus)
-  const [intervalModifier, setIntervalModifier] = useState(DEFAULT_SETTINGS.interval_modifier)
-  const [maximumInterval, setMaximumInterval] = useState(DEFAULT_SETTINGS.maximum_interval)
-  const [lapseNewInterval, setLapseNewInterval] = useState(DEFAULT_SETTINGS.lapse_new_interval)
-  const [showUnreviewedInsights, setShowUnreviewedInsights] = useState(true)
-  const [proficiencyLevel, setProficiencyLevel] = useState<ProficiencyLevel>('beginner')
-  const [writingExercisesPerDay, setWritingExercisesPerDay] = useState(DEFAULT_SETTINGS.writing_exercises_per_day)
-  const [writingSessionEnabled, setWritingSessionEnabled] = useState(DEFAULT_SETTINGS.writing_session_enabled)
+  const updateForm = <K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }))
+  }
 
   // Load settings on mount
   useEffect(() => {
@@ -92,24 +119,7 @@ export function SettingsPage() {
         setLoadingSettings(true)
         const userSettings = await apiClient.getSettings(token)
         setSettings(userSettings)
-
-        // Populate form state
-        setNewCardsPerDay(userSettings.new_cards_per_day)
-        setMaxReviewsPerDay(userSettings.max_reviews_per_day)
-        setMaxReviewsEnabled(userSettings.max_reviews_per_day !== null)
-        setLearningStepsInput(formatSteps(userSettings.learning_steps))
-        setRelearningStepsInput(formatSteps(userSettings.relearning_steps))
-        setGraduatingInterval(userSettings.graduating_interval)
-        setEasyInterval(userSettings.easy_interval)
-        setStartingEase(userSettings.starting_ease)
-        setEasyBonus(userSettings.easy_bonus)
-        setIntervalModifier(userSettings.interval_modifier)
-        setMaximumInterval(userSettings.maximum_interval ?? DEFAULT_SETTINGS.maximum_interval)
-        setLapseNewInterval(userSettings.lapse_new_interval ?? DEFAULT_SETTINGS.lapse_new_interval)
-        setShowUnreviewedInsights(userSettings.show_unreviewed_insights ?? true)
-        setProficiencyLevel(userSettings.proficiency_level ?? 'beginner')
-        setWritingExercisesPerDay(userSettings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day)
-        setWritingSessionEnabled(userSettings.writing_session_enabled ?? DEFAULT_SETTINGS.writing_session_enabled)
+        setForm(settingsToForm(userSettings))
       } catch (error) {
         console.error('Failed to load settings:', error)
         toast({
@@ -127,8 +137,8 @@ export function SettingsPage() {
   const saveSettings = async () => {
     if (!token) return
 
-    const learningSteps = parseSteps(learningStepsInput)
-    const relearningSteps = parseSteps(relearningStepsInput)
+    const learningSteps = parseSteps(form.learningStepsInput)
+    const relearningSteps = parseSteps(form.relearningStepsInput)
 
     if (learningSteps.length === 0) {
       toast({
@@ -151,26 +161,25 @@ export function SettingsPage() {
     try {
       setSavingSettings(true)
       const updated = await apiClient.updateSettings(token, {
-        new_cards_per_day: newCardsPerDay,
-        max_reviews_per_day: maxReviewsEnabled ? maxReviewsPerDay : null,
+        new_cards_per_day: form.newCardsPerDay,
+        max_reviews_per_day: form.maxReviewsEnabled ? form.maxReviewsPerDay : null,
         learning_steps: learningSteps,
         relearning_steps: relearningSteps,
-        graduating_interval: graduatingInterval,
-        easy_interval: easyInterval,
-        starting_ease: startingEase,
-        easy_bonus: easyBonus,
-        interval_modifier: intervalModifier,
-        maximum_interval: maximumInterval,
-        lapse_new_interval: lapseNewInterval,
-        show_unreviewed_insights: showUnreviewedInsights,
-        proficiency_level: proficiencyLevel,
-        writing_exercises_per_day: writingExercisesPerDay,
-        writing_session_enabled: writingSessionEnabled,
+        graduating_interval: form.graduatingInterval,
+        easy_interval: form.easyInterval,
+        starting_ease: form.startingEase,
+        easy_bonus: form.easyBonus,
+        interval_modifier: form.intervalModifier,
+        maximum_interval: form.maximumInterval,
+        lapse_new_interval: form.lapseNewInterval,
+        show_unreviewed_insights: form.showUnreviewedInsights,
+        proficiency_level: form.proficiencyLevel,
+        writing_exercises_per_day: form.writingExercisesPerDay,
+        writing_session_enabled: form.writingSessionEnabled,
       })
       setSettings(updated)
-      // Normalize the input fields after save
-      setLearningStepsInput(formatSteps(learningSteps))
-      setRelearningStepsInput(formatSteps(relearningSteps))
+      updateForm('learningStepsInput', formatSteps(learningSteps))
+      updateForm('relearningStepsInput', formatSteps(relearningSteps))
       toast({
         title: 'Settings saved',
         description: 'Your SRS settings have been updated',
@@ -187,42 +196,29 @@ export function SettingsPage() {
     }
   }
 
-  const resetToDefaults = () => {
-    setNewCardsPerDay(DEFAULT_SETTINGS.new_cards_per_day)
-    setMaxReviewsPerDay(DEFAULT_SETTINGS.max_reviews_per_day)
-    setMaxReviewsEnabled(false)
-    setLearningStepsInput(formatSteps(DEFAULT_SETTINGS.learning_steps))
-    setRelearningStepsInput(formatSteps(DEFAULT_SETTINGS.relearning_steps))
-    setGraduatingInterval(DEFAULT_SETTINGS.graduating_interval)
-    setEasyInterval(DEFAULT_SETTINGS.easy_interval)
-    setStartingEase(DEFAULT_SETTINGS.starting_ease)
-    setEasyBonus(DEFAULT_SETTINGS.easy_bonus)
-    setIntervalModifier(DEFAULT_SETTINGS.interval_modifier)
-    setMaximumInterval(DEFAULT_SETTINGS.maximum_interval)
-    setLapseNewInterval(DEFAULT_SETTINGS.lapse_new_interval)
-    setShowUnreviewedInsights(true)
-    setProficiencyLevel('beginner')
-    setWritingExercisesPerDay(DEFAULT_SETTINGS.writing_exercises_per_day)
-    setWritingSessionEnabled(DEFAULT_SETTINGS.writing_session_enabled)
-  }
+  const resetToDefaults = () => setForm(DEFAULT_FORM)
 
-  const hasUnsavedChanges = settings && (
-    newCardsPerDay !== settings.new_cards_per_day ||
-    (maxReviewsEnabled ? maxReviewsPerDay : null) !== settings.max_reviews_per_day ||
-    formatSteps(parseSteps(learningStepsInput)) !== formatSteps(settings.learning_steps) ||
-    formatSteps(parseSteps(relearningStepsInput)) !== formatSteps(settings.relearning_steps) ||
-    graduatingInterval !== settings.graduating_interval ||
-    easyInterval !== settings.easy_interval ||
-    startingEase !== settings.starting_ease ||
-    easyBonus !== settings.easy_bonus ||
-    intervalModifier !== settings.interval_modifier ||
-    maximumInterval !== (settings.maximum_interval ?? DEFAULT_SETTINGS.maximum_interval) ||
-    lapseNewInterval !== (settings.lapse_new_interval ?? DEFAULT_SETTINGS.lapse_new_interval) ||
-    showUnreviewedInsights !== (settings.show_unreviewed_insights ?? true) ||
-    proficiencyLevel !== (settings.proficiency_level ?? 'beginner') ||
-    writingExercisesPerDay !== (settings.writing_exercises_per_day ?? DEFAULT_SETTINGS.writing_exercises_per_day) ||
-    writingSessionEnabled !== (settings.writing_session_enabled ?? DEFAULT_SETTINGS.writing_session_enabled)
-  )
+  const hasUnsavedChanges = useMemo(() => {
+    if (!settings) return false
+    const saved = settingsToForm(settings)
+    return (
+      form.newCardsPerDay !== saved.newCardsPerDay ||
+      (form.maxReviewsEnabled ? form.maxReviewsPerDay : null) !== saved.maxReviewsPerDay ||
+      formatSteps(parseSteps(form.learningStepsInput)) !== saved.learningStepsInput ||
+      formatSteps(parseSteps(form.relearningStepsInput)) !== saved.relearningStepsInput ||
+      form.graduatingInterval !== saved.graduatingInterval ||
+      form.easyInterval !== saved.easyInterval ||
+      form.startingEase !== saved.startingEase ||
+      form.easyBonus !== saved.easyBonus ||
+      form.intervalModifier !== saved.intervalModifier ||
+      form.maximumInterval !== saved.maximumInterval ||
+      form.lapseNewInterval !== saved.lapseNewInterval ||
+      form.showUnreviewedInsights !== saved.showUnreviewedInsights ||
+      form.proficiencyLevel !== saved.proficiencyLevel ||
+      form.writingExercisesPerDay !== saved.writingExercisesPerDay ||
+      form.writingSessionEnabled !== saved.writingSessionEnabled
+    )
+  }, [form, settings])
 
   const loadDebugData = async () => {
     if (!token) return
@@ -373,8 +369,8 @@ export function SettingsPage() {
                       type="number"
                       min={0}
                       max={100}
-                      value={newCardsPerDay}
-                      onChange={(e) => setNewCardsPerDay(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                      value={form.newCardsPerDay}
+                      onChange={(e) => updateForm('newCardsPerDay', Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
                       className="w-24"
                     />
                     <span className="text-sm text-muted-foreground">cards</span>
@@ -389,31 +385,31 @@ export function SettingsPage() {
                     <Label htmlFor="max-reviews-enabled">Maximum reviews per day</Label>
                     <Switch
                       id="max-reviews-enabled"
-                      checked={maxReviewsEnabled}
+                      checked={form.maxReviewsEnabled}
                       onCheckedChange={(checked) => {
-                        setMaxReviewsEnabled(checked)
-                        if (checked && maxReviewsPerDay === null) {
-                          setMaxReviewsPerDay(200)
+                        updateForm('maxReviewsEnabled', checked)
+                        if (checked && form.maxReviewsPerDay === null) {
+                          updateForm('maxReviewsPerDay', 200)
                         }
                       }}
                     />
                   </div>
-                  {maxReviewsEnabled && (
+                  {form.maxReviewsEnabled && (
                     <div className="flex items-center gap-4">
                       <Input
                         id="max-reviews-per-day"
                         type="number"
                         min={1}
                         max={9999}
-                        value={maxReviewsPerDay ?? 200}
-                        onChange={(e) => setMaxReviewsPerDay(Math.max(1, parseInt(e.target.value) || 200))}
+                        value={form.maxReviewsPerDay ?? 200}
+                        onChange={(e) => updateForm('maxReviewsPerDay', Math.max(1, parseInt(e.target.value) || 200))}
                         className="w-24"
                       />
                       <span className="text-sm text-muted-foreground">reviews</span>
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {maxReviewsEnabled
+                    {form.maxReviewsEnabled
                       ? 'Limits total reviews per day (due cards may accumulate)'
                       : 'No limit on daily reviews (recommended)'}
                   </p>
@@ -431,12 +427,12 @@ export function SettingsPage() {
                       </div>
                       <Switch
                         id="writing-session-enabled"
-                        checked={writingSessionEnabled}
-                        onCheckedChange={setWritingSessionEnabled}
+                        checked={form.writingSessionEnabled}
+                        onCheckedChange={(v) => updateForm('writingSessionEnabled', v)}
                       />
                     </div>
 
-                    {writingSessionEnabled && (
+                    {form.writingSessionEnabled && (
                       <div className="space-y-2">
                         <Label htmlFor="writing-exercises-per-day">Writing exercises per day</Label>
                         <div className="flex items-center gap-4">
@@ -445,8 +441,8 @@ export function SettingsPage() {
                             type="number"
                             min={1}
                             max={50}
-                            value={writingExercisesPerDay}
-                            onChange={(e) => setWritingExercisesPerDay(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
+                            value={form.writingExercisesPerDay}
+                            onChange={(e) => updateForm('writingExercisesPerDay', Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
                             className="w-24"
                           />
                           <span className="text-sm text-muted-foreground">exercises</span>
@@ -473,8 +469,8 @@ export function SettingsPage() {
                   <Input
                     id="learning-steps"
                     type="text"
-                    value={learningStepsInput}
-                    onChange={(e) => setLearningStepsInput(e.target.value)}
+                    value={form.learningStepsInput}
+                    onChange={(e) => updateForm('learningStepsInput', e.target.value)}
                     placeholder="1, 10"
                     className="w-48"
                   />
@@ -491,8 +487,8 @@ export function SettingsPage() {
                       type="number"
                       min={1}
                       max={365}
-                      value={graduatingInterval}
-                      onChange={(e) => setGraduatingInterval(Math.max(1, parseInt(e.target.value) || 1))}
+                      value={form.graduatingInterval}
+                      onChange={(e) => updateForm('graduatingInterval', Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-24"
                     />
                     <span className="text-sm text-muted-foreground">days</span>
@@ -510,8 +506,8 @@ export function SettingsPage() {
                       type="number"
                       min={1}
                       max={365}
-                      value={easyInterval}
-                      onChange={(e) => setEasyInterval(Math.max(1, parseInt(e.target.value) || 4))}
+                      value={form.easyInterval}
+                      onChange={(e) => updateForm('easyInterval', Math.max(1, parseInt(e.target.value) || 4))}
                       className="w-24"
                     />
                     <span className="text-sm text-muted-foreground">days</span>
@@ -533,15 +529,15 @@ export function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="starting-ease">Starting ease</Label>
-                    <span className="text-sm font-medium">{(startingEase * 100).toFixed(0)}%</span>
+                    <span className="text-sm font-medium">{(form.startingEase * 100).toFixed(0)}%</span>
                   </div>
                   <Slider
                     id="starting-ease"
                     min={130}
                     max={300}
                     step={5}
-                    value={[startingEase * 100]}
-                    onValueChange={(value) => setStartingEase(value[0] / 100)}
+                    value={[form.startingEase * 100]}
+                    onValueChange={(value) => updateForm('startingEase', value[0] / 100)}
                   />
                   <p className="text-xs text-muted-foreground">
                     Initial ease factor for new cards (130% minimum, 250% default)
@@ -551,15 +547,15 @@ export function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="easy-bonus">Easy bonus</Label>
-                    <span className="text-sm font-medium">{(easyBonus * 100).toFixed(0)}%</span>
+                    <span className="text-sm font-medium">{(form.easyBonus * 100).toFixed(0)}%</span>
                   </div>
                   <Slider
                     id="easy-bonus"
                     min={100}
                     max={200}
                     step={5}
-                    value={[easyBonus * 100]}
-                    onValueChange={(value) => setEasyBonus(value[0] / 100)}
+                    value={[form.easyBonus * 100]}
+                    onValueChange={(value) => updateForm('easyBonus', value[0] / 100)}
                   />
                   <p className="text-xs text-muted-foreground">
                     Extra multiplier applied when pressing Easy (100% = no bonus)
@@ -569,15 +565,15 @@ export function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="interval-modifier">Interval modifier</Label>
-                    <span className="text-sm font-medium">{(intervalModifier * 100).toFixed(0)}%</span>
+                    <span className="text-sm font-medium">{(form.intervalModifier * 100).toFixed(0)}%</span>
                   </div>
                   <Slider
                     id="interval-modifier"
                     min={50}
                     max={200}
                     step={5}
-                    value={[intervalModifier * 100]}
-                    onValueChange={(value) => setIntervalModifier(value[0] / 100)}
+                    value={[form.intervalModifier * 100]}
+                    onValueChange={(value) => updateForm('intervalModifier', value[0] / 100)}
                   />
                   <p className="text-xs text-muted-foreground">
                     Global multiplier for all intervals (100% = normal, lower = more reviews)
@@ -592,14 +588,14 @@ export function SettingsPage() {
                       type="number"
                       min={1}
                       max={36500}
-                      value={maximumInterval}
-                      onChange={(e) => setMaximumInterval(Math.max(1, Math.min(36500, parseInt(e.target.value) || 365)))}
+                      value={form.maximumInterval}
+                      onChange={(e) => updateForm('maximumInterval', Math.max(1, Math.min(36500, parseInt(e.target.value) || 365)))}
                       className="w-28"
                     />
                     <span className="text-sm text-muted-foreground">days</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Cards will never have an interval longer than this ({Math.round(maximumInterval / 365)} years)
+                    Cards will never have an interval longer than this ({Math.round(form.maximumInterval / 365)} years)
                   </p>
                 </div>
 
@@ -615,16 +611,16 @@ export function SettingsPage() {
                       </div>
                       <Switch
                         id="show-unreviewed-insights"
-                        checked={showUnreviewedInsights}
-                        onCheckedChange={setShowUnreviewedInsights}
+                        checked={form.showUnreviewedInsights}
+                        onCheckedChange={(v) => updateForm('showUnreviewedInsights', v)}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="proficiency-level">Dutch proficiency level</Label>
                       <Select
-                        value={proficiencyLevel}
-                        onValueChange={(value) => setProficiencyLevel(value as ProficiencyLevel)}
+                        value={form.proficiencyLevel}
+                        onValueChange={(value) => updateForm('proficiencyLevel', value as ProficiencyLevel)}
                       >
                         <SelectTrigger className="w-48" id="proficiency-level">
                           <SelectValue placeholder="Select level" />
@@ -656,8 +652,8 @@ export function SettingsPage() {
                   <Input
                     id="relearning-steps"
                     type="text"
-                    value={relearningStepsInput}
-                    onChange={(e) => setRelearningStepsInput(e.target.value)}
+                    value={form.relearningStepsInput}
+                    onChange={(e) => updateForm('relearningStepsInput', e.target.value)}
                     placeholder="10"
                     className="w-48"
                   />
@@ -669,21 +665,21 @@ export function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="lapse-new-interval">New interval after lapse</Label>
-                    <span className="text-sm font-medium">{lapseNewInterval}%</span>
+                    <span className="text-sm font-medium">{form.lapseNewInterval}%</span>
                   </div>
                   <Slider
                     id="lapse-new-interval"
                     min={0}
                     max={100}
                     step={5}
-                    value={[lapseNewInterval]}
-                    onValueChange={(value) => setLapseNewInterval(value[0])}
+                    value={[form.lapseNewInterval]}
+                    onValueChange={(value) => updateForm('lapseNewInterval', value[0])}
                   />
                   <p className="text-xs text-muted-foreground">
                     Percentage of previous interval after lapse.
-                    {lapseNewInterval === 0 && ' 0% resets to 1 day (Anki default).'}
-                    {lapseNewInterval === 100 && ' 100% keeps the previous interval (lenient).'}
-                    {lapseNewInterval > 0 && lapseNewInterval < 100 && ` A 30-day card becomes ${Math.max(1, Math.round(30 * lapseNewInterval / 100))} day(s).`}
+                    {form.lapseNewInterval === 0 && ' 0% resets to 1 day (Anki default).'}
+                    {form.lapseNewInterval === 100 && ' 100% keeps the previous interval (lenient).'}
+                    {form.lapseNewInterval > 0 && form.lapseNewInterval < 100 && ` A 30-day card becomes ${Math.max(1, Math.round(30 * form.lapseNewInterval / 100))} day(s).`}
                   </p>
                 </div>
               </div>

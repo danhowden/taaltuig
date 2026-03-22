@@ -102,12 +102,7 @@ export function AnkiImport({ onImportComplete }: AnkiImportProps) {
       })
 
       // Step 2: Upload file directly to S3
-      const uploadUrl = uploadResponse.upload_url || uploadResponse.uploadUrl
-      if (!uploadUrl) {
-        throw new Error('No upload URL received from server')
-      }
-
-      const uploadResult = await fetch(uploadUrl, {
+      const uploadResult = await fetch(uploadResponse.uploadUrl, {
         method: 'PUT',
         body: selectedFile,
       })
@@ -131,15 +126,11 @@ export function AnkiImport({ onImportComplete }: AnkiImportProps) {
 
       ws.onopen = () => {
         // Send import request
-        const s3Bucket = uploadResponse.s3_bucket || uploadResponse.s3Bucket
-        const s3Key = uploadResponse.s3_key || uploadResponse.s3Key
         ws.send(
           JSON.stringify({
             action: 'importAnki',
-            s3Bucket,
-            s3_bucket: s3Bucket,
-            s3Key,
-            s3_key: s3Key,
+            s3Bucket: uploadResponse.s3Bucket,
+            s3Key: uploadResponse.s3Key,
             collectionName: collectionName.trim() || undefined,
           })
         )

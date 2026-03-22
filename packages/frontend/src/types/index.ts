@@ -211,18 +211,14 @@ export interface DeleteCardResponse {
 }
 
 export interface RenameCategoryRequest {
-  old_name?: string // OpenAPI spec field (snake_case)
-  new_name?: string // OpenAPI spec field (snake_case)
-  oldCategory?: string // Frontend uses this (camelCase)
-  newCategory?: string // Frontend uses this (camelCase)
+  oldCategory: string
+  newCategory: string
 }
 
 export interface RenameCategoryResponse {
-  updated_count: number // OpenAPI spec field
-  success?: boolean // Backend may include this
-  cardsUpdated?: number // Frontend expects this
-  reviewItemsUpdated?: number // Frontend expects this
-  settingsUpdated?: boolean // Frontend expects this
+  cardsUpdated: number
+  reviewItemsUpdated: number
+  settingsUpdated?: boolean
 }
 
 export interface GetUploadUrlRequest {
@@ -230,20 +226,15 @@ export interface GetUploadUrlRequest {
 }
 
 export interface GetUploadUrlResponse {
-  upload_url: string // Presigned S3 URL (valid for 5 minutes) - snake_case from API
-  uploadUrl?: string // Backwards compatibility (deprecated)
-  s3_key: string // S3 object key - snake_case from API
-  s3Key?: string // Backwards compatibility (deprecated)
-  s3_bucket?: string // Backend may include this
-  s3Bucket?: string // Backwards compatibility (deprecated)
+  uploadUrl: string
+  s3Key: string
+  s3Bucket: string
 }
 
 export interface ImportAnkiRequest {
-  s3_key?: string
-  s3Key?: string // Backwards compatibility
-  s3_bucket?: string
-  s3Bucket?: string // Backwards compatibility
-  connection_id: string // WebSocket connection ID
+  s3Key: string
+  s3Bucket: string
+  connection_id: string
 }
 
 export interface ImportAnkiResponse {
@@ -334,7 +325,17 @@ export interface InsightsQueueResponse {
 // Writing Exercise Types
 // ============================================================================
 
-export type ExerciseType = 'translation' | 'fill_blank' | 'word_reorder' | 'guided_write' | 'paragraph_write'
+export type ExerciseType =
+  | 'translation'
+  | 'fill_blank'
+  | 'word_reorder'
+  | 'guided_write'
+  | 'paragraph_write'
+  | 'multiple_choice'
+  | 'error_correction'
+  | 'conjugation'
+  | 'cloze_passage'
+  | 'sentence_completion'
 export type AssessmentMatchType = 'exact' | 'alternative' | 'fuzzy' | 'wrong'
 
 export interface WritingExercise {

@@ -17,7 +17,8 @@ import {
 import { LoadingCards } from '@/components/review/LoadingCards'
 import { Input } from '@/components/ui/input'
 import { PencilLine, RotateCw, Trash2, Undo2 } from 'lucide-react'
-import type { StoredWritingExercise, ExerciseStatus, ExerciseType, GenerateExercisesResponse } from '@/types'
+import type { StoredWritingExercise, ExerciseStatus, GenerateExercisesResponse } from '@/types'
+import { EXERCISE_TYPE_COLORS, EXERCISE_TYPE_LABELS } from '@/constants/exercises'
 
 function StatusBadge({ status }: { status: string }) {
   // Coerce legacy 'served'/'validated'/'expired' to pending
@@ -31,25 +32,6 @@ function StatusBadge({ status }: { status: string }) {
       {normalised}
     </span>
   )
-}
-
-const TYPE_COLORS: Record<ExerciseType, string> = {
-  translation: 'bg-blue-100 text-blue-800 border-blue-200',
-  fill_blank: 'bg-purple-100 text-purple-800 border-purple-200',
-  word_reorder: 'bg-teal-100 text-teal-800 border-teal-200',
-  guided_write: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  paragraph_write: 'bg-slate-100 text-slate-800 border-slate-200',
-}
-
-function exerciseTypeLabel(type: ExerciseType): string {
-  switch (type) {
-    case 'translation': return 'Translation'
-    case 'fill_blank': return 'Fill-blank'
-    case 'word_reorder': return 'Reorder'
-    case 'guided_write': return 'Guided'
-    case 'paragraph_write': return 'Paragraph'
-    default: return type
-  }
 }
 
 function ExerciseCard({
@@ -85,8 +67,8 @@ function ExerciseCard({
     <div className={`rounded-[6px] bg-white/60 p-4 space-y-2 ${exercise.status === 'rejected' ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" className={`text-xs ${TYPE_COLORS[exercise.type] ?? ''}`}>
-            {exerciseTypeLabel(exercise.type)}
+          <Badge variant="outline" className={`text-xs ${EXERCISE_TYPE_COLORS[exercise.type] ?? ''}`}>
+            {EXERCISE_TYPE_LABELS[exercise.type]}
           </Badge>
           <StatusBadge status={exercise.status} />
           {exercise.source === 'user_requested' && (

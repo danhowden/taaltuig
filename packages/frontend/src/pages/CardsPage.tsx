@@ -32,7 +32,7 @@ import { LoadingCards } from '@/components/review/LoadingCards'
 import type { Card, UserSettings } from '@/types'
 import type { NewCardForm } from '@/types/cards'
 import { BULK_THRESHOLD } from '@/constants/cards'
-import { categorizeCards, filterCardsBySearch } from '@/utils/cardFilters'
+import { categorizeCards } from '@/utils/cardFilters'
 
 const INSIGHT_STATUS_OPTIONS: { value: InsightStatusFilter | 'all'; label: string }[] = [
   { value: 'all', label: 'All insights' },
@@ -107,7 +107,6 @@ export function CardsPage() {
     selectedCount,
     toggleCard,
     selectAll,
-    deselectAll,
     clearSelection,
   } = useCardSelection()
 
@@ -144,12 +143,8 @@ export function CardsPage() {
     invalidateQueries: ['settings'],
   })
 
-  // Group cards by category and filter (client-side from loaded cards)
-  const categorizedCards = useMemo(() => {
-    // Additional client-side filtering if needed
-    const filtered = filterCardsBySearch(cards, '')
-    return categorizeCards(filtered)
-  }, [cards])
+  // Group cards by category (already filtered by search above)
+  const categorizedCards = useMemo(() => categorizeCards(cards), [cards])
 
   // Reset manual toggles when search changes
   const prevSearchQuery = useRef(searchQuery)
@@ -281,95 +276,60 @@ export function CardsPage() {
       throw new Error('No change')
     }
 
-    return new Promise<void>((resolve, reject) => {
-      renameCategory.mutate(
-        {
-          oldCategory,
-          newCategory: newCategory.trim(),
-        },
-        {
-          onSuccess: (result) => {
-            toast({
-              title: 'Category renamed',
-              description: `Updated ${result.cardsUpdated || result.updated_count} cards${
-                result.reviewItemsUpdated
-                  ? ` and ${result.reviewItemsUpdated} review items`
-                  : ''
-              }`,
-            })
+    try {
+      const result = await renameCategory.mutateAsync({
+        oldCategory,
+        newCategory: newCategory.trim(),
+      })
 
-            // Update local disabled categories if the old category was in the list
-            if (disabledCategories && disabledCategories.includes(oldCategory)) {
-              setDisabledCategories(
-                disabledCategories.map((cat) =>
-                  cat === oldCategory ? newCategory.trim() : cat
-                )
-              )
-            }
+      toast({
+        title: 'Category renamed',
+        description: `Updated ${result.cardsUpdated} cards${
+          result.reviewItemsUpdated
+            ? ` and ${result.reviewItemsUpdated} review items`
+            : ''
+        }`,
+      })
 
-            resolve()
-          },
-          onError: (error) => {
-            console.error('Failed to rename category:', error)
-            toast({
-              title: 'Error',
-              description: 'Failed to rename category',
-              variant: 'destructive',
-            })
-            reject(error)
-          },
-        }
-      )
-    })
+      // Update local disabled categories if the old category was in the list
+      if (disabledCategories && disabledCategories.includes(oldCategory)) {
+        setDisabledCategories(
+          disabledCategories.map((cat) =>
+            cat === oldCategory ? newCategory.trim() : cat
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Failed to rename category:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to rename category',
+        variant: 'destructive',
+      })
+      throw error
+    }
   }
 
   const handleUpdateCard = async (cardId: string, updates: Partial<Card>) => {
-    return new Promise<void>((resolve, reject) => {
-      updateCard.mutate(
-        { cardId, data: updates },
-        {
-          onSuccess: () => {
-            toast({
-              title: 'Success',
-              description: 'Card updated successfully',
-            })
-            resolve()
-          },
-          onError: (error) => {
-            console.error('Failed to update card:', error)
-            toast({
-              title: 'Error',
-              description: 'Failed to update card',
-              variant: 'destructive',
-            })
-            reject(error)
-          },
-        }
-      )
-    })
+    try {
+      await updateCard.mutateAsync({ cardId, data: updates })
+      toast({ title: 'Success', description: 'Card updated successfully' })
+    } catch (error) {
+      console.error('Failed to update card:', error)
+      toast({ title: 'Error', description: 'Failed to update card', variant: 'destructive' })
+      throw error
+    }
   }
 
   const handleDeleteCard = async (cardId: string) => {
-    return new Promise<void>((resolve, reject) => {
-      deleteCard.mutate(cardId, {
-        onSuccess: () => {
-          toast({
-            title: 'Success',
-            description: 'Card and associated review items deleted',
-          })
-          resolve()
-        },
-        onError: (error) => {
-          console.error('Failed to delete card:', error)
-          toast({
-            title: 'Error',
-            description: 'Failed to delete card',
-            variant: 'destructive',
-          })
-          reject(error)
-        },
-      })
-    })
+    try {
+      await deleteCard.mutateAsync(cardId)
+      toast({ title: 'Success', description: 'Card and associated review items deleted' })
+    } catch (error) {
+      console.error('Failed to delete card:', error)
+      toast({ title: 'Error', description: 'Failed to delete card', variant: 'destructive' })
+      throw error
+    }
   }
 
   const handleCreateCards = async (newCards: NewCardForm[]) => {
@@ -419,38 +379,12 @@ export function CardsPage() {
   const generateAndValidateBatch = useCallback(async (cardIds: string[]) => {
     const batchSize = 20
     let totalGenerated = 0
-    let failedIds: string[] = []
 
-    for (let i = 0; i < cardIds.length; i += batchSize) {
-      const batch = cardIds.slice(i, i + batchSize)
+    const processBatches = async (ids: string[]): Promise<string[]> => {
+      const failedIds: string[] = []
 
-      try {
-        const genResult = await generateInsights.mutateAsync({ card_ids: batch })
-        totalGenerated += genResult.generated.filter((g) => g.insights_count > 0).length
-
-        // Track any cards the backend reported as failed
-        if (genResult.failed) failedIds.push(...genResult.failed)
-
-        const cardsWithPending = genResult.generated
-          .filter((g) => g.insights_count > 0)
-          .map((g) => g.card_id)
-
-        if (cardsWithPending.length > 0) {
-          await validateInsights.mutateAsync({ card_ids: cardsWithPending })
-        }
-      } catch {
-        // Batch failed entirely — collect for retry
-        failedIds.push(...batch)
-      }
-    }
-
-    // Retry failed cards once
-    if (failedIds.length > 0) {
-      const retryIds = [...new Set(failedIds)]
-      failedIds = []
-
-      for (let i = 0; i < retryIds.length; i += batchSize) {
-        const batch = retryIds.slice(i, i + batchSize)
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize)
 
         try {
           const genResult = await generateInsights.mutateAsync({ card_ids: batch })
@@ -469,9 +403,18 @@ export function CardsPage() {
           failedIds.push(...batch)
         }
       }
+
+      return failedIds
     }
 
-    return { totalGenerated, failedCount: failedIds.length }
+    const failedIds = await processBatches(cardIds)
+
+    // Retry failed cards once
+    const retryFailedIds = failedIds.length > 0
+      ? await processBatches([...new Set(failedIds)])
+      : []
+
+    return { totalGenerated, failedCount: retryFailedIds.length }
   }, [generateInsights, validateInsights])
 
   // Generate insights for specific cards (by category)
@@ -722,7 +665,7 @@ export function CardsPage() {
             selectedIds={selectedIds}
             onToggleSelect={toggleCard}
             onSelectAll={selectAll}
-            onDeselectAll={deselectAll}
+            onDeselectAll={clearSelection}
           />
         ) : (
           <VirtualizedCardsTable
@@ -731,7 +674,7 @@ export function CardsPage() {
             selectedIds={selectedIds}
             onToggleSelect={toggleCard}
             onSelectAll={selectAll}
-            onDeselectAll={deselectAll}
+            onDeselectAll={clearSelection}
           />
         )}
 

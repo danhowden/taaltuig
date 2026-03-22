@@ -19,7 +19,6 @@ function ProgressBar({
 }: {
   current: number
   total: number
-  correct: number
 }) {
   const progress = total > 0 ? (current / total) * 100 : 0
   const remaining = Math.max(0, total - current)
@@ -580,7 +579,6 @@ export function WritingSession() {
         <ProgressBar
           current={session.currentIndex + (session.phase === 'feedback' ? 1 : 0)}
           total={session.totalCount}
-          correct={session.correctCount}
         />
       </div>
     </SessionLayout>
