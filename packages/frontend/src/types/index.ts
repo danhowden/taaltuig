@@ -134,6 +134,8 @@ export interface QueueResponse {
     new_remaining_today: number // Remaining new cards available today
     total_count?: number // Total cards (frontend extension)
     learning_count?: number // Learning cards (frontend extension)
+    vocab_experienced: number // Unique cards that have been reviewed (not in NEW state)
+    vocab_learned: number // Unique cards in REVIEW state (graduated)
   }
 }
 

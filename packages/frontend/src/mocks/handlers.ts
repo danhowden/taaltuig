@@ -55,6 +55,8 @@ export const handlers = [
           learning_count: 0,
           total_count: extraCards.length,
           new_remaining_today: Math.max(0, mockExtraNewCards.length - count),
+          vocab_experienced: 42,
+          vocab_learned: 28,
         },
       }
       return HttpResponse.json(response)
@@ -79,6 +81,8 @@ export const handlers = [
         learning_count: learningCount,
         total_count: queue.length,
         new_remaining_today: 15, // Mock value
+        vocab_experienced: 42,
+        vocab_learned: 28,
       },
     }
 

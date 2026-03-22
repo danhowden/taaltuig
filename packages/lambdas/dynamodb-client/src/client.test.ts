@@ -808,6 +808,14 @@ describe('TaaltuigDynamoDBClient', () => {
       mockSend.mockResolvedValueOnce({ Items: [] })
       // Mock today's history count
       mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab learned - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
 
       // Mock NEW items - 6 total (forward/reverse pairs)
       // Since we shuffle, we should only get 3 out of the 6
@@ -858,6 +866,10 @@ describe('TaaltuigDynamoDBClient', () => {
       mockSend.mockResolvedValueOnce({ Items: [] }) // LEARNING items
       mockSend.mockResolvedValueOnce({ Items: [] }) // RELEARNING items
       mockSend.mockResolvedValueOnce({ Items: [] }) // Today's history
+      mockSend.mockResolvedValueOnce({ Items: [] }) // Vocab experienced - LEARNING
+      mockSend.mockResolvedValueOnce({ Items: [] }) // Vocab experienced - REVIEW
+      mockSend.mockResolvedValueOnce({ Items: [] }) // Vocab experienced - RELEARNING
+      mockSend.mockResolvedValueOnce({ Items: [] }) // Vocab learned - REVIEW
       mockSend.mockResolvedValueOnce({ Items: [] }) // NEW items
 
       const result = await client.getReviewQueue(userId)
@@ -890,6 +902,14 @@ describe('TaaltuigDynamoDBClient', () => {
       // Mock relearning items (empty)
       mockSend.mockResolvedValueOnce({ Items: [] })
       // Mock today's history count
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab learned - REVIEW state
       mockSend.mockResolvedValueOnce({ Items: [] })
 
       // Mock NEW items
@@ -946,6 +966,15 @@ describe('TaaltuigDynamoDBClient', () => {
         ],
       })
 
+      // Mock vocab experienced - LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab learned - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
       // Should NOT query for NEW items since remainingNew = 0
 
       const result = await client.getReviewQueue(userId)
@@ -992,6 +1021,15 @@ describe('TaaltuigDynamoDBClient', () => {
       // Mock history (0 new cards today)
       mockSend.mockResolvedValueOnce({ Items: [] })
 
+      // Mock vocab experienced - LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab learned - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+
       // Mock NEW items with different categories
       const newItems = [
         { review_item_id: '1', state: 'NEW', category: 'grammar' }, // Should be filtered
@@ -1035,6 +1073,14 @@ describe('TaaltuigDynamoDBClient', () => {
       mockSend.mockResolvedValueOnce({ Items: [] })
       mockSend.mockResolvedValueOnce({ Items: [] })
       mockSend.mockResolvedValueOnce({ Items: [] })
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - LEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - REVIEW state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab experienced - RELEARNING state
+      mockSend.mockResolvedValueOnce({ Items: [] })
+      // Mock vocab learned - REVIEW state
       mockSend.mockResolvedValueOnce({ Items: [] })
 
       // Mock NEW items

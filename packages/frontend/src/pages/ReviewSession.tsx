@@ -186,6 +186,8 @@ export function ReviewSession() {
           <EmptyState
             onContinue={hasExtraCardsAvailable ? handleContinue : undefined}
             loadingExtraCards={session.loadingExtraCards}
+            vocabExperienced={data?.stats?.vocab_experienced}
+            vocabLearned={data?.stats?.vocab_learned}
           />
         </SessionLayout.Center>
       </SessionLayout>
@@ -200,6 +202,8 @@ export function ReviewSession() {
             onContinue={hasExtraCardsAvailable ? handleContinue : undefined}
             loadingExtraCards={session.loadingExtraCards}
             writingExerciseCount={writingData?.stats?.pool_size}
+            vocabExperienced={data?.stats?.vocab_experienced}
+            vocabLearned={data?.stats?.vocab_learned}
           />
         </SessionLayout.Center>
       </SessionLayout>

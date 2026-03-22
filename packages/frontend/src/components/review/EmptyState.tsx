@@ -76,15 +76,36 @@ function EmptyCardIllustration({ size = 120 }: { size?: number }) {
 interface EmptyStateProps {
   onContinue?: (extraCards: number) => void
   loadingExtraCards?: number | null
+  vocabExperienced?: number
+  vocabLearned?: number
 }
 
-export function EmptyState({ onContinue, loadingExtraCards }: EmptyStateProps) {
+export function EmptyState({ onContinue, loadingExtraCards, vocabExperienced, vocabLearned }: EmptyStateProps) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center pb-2">
         <EmptyCardIllustration size={160} />
         <h2 className="text-4xl font-bold">Geen kaarten</h2>
       </div>
+
+      {(vocabExperienced !== undefined || vocabLearned !== undefined) && (
+        <div className="rounded-2xl bg-white/50 backdrop-blur-sm border border-white/60 p-6">
+          <div className="grid grid-cols-2 gap-4">
+            {vocabExperienced !== undefined && (
+              <div className="text-center">
+                <div className="text-3xl font-bold text-black/80">{vocabExperienced}</div>
+                <div className="text-sm text-black/60 mt-1">Vocabulary Experienced</div>
+              </div>
+            )}
+            {vocabLearned !== undefined && (
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{vocabLearned}</div>
+                <div className="text-sm text-black/60 mt-1">Vocabulary Learned</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {onContinue && (
         <ExtraCardsCard

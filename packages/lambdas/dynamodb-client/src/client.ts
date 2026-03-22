@@ -211,19 +211,23 @@ export class TaaltuigDynamoDBClient {
       learning_count: number
       total_count: number
       new_remaining_today: number
+      vocab_experienced: number
+      vocab_learned: number
     }
   }> {
     const now = new Date().toISOString()
     const extraNew = options?.extraNew || 0
 
     // Run all independent queries in parallel
-    const [settings, reviewItems, learningItems, relearningItems, newCardsToday] =
+    const [settings, reviewItems, learningItems, relearningItems, newCardsToday, vocabExperienced, vocabLearned] =
       await Promise.all([
         this.getSettings(userId),
         this.queryReviewItemsByState(userId, 'REVIEW', now),
         this.queryReviewItemsByState(userId, 'LEARNING', now),
         this.queryReviewItemsByState(userId, 'RELEARNING', now),
         this.countNewCardsToday(userId),
+        this.countVocabularyExperienced(userId),
+        this.countVocabularyLearned(userId),
       ])
 
     if (!settings) {
@@ -251,6 +255,8 @@ export class TaaltuigDynamoDBClient {
           learning_count: learningItems.length + relearningItems.length,
           total_count: queue.length,
           new_remaining_today: 0,
+          vocab_experienced: vocabExperienced,
+          vocab_learned: vocabLearned,
         },
       }
     }
@@ -284,6 +290,8 @@ export class TaaltuigDynamoDBClient {
         learning_count: learningItems.length + relearningItems.length,
         total_count: queue.length,
         new_remaining_today: Math.max(0, remainingNew - shuffledNewItems.length),
+        vocab_experienced: vocabExperienced,
+        vocab_learned: vocabLearned,
       },
     }
   }
@@ -380,6 +388,65 @@ export class TaaltuigDynamoDBClient {
   }
 
   /**
+   * Count unique cards (vocabulary) by state.
+   * Returns count of unique card_ids that have at least one ReviewItem in the given state.
+   */
+  async countUniqueCardsByState(userId: string, state: State): Promise<number> {
+    const params: QueryCommandInput = {
+      TableName: this.tableName,
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :pk',
+      ExpressionAttributeValues: {
+        ':pk': `USER#${userId}#${state}`,
+      },
+      ProjectionExpression: 'card_id',
+    }
+
+    const response = await this.client.send(new QueryCommand(params))
+    const items = response.Items || []
+
+    // Extract unique card_ids
+    const uniqueCardIds = new Set(items.map(item => item.card_id))
+    return uniqueCardIds.size
+  }
+
+  /**
+   * Count total vocabulary experienced (all cards that have been reviewed at least once).
+   * This includes cards in LEARNING, REVIEW, or RELEARNING states.
+   */
+  async countVocabularyExperienced(userId: string): Promise<number> {
+    // Fetch card_ids from all three states in parallel
+    const allItems: ReviewItem[] = []
+
+    const queries = ['LEARNING', 'REVIEW', 'RELEARNING'].map(async (state) => {
+      const params: QueryCommandInput = {
+        TableName: this.tableName,
+        IndexName: 'GSI1',
+        KeyConditionExpression: 'GSI1PK = :pk',
+        ExpressionAttributeValues: {
+          ':pk': `USER#${userId}#${state}`,
+        },
+        ProjectionExpression: 'card_id',
+      }
+      const response = await this.client.send(new QueryCommand(params))
+      return (response.Items as ReviewItem[]) || []
+    })
+
+    const results = await Promise.all(queries)
+    results.forEach(items => allItems.push(...items))
+
+    const uniqueCardIds = new Set(allItems.map(item => item.card_id))
+    return uniqueCardIds.size
+  }
+
+  /**
+   * Count total vocabulary learned (unique cards in REVIEW state).
+   */
+  async countVocabularyLearned(userId: string): Promise<number> {
+    return this.countUniqueCardsByState(userId, 'REVIEW')
+  }
+
+  /**
    * Get review queue stats without building the full queue.
    * Much cheaper than getReviewQueue — only counts, no item fetching.
    */
@@ -389,6 +456,8 @@ export class TaaltuigDynamoDBClient {
     learning_count: number
     total_count: number
     new_remaining_today: number
+    vocab_experienced: number
+    vocab_learned: number
   }> {
     const now = new Date().toISOString()
 
@@ -410,13 +479,15 @@ export class TaaltuigDynamoDBClient {
       return response.Count || 0
     }
 
-    const [settings, reviewCount, learningCount, relearningCount, newCardsToday] =
+    const [settings, reviewCount, learningCount, relearningCount, newCardsToday, vocabExperienced, vocabLearned] =
       await Promise.all([
         this.getSettings(userId),
         countByState('REVIEW', now),
         countByState('LEARNING', now),
         countByState('RELEARNING', now),
         this.countNewCardsToday(userId),
+        this.countVocabularyExperienced(userId),
+        this.countVocabularyLearned(userId),
       ])
 
     const newCardsPerDay = settings?.new_cards_per_day ?? 20
@@ -429,6 +500,8 @@ export class TaaltuigDynamoDBClient {
       learning_count: learningCount + relearningCount,
       total_count: dueCount + remainingNew,
       new_remaining_today: remainingNew,
+      vocab_experienced: vocabExperienced,
+      vocab_learned: vocabLearned,
     }
   }
 
