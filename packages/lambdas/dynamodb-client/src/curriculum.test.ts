@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   CURRICULUM,
   CEFR_LEVELS,
+  MASTERY_THRESHOLD,
+  MASTERY_MIN_EXERCISES,
+  LEVEL_ADVANCEMENT_THRESHOLD,
   getTopic,
+  getTrackableTopics,
   getLeafTopics,
   getAllTopics,
   getChildren,
@@ -45,17 +49,45 @@ describe('Curriculum', () => {
     }
   })
 
-  it('should have leaf topics with at least one suitable exercise type', () => {
-    const leaves = CURRICULUM.filter((t) => !t.is_category)
-    for (const leaf of leaves) {
-      expect(leaf.suitable_exercise_types.length).toBeGreaterThan(0)
+  it('should have trackable topics with at least one suitable exercise type', () => {
+    const trackable = CURRICULUM.filter((t) => t.trackable)
+    for (const topic of trackable) {
+      expect(topic.suitable_exercise_types.length).toBeGreaterThan(0)
     }
   })
 
-  it('should compute topic counts per level', () => {
+  it('should have vocabulary themes marked as non-trackable', () => {
+    const vocabThemes = CURRICULUM.filter(
+      (t) => !t.is_category && t.id.includes('.vocabulary.')
+    )
+    expect(vocabThemes.length).toBeGreaterThan(0)
+    for (const theme of vocabThemes) {
+      expect(theme.trackable).toBe(false)
+    }
+  })
+
+  it('should have grammar topics marked as trackable', () => {
+    const grammarLeaves = CURRICULUM.filter(
+      (t) => !t.is_category && t.id.includes('.grammar.')
+    )
+    expect(grammarLeaves.length).toBeGreaterThan(0)
+    for (const topic of grammarLeaves) {
+      expect(topic.trackable).toBe(true)
+    }
+  })
+
+  it('should compute topic counts per level (trackable only)', () => {
     for (const level of CEFR_LEVELS) {
+      const trackable = getTrackableTopics(level.level)
+      expect(level.topic_count).toBe(trackable.length)
       expect(level.topic_count).toBeGreaterThan(0)
     }
+  })
+
+  it('should have sensible mastery constants', () => {
+    expect(MASTERY_THRESHOLD).toBe(0.8)
+    expect(MASTERY_MIN_EXERCISES).toBe(8)
+    expect(LEVEL_ADVANCEMENT_THRESHOLD).toBe(0.7)
   })
 })
 
@@ -65,6 +97,7 @@ describe('getTopic', () => {
     expect(topic).toBeDefined()
     expect(topic!.name).toBe('Present Tense — Regular')
     expect(topic!.level).toBe('A1')
+    expect(topic!.trackable).toBe(true)
   })
 
   it('should return undefined for unknown ID', () => {
@@ -72,13 +105,26 @@ describe('getTopic', () => {
   })
 })
 
+describe('getTrackableTopics', () => {
+  it('should return only trackable grammar topics', () => {
+    const trackable = getTrackableTopics('A1')
+    for (const topic of trackable) {
+      expect(topic.trackable).toBe(true)
+      expect(topic.is_category).toBe(false)
+    }
+    // A1 has 18 grammar leaf topics
+    expect(trackable.length).toBe(18)
+  })
+})
+
 describe('getLeafTopics', () => {
-  it('should return only non-category topics', () => {
+  it('should return all non-category topics (trackable + vocab themes)', () => {
     const leaves = getLeafTopics('A1')
     for (const leaf of leaves) {
       expect(leaf.is_category).toBe(false)
     }
-    expect(leaves.length).toBeGreaterThan(10)
+    // A1: 18 grammar + 8 vocabulary themes = 26
+    expect(leaves.length).toBe(26)
   })
 })
 

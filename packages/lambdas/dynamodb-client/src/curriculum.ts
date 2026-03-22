@@ -39,6 +39,8 @@ export interface CurriculumTopic {
   sort_order: number
   /** Whether this is a category node (has children) or a leaf (trackable) */
   is_category: boolean
+  /** Whether this topic is trackable (grammar topics) or informational-only (vocabulary themes) */
+  trackable: boolean
 }
 
 export interface CEFRLevelMeta {
@@ -123,6 +125,7 @@ function topic(def: TopicDef): CurriculumTopic {
     vocabulary_themes: [],
     suitable_exercise_types: ['translation', 'fill_blank', 'word_reorder'],
     is_category: false,
+    trackable: true,
     ...def,
   }
 }
@@ -134,6 +137,19 @@ function category(def: Omit<TopicDef, 'grammar_points' | 'vocabulary_themes' | '
     vocabulary_themes: [],
     suitable_exercise_types: [],
     is_category: true,
+    trackable: false,
+  }
+}
+
+/** Vocabulary theme — informational only, not tracked for mastery */
+function vocabTheme(def: Omit<TopicDef, 'grammar_points' | 'suitable_exercise_types'>): CurriculumTopic {
+  return {
+    ...def,
+    grammar_points: [],
+    vocabulary_themes: def.vocabulary_themes || [],
+    suitable_exercise_types: [],
+    is_category: false,
+    trackable: false,
   }
 }
 
@@ -272,54 +288,46 @@ const A1_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['fill_blank', 'translation'],
   }),
 
-  // -- Vocabulary Themes --
-  topic({
+  // -- Vocabulary Themes (informational only, not tracked for mastery) --
+  vocabTheme({
     id: 'a1.vocabulary.greetings', name: 'Greetings & Introductions', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 1,
     description: 'Hello, goodbye, introducing yourself',
     vocabulary_themes: ['greetings', 'introductions', 'pleasantries'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.family', name: 'Family & Relationships', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 2,
     description: 'Family members, basic relationship words',
     vocabulary_themes: ['family members', 'relationships'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.numbers_time', name: 'Numbers & Time', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 3,
     description: 'Cardinal numbers 0-100, telling time, days, months, seasons',
     vocabulary_themes: ['numbers', 'telling time', 'days of week', 'months', 'seasons'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.food_drink', name: 'Food & Drink', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 4,
     description: 'Basic food, drink, and meal vocabulary',
     vocabulary_themes: ['food', 'drink', 'meals'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.home', name: 'Home & Rooms', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 5,
     description: 'Rooms, furniture, basic household items',
     vocabulary_themes: ['rooms', 'furniture', 'household'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.daily_routine', name: 'Daily Routine', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 6,
     description: 'Common daily activities and routines',
     vocabulary_themes: ['daily activities', 'routines', 'morning/evening'],
-    suitable_exercise_types: ['translation', 'word_reorder'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.weather', name: 'Weather', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 7,
     description: 'Basic weather expressions (het regent, de zon schijnt)',
     vocabulary_themes: ['weather', 'seasons'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a1.vocabulary.directions', name: 'Directions', level: 'A1', parent_id: 'a1.vocabulary', sort_order: 8,
     description: 'links, rechts, rechtdoor — basic navigation',
     vocabulary_themes: ['directions', 'navigation'],
-    suitable_exercise_types: ['translation'],
   }),
 ]
 
@@ -460,48 +468,41 @@ const A2_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['fill_blank', 'translation'],
   }),
 
-  // -- Vocabulary Themes --
-  topic({
+  // -- Vocabulary Themes (informational only) --
+  vocabTheme({
     id: 'a2.vocabulary.daily_routines', name: 'Daily Routines & Habits', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 1,
     description: 'Describing daily schedule, habits, and routines in detail',
     vocabulary_themes: ['daily routines', 'habits', 'time management'],
-    suitable_exercise_types: ['translation', 'word_reorder'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.shopping', name: 'Shopping', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 2,
     description: 'Prices, quantities, preferences, transactions',
     vocabulary_themes: ['shopping', 'prices', 'quantities'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.travel', name: 'Travel & Transport', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 3,
     description: 'Tickets, timetables, directions, public transport',
     vocabulary_themes: ['travel', 'transport', 'tickets', 'directions'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.hobbies', name: 'Hobbies & Leisure', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 4,
     description: 'Sports, hobbies, leisure activities',
     vocabulary_themes: ['hobbies', 'sports', 'leisure'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.work', name: 'Work & Occupations', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 5,
     description: 'Jobs, workplace, basic work vocabulary',
     vocabulary_themes: ['occupations', 'workplace', 'work activities'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.health', name: 'Health & Body', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 6,
     description: 'Basic complaints, body parts, feeling unwell',
     vocabulary_themes: ['health', 'body parts', 'illness'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'a2.vocabulary.food_cooking', name: 'Food & Cooking', level: 'A2', parent_id: 'a2.vocabulary', sort_order: 7,
     description: 'Recipes, restaurants, ordering, ingredients',
     vocabulary_themes: ['cooking', 'restaurants', 'ordering food', 'ingredients'],
-    suitable_exercise_types: ['translation'],
   }),
 ]
 
@@ -616,48 +617,41 @@ const B1_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['fill_blank', 'translation'],
   }),
 
-  // -- Vocabulary Themes --
-  topic({
+  // -- Vocabulary Themes (informational only) --
+  vocabTheme({
     id: 'b1.vocabulary.opinions', name: 'Opinions & Feelings', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 1,
     description: 'Expressing agreement, disagreement, emotions',
     vocabulary_themes: ['opinions', 'feelings', 'agreement', 'disagreement'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.education', name: 'Education & Learning', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 2,
     description: 'School, courses, studying, qualifications',
     vocabulary_themes: ['education', 'school', 'studying'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.work_detailed', name: 'Work Environment', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 3,
     description: 'Meetings, projects, colleagues, workplace communication',
     vocabulary_themes: ['workplace', 'meetings', 'projects'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.health_detailed', name: 'Healthcare', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 4,
     description: 'Doctor visits, symptoms, medication, appointments',
     vocabulary_themes: ['healthcare', 'doctor', 'symptoms', 'medication'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.media', name: 'Media & News', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 5,
     description: 'Newspapers, TV, internet, discussing news',
     vocabulary_themes: ['media', 'news', 'internet'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.housing', name: 'Housing', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 6,
     description: 'Renting, moving, contracts, describing a home',
     vocabulary_themes: ['housing', 'renting', 'moving'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'b1.vocabulary.culture', name: 'Dutch Culture & Traditions', level: 'B1', parent_id: 'b1.vocabulary', sort_order: 7,
     description: 'Sinterklaas, Koningsdag, customs, social norms',
     vocabulary_themes: ['Dutch customs', 'traditions', 'holidays'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
 ]
 
@@ -740,41 +734,36 @@ const B2_TOPICS: CurriculumTopic[] = [
   }),
 
   // -- Vocabulary --
-  topic({
+  // -- Vocabulary (informational only) --
+  vocabTheme({
     id: 'b2.vocabulary.abstract', name: 'Abstract Concepts', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 1,
     description: 'Abstract ideas, philosophical concepts, emotions in depth',
     vocabulary_themes: ['abstract concepts', 'philosophy', 'deep emotions'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b2.vocabulary.politics', name: 'Politics & Current Affairs', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 2,
     description: 'Government, elections, political parties, current events',
     vocabulary_themes: ['politics', 'government', 'elections', 'current affairs'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b2.vocabulary.science', name: 'Science & Technology', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 3,
     description: 'Scientific concepts, technology, innovation',
     vocabulary_themes: ['science', 'technology', 'innovation'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'b2.vocabulary.arts', name: 'Arts & Literature', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 4,
     description: 'Books, film, music, art criticism and discussion',
     vocabulary_themes: ['arts', 'literature', 'film', 'music criticism'],
-    suitable_exercise_types: ['translation', 'guided_write', 'paragraph_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'b2.vocabulary.idioms', name: 'Idiomatic Expressions', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 5,
     description: 'Common Dutch idioms, fixed expressions, proverbs',
     vocabulary_themes: ['idioms', 'fixed expressions', 'proverbs'],
-    suitable_exercise_types: ['translation', 'fill_blank'],
   }),
-  topic({
+  vocabTheme({
     id: 'b2.vocabulary.legal', name: 'Legal & Administrative', level: 'B2', parent_id: 'b2.vocabulary', sort_order: 6,
     description: 'Contracts, insurance, rights, official documents',
     vocabulary_themes: ['legal', 'contracts', 'insurance', 'administration'],
-    suitable_exercise_types: ['translation'],
   }),
 ]
 
@@ -824,23 +813,21 @@ const C1_TOPICS: CurriculumTopic[] = [
   }),
 
   // -- Vocabulary --
-  topic({
+  // -- Vocabulary (informational only) --
+  vocabTheme({
     id: 'c1.vocabulary.academic', name: 'Academic Discourse', level: 'C1', parent_id: 'c1.vocabulary', sort_order: 1,
     description: 'Academic writing vocabulary, argumentation, citations',
     vocabulary_themes: ['academic writing', 'argumentation', 'research'],
-    suitable_exercise_types: ['translation', 'guided_write', 'paragraph_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'c1.vocabulary.professional', name: 'Professional Communication', level: 'C1', parent_id: 'c1.vocabulary', sort_order: 2,
     description: 'Business Dutch, presentations, negotiations',
     vocabulary_themes: ['business', 'presentations', 'negotiations'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'c1.vocabulary.figurative', name: 'Figurative Language', level: 'C1', parent_id: 'c1.vocabulary', sort_order: 3,
     description: 'Metaphors, similes, irony, understatement',
     vocabulary_themes: ['figurative language', 'metaphors', 'irony'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
 ]
 
@@ -871,24 +858,21 @@ const C2_TOPICS: CurriculumTopic[] = [
     suitable_exercise_types: ['translation', 'guided_write'],
   }),
 
-  // -- Vocabulary --
-  topic({
+  // -- Vocabulary (informational only) --
+  vocabTheme({
     id: 'c2.vocabulary.specialized', name: 'Specialized & Technical', level: 'C2', parent_id: 'c2.vocabulary', sort_order: 1,
     description: 'Legal, academic, technical vocabulary at native level',
     vocabulary_themes: ['legal', 'academic', 'technical', 'domain-specific'],
-    suitable_exercise_types: ['translation', 'paragraph_write'],
   }),
-  topic({
+  vocabTheme({
     id: 'c2.vocabulary.regional', name: 'Regional Variation', level: 'C2', parent_id: 'c2.vocabulary', sort_order: 2,
     description: 'Flemish vs Netherlands Dutch, regional expressions',
     vocabulary_themes: ['Flemish Dutch', 'regional expressions', 'dialectal awareness'],
-    suitable_exercise_types: ['translation'],
   }),
-  topic({
+  vocabTheme({
     id: 'c2.vocabulary.low_frequency', name: 'Low-Frequency Expressions', level: 'C2', parent_id: 'c2.vocabulary', sort_order: 3,
     description: 'Rare idioms, etymological awareness, literary vocabulary',
     vocabulary_themes: ['rare idioms', 'etymology', 'literary vocabulary'],
-    suitable_exercise_types: ['translation', 'guided_write'],
   }),
 ]
 
@@ -905,12 +889,18 @@ export const CURRICULUM: CurriculumTopic[] = [
   ...C2_TOPICS,
 ]
 
-// Compute topic counts per level
+// Compute topic counts per level (trackable topics only — grammar, not vocab themes)
 for (const levelMeta of CEFR_LEVELS) {
   levelMeta.topic_count = CURRICULUM.filter(
-    (t) => t.level === levelMeta.level && !t.is_category
+    (t) => t.level === levelMeta.level && t.trackable
   ).length
 }
+
+/** Mastery threshold: correct percentage needed over minimum exercises */
+export const MASTERY_THRESHOLD = 0.8 // 80% correct
+export const MASTERY_MIN_EXERCISES = 8 // at least 8 exercises attempted
+/** Percentage of trackable topics that must be mastered to suggest level advancement */
+export const LEVEL_ADVANCEMENT_THRESHOLD = 0.7 // 70% of topics mastered
 
 // ---------------------------------------------------------------------------
 // Lookup helpers
@@ -926,7 +916,12 @@ export function getTopic(id: string): CurriculumTopic | undefined {
   return topicIndex.get(id)
 }
 
-/** Get all leaf topics (trackable, non-category) for a CEFR level */
+/** Get all trackable topics (grammar — tracked for mastery) for a CEFR level */
+export function getTrackableTopics(level: CEFRLevel): CurriculumTopic[] {
+  return CURRICULUM.filter((t) => t.level === level && t.trackable)
+}
+
+/** Get all leaf topics (trackable + vocab themes, non-category) for a CEFR level */
 export function getLeafTopics(level: CEFRLevel): CurriculumTopic[] {
   return CURRICULUM.filter((t) => t.level === level && !t.is_category)
 }
