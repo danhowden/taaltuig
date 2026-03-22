@@ -47,6 +47,7 @@ import type {
   ChallengeWritingRequest,
   ChallengeWritingResponse,
   ExerciseSummaryResponse,
+  ExerciseCatalogResponse,
 } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
@@ -537,6 +538,22 @@ class ApiClient {
       }
     )
   }
+  async getExerciseCatalog(
+    token: string,
+    params: { topic?: string; level?: string; type?: string }
+  ): Promise<ExerciseCatalogResponse> {
+    const searchParams = new URLSearchParams()
+    if (params.topic) searchParams.set('topic', params.topic)
+    if (params.level) searchParams.set('level', params.level)
+    if (params.type) searchParams.set('type', params.type)
+    return this.request<ExerciseCatalogResponse>(
+      `/api/exercises/catalog?${searchParams.toString()}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+  }
+
   async getExerciseSummary(
     token: string,
     level: string

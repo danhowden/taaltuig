@@ -1,22 +1,36 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
-import { TaaltuigDynamoDBClient } from '@taaltuig/dynamodb-client'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb'
 import {
   getUserIdFromEvent,
-  parseJsonBody,
   unauthorizedResponse,
   badRequestResponse,
   serverErrorResponse,
   jsonResponse,
 } from '@taaltuig/lambda-utils'
 
-const TABLE_NAME = process.env.TABLE_NAME!
-const dbClient = new TaaltuigDynamoDBClient(TABLE_NAME)
+const EXERCISES_TABLE_NAME = process.env.EXERCISES_TABLE_NAME!
+const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}))
+
+const VALID_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
+
+export interface CatalogExercise {
+  exercise_id: string
+  type: string
+  topic_id: string
+  cefr_level: string
+  prompt: string
+  reference_answer: string
+  alternatives: string[]
+  grammar_focus?: string
+  blanking_strategy?: string
+  source_notes?: string
+  seeded_at: string
+}
 
 /**
- * GET /api/writing/exercises — list exercises
- * DELETE /api/writing/exercises — clear incomplete exercises
- * PUT /api/writing/exercises — reject an exercise with a reason
- * PATCH /api/writing/exercises — reset an exercise back to pending
+ * GET /api/exercises/catalog?topic=<topic_id>     — exercises for a topic (PK query)
+ * GET /api/exercises/catalog?level=<A1>&type=<type> — exercises for a level (GSI1 query)
  */
 export async function handler(
   event: APIGatewayProxyEventV2
@@ -27,85 +41,69 @@ export async function handler(
       return unauthorizedResponse()
     }
 
-    const method = event.requestContext?.http?.method
-
-    if (method === 'DELETE') {
-      const result = await dbClient.clearIncompleteExercises(userId)
-      return jsonResponse({
-        message: 'Incomplete exercises cleared',
-        deleted: result.deleted,
-      })
-    }
-
-    if (method === 'PATCH') {
-      const parsed = parseJsonBody(event)
-      if (parsed.error) {
-        return badRequestResponse('Invalid request body')
-      }
-
-      const { exercise_id } = parsed.data as { exercise_id?: string }
-      if (!exercise_id) {
-        return badRequestResponse('Missing required field: exercise_id')
-      }
-
-      await dbClient.resetExercise(userId, exercise_id)
-      return jsonResponse({ message: 'Exercise reset to pending', exercise_id })
-    }
-
-    if (method === 'PUT') {
-      const parsed = parseJsonBody(event)
-      if (parsed.error) {
-        return badRequestResponse('Invalid request body')
-      }
-
-      const { exercise_id, reason } = parsed.data as { exercise_id?: string; reason?: string }
-      if (!exercise_id || !reason) {
-        return badRequestResponse('Missing required fields: exercise_id, reason')
-      }
-
-      await dbClient.rejectExercise(userId, exercise_id, reason)
-      return jsonResponse({ message: 'Exercise rejected', exercise_id })
-    }
-
-    // GET
-    const cardId = event.queryStringParameters?.card_id
-    const statusFilter = event.queryStringParameters?.status
+    const topic = event.queryStringParameters?.topic
+    const level = event.queryStringParameters?.level?.toUpperCase()
     const typeFilter = event.queryStringParameters?.type
 
-    if (cardId) {
-      const links = await dbClient.getExercisesForCard(userId, cardId)
-      return jsonResponse(links)
+    if (!topic && !level) {
+      return badRequestResponse('Either topic or level query parameter is required')
     }
 
-    let exercises = await dbClient.getAllExercises(userId)
+    let items: Record<string, unknown>[]
 
-    if (statusFilter) {
-      exercises = exercises.filter((e) => e.status === statusFilter)
-    }
-    if (typeFilter) {
-      exercises = exercises.filter((e) => e.type === typeFilter)
-    }
-
-    // Join with attempts to show user's answer and score
-    const attempts = await dbClient.getWritingAttemptsByExercise(userId)
-
-    const enriched = exercises.map((e) => {
-      const attempt = attempts.get(e.exercise_id)
-      return {
-        ...e,
-        attempt: attempt ? {
-          user_answer: attempt.user_answer,
-          score: attempt.score,
-          feedback: attempt.feedback,
-          match_type: attempt.match_type,
-          created_at: attempt.created_at,
-        } : null,
+    if (topic) {
+      // Query by topic (PK lookup)
+      const params: Record<string, unknown> = {
+        TableName: EXERCISES_TABLE_NAME,
+        KeyConditionExpression: typeFilter
+          ? 'PK = :pk AND begins_with(SK, :skPrefix)'
+          : 'PK = :pk',
+        ExpressionAttributeValues: typeFilter
+          ? { ':pk': `TOPIC#${topic}`, ':skPrefix': `${typeFilter}#` }
+          : { ':pk': `TOPIC#${topic}` },
       }
-    })
 
-    return jsonResponse(enriched)
+      const response = await docClient.send(new QueryCommand(params))
+      items = (response.Items || []) as Record<string, unknown>[]
+    } else {
+      // Query by level (GSI1)
+      if (!VALID_LEVELS.has(level!)) {
+        return badRequestResponse('Invalid level (A1-C2)')
+      }
+
+      const params: Record<string, unknown> = {
+        TableName: EXERCISES_TABLE_NAME,
+        IndexName: 'GSI1',
+        KeyConditionExpression: typeFilter
+          ? 'GSI1PK = :pk AND begins_with(GSI1SK, :skPrefix)'
+          : 'GSI1PK = :pk',
+        ExpressionAttributeValues: typeFilter
+          ? { ':pk': `LEVEL#${level}`, ':skPrefix': `${typeFilter}#` }
+          : { ':pk': `LEVEL#${level}` },
+      }
+
+      const response = await docClient.send(new QueryCommand(params))
+      items = (response.Items || []) as Record<string, unknown>[]
+    }
+
+    // Strip DynamoDB key attributes from response
+    const exercises: CatalogExercise[] = items.map((item) => ({
+      exercise_id: item.exercise_id as string,
+      type: item.type as string,
+      topic_id: item.topic_id as string,
+      cefr_level: item.cefr_level as string,
+      prompt: item.prompt as string,
+      reference_answer: item.reference_answer as string,
+      alternatives: (item.alternatives as string[]) || [],
+      grammar_focus: item.grammar_focus as string | undefined,
+      blanking_strategy: item.blanking_strategy as string | undefined,
+      source_notes: item.source_notes as string | undefined,
+      seeded_at: item.seeded_at as string,
+    }))
+
+    return jsonResponse({ exercises, count: exercises.length })
   } catch (error) {
-    console.error('Error in writingExercises:', error)
+    console.error('Error in exerciseCatalog:', error)
     return serverErrorResponse()
   }
 }

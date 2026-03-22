@@ -452,6 +452,25 @@ export interface ExerciseSummaryResponse {
   counts: Record<string, TopicExerciseCounts>
 }
 
+export interface CatalogExercise {
+  exercise_id: string
+  type: ExerciseType
+  topic_id: string
+  cefr_level: string
+  prompt: string
+  reference_answer: string
+  alternatives: string[]
+  grammar_focus?: string
+  blanking_strategy?: string
+  source_notes?: string
+  seeded_at: string
+}
+
+export interface ExerciseCatalogResponse {
+  exercises: CatalogExercise[]
+  count: number
+}
+
 // ============================================================================
 // Metrics API Types
 // ============================================================================

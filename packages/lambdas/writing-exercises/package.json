@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage --config=../vitest.config.ts"
   },
   "dependencies": {
-    "@taaltuig/dynamodb-client": "workspace:*",
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
     "@taaltuig/lambda-utils": "workspace:*"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PageLayout } from '@/components/PageLayout'
 import {
   CURRICULUM,
@@ -190,11 +191,18 @@ function TopicNode({
             </div>
           )}
 
-          {/* Exercise counts per type */}
+          {/* Exercise counts per type — links to catalog */}
           {topicCounts && (
-            <div className="mt-1.5">
+            <Link
+              to={`/exercises?topic=${topic.id}`}
+              className="mt-1.5 inline-flex items-center gap-1.5 group"
+              onClick={(e) => e.stopPropagation()}
+            >
               <ExerciseCountBadge counts={topicCounts} />
-            </div>
+              <span className="text-[10px] text-black/30 group-hover:text-black/60 transition-colors">
+                view →
+              </span>
+            </Link>
           )}
 
           {/* Suitable types (only show if no exercises yet) */}

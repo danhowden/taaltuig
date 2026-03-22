@@ -35,7 +35,7 @@ export function AppSidebar() {
     { icon: Home, label: 'Home', path: '/' },
     { icon: Brain, label: 'Review', path: '/review' },
     { icon: PencilLine, label: 'Writing', path: '/writing' },
-    { icon: ClipboardList, label: 'Exercise Admin', path: '/writing/admin' },
+    { icon: ClipboardList, label: 'Exercises', path: '/exercises' },
     { icon: CreditCard, label: 'Cards', path: '/cards' },
     { icon: Lightbulb, label: 'Insights', path: '/insights' },
     { icon: BookOpen, label: 'Curriculum', path: '/curriculum' },

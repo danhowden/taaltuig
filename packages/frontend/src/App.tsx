@@ -94,7 +94,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/writing/admin"
+                    path="/exercises"
                     element={
                       <ErrorBoundary>
                         <ExerciseAdminPage />
