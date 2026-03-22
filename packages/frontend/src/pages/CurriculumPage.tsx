@@ -278,47 +278,40 @@ function MasteryConfig() {
 // Data Flow Diagram
 // ============================================================================
 
+const DATA_FLOW_STEPS = [
+  { label: 'User Level', sublabel: 'proficiency_level', num: 1 },
+  { label: 'Topic Selection', sublabel: 'getTrackableTopics()', num: 2 },
+  { label: 'AI Generation', sublabel: 'writing-generate', num: 3 },
+  { label: 'Exercise', sublabel: 'WritingExercise', num: 4 },
+  { label: 'Assessment', sublabel: 'writing-submit', num: 5 },
+  { label: 'Progress', sublabel: 'TopicProgress', num: 6 },
+  { label: 'Mastery', sublabel: '80% / 8 exercises', num: 7 },
+  { label: 'Level Up', sublabel: '70% mastered', num: 8 },
+]
+
 function DataFlowDiagram() {
   return (
     <div className="bg-white/60 rounded-xl p-4 mb-6">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50 mb-4">
         Data Flow
       </h3>
-      <div className="flex items-center gap-2 text-xs overflow-x-auto pb-2">
-        <Step label="User Level" sublabel="UserSettings.proficiency_level" />
-        <Arrow />
-        <Step label="Topic Selection" sublabel="getTrackableTopics(level)" />
-        <Arrow />
-        <Step label="AI Generation" sublabel="writing-generate lambda" />
-        <Arrow />
-        <Step label="Exercise" sublabel="WritingExercise.topic_id" />
-        <Arrow />
-        <Step label="Assessment" sublabel="writing-submit lambda" />
-        <Arrow />
-        <Step label="Progress Update" sublabel="TopicProgress entity" />
-        <Arrow />
-        <Step label="Mastery Check" sublabel="80% over 8 exercises" />
-        <Arrow />
-        <Step label="Level Advance" sublabel="70% topics mastered" />
+      <div className="grid grid-cols-4 gap-x-0 gap-y-4">
+        {DATA_FLOW_STEPS.map((step, i) => (
+          <div key={step.num} className="flex items-center">
+            <div className="flex-1 text-center">
+              <div className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-black/5 text-[11px] font-semibold text-black/40 mb-1.5">
+                {step.num}
+              </div>
+              <div className="text-xs font-medium text-black/70">{step.label}</div>
+              <div className="text-[10px] text-black/35 font-mono mt-0.5">{step.sublabel}</div>
+            </div>
+            {(i + 1) % 4 !== 0 && i < DATA_FLOW_STEPS.length - 1 && (
+              <ChevronRight className="h-3.5 w-3.5 text-black/15 flex-shrink-0 -mx-1" />
+            )}
+          </div>
+        ))}
       </div>
     </div>
-  )
-}
-
-function Step({ label, sublabel }: { label: string; sublabel: string }) {
-  return (
-    <div className="flex-shrink-0 bg-white rounded-lg border border-black/10 px-3 py-2 text-center min-w-[120px]">
-      <div className="font-medium text-black/70">{label}</div>
-      <div className="text-[10px] text-black/40 font-mono mt-0.5">
-        {sublabel}
-      </div>
-    </div>
-  )
-}
-
-function Arrow() {
-  return (
-    <ChevronRight className="h-4 w-4 text-black/20 flex-shrink-0" />
   )
 }
 
