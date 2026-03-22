@@ -399,6 +399,19 @@ export class ApiStack extends cdk.Stack {
       }
     )
 
+    const exerciseSummaryLambda = new lambda.Function(
+      this,
+      'ExerciseSummaryFunction',
+      {
+        ...lambdaDefaults,
+        functionName: 'taaltuig-exercise-summary',
+        description: 'Exercise counts per topic for a CEFR level',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../../../lambdas/exercise-summary/dist')
+        ),
+      }
+    )
+
     const getMetricsLambda = new lambda.Function(
       this,
       'GetMetricsFunction',
@@ -663,6 +676,7 @@ export class ApiStack extends cdk.Stack {
       writingExercisesLambda,
       writingChallengeLambda,
       sidebarCountsLambda,
+      exerciseSummaryLambda,
     ]
 
     // Import DynamoDB tables
@@ -844,6 +858,16 @@ export class ApiStack extends cdk.Stack {
       integration: new integrations.HttpLambdaIntegration(
         'SidebarCountsIntegration',
         sidebarCountsLambda
+      ),
+      authorizer: jwtAuthorizer,
+    })
+
+    httpApi.addRoutes({
+      path: '/api/exercises/summary',
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        'ExerciseSummaryIntegration',
+        exerciseSummaryLambda
       ),
       authorizer: jwtAuthorizer,
     })

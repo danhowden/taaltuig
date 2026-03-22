@@ -439,6 +439,20 @@ export interface GenerateExercisesResponse {
 }
 
 // ============================================================================
+// Exercise Summary Types
+// ============================================================================
+
+export interface TopicExerciseCounts {
+  total: number
+  by_type: Record<string, number>
+}
+
+export interface ExerciseSummaryResponse {
+  level: string
+  counts: Record<string, TopicExerciseCounts>
+}
+
+// ============================================================================
 // Metrics API Types
 // ============================================================================
 

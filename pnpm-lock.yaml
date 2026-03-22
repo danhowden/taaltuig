@@ -324,6 +324,28 @@ importers:
         specifier: ^2.0.5
         version: 2.1.9(@types/node@20.19.30)(@vitest/ui@2.1.9)(happy-dom@20.0.2)(msw@2.12.7(@types/node@20.19.30)(typescript@5.9.3))
 
+  packages/lambdas/exercise-summary:
+    dependencies:
+      '@aws-sdk/client-dynamodb':
+        specifier: ^3.700.0
+        version: 3.972.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.700.0
+        version: 3.972.0(@aws-sdk/client-dynamodb@3.972.0)
+      '@taaltuig/lambda-utils':
+        specifier: workspace:*
+        version: link:../lambda-utils
+    devDependencies:
+      '@types/aws-lambda':
+        specifier: ^8.10.145
+        version: 8.10.159
+      '@vitest/coverage-v8':
+        specifier: ^2.1.9
+        version: 2.1.9(vitest@2.1.9(@types/node@25.3.3)(@vitest/ui@2.1.9)(happy-dom@20.0.2)(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3)))
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@25.3.3)(@vitest/ui@2.1.9)(happy-dom@20.0.2)(msw@2.12.7(@types/node@25.3.3)(typescript@5.9.3))
+
   packages/lambdas/generate-insights:
     dependencies:
       '@aws-sdk/client-bedrock-runtime':

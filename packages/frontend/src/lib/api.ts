@@ -46,6 +46,7 @@ import type {
   StoredWritingExercise,
   ChallengeWritingRequest,
   ChallengeWritingResponse,
+  ExerciseSummaryResponse,
 } from '@/types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
@@ -529,6 +530,19 @@ class ApiClient {
     const query = searchParams.toString()
     return this.request<StoredWritingExercise[]>(
       `/api/writing/exercises${query ? `?${query}` : ''}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+  }
+  async getExerciseSummary(
+    token: string,
+    level: string
+  ): Promise<ExerciseSummaryResponse> {
+    return this.request<ExerciseSummaryResponse>(
+      `/api/exercises/summary?level=${encodeURIComponent(level)}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
